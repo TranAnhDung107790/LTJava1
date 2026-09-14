@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Sinh viên</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: inline-block; width: 120px; }
+        .form-group input { padding: 6px; width: 250px; }
+        button { padding: 6px 14px; cursor: pointer; }
+        .btn-delete { background-color: #dc3545; color: white; border: none; }
+        .btn-add { background-color: #28a745; color: white; border: none; }
+    </style>
+</head>
+<body>
+
+    <h2>Thêm Mới Sinh Viên</h2>
+    <form id="addStudentForm">
+        <div class="form-group">
+            <label>Mã SV:</label>
+            <input type="text" id="studentCode" required>
+        </div>
+        <div class="form-group">
+            <label>Họ và Tên:</label>
+            <input type="text" id="fullName" required>
+        </div>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+            <label>Điện thoại:</label>
+            <input type="text" id="phone">
+        </div>
+        <div class="form-group">
+            <label>Lớp:</label>
+            <input type="text" id="className">
+        </div>
+        <button type="submit" class="btn-add">Lưu Sinh Viên</button>
+    </form>
+
+    <hr style="margin: 30px 0;">
+
+    <h2>Danh Sách Sinh Viên</h2>
+    <div>
+        <input type="text" id="keyword" placeholder="Nhập từ khóa tìm kiếm..." style="padding: 6px; width: 250px;">
+        <button onclick="loadStudents()">Tìm kiếm</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Mã SV</th>
+                <th>Họ Tên</th>
+                <th>Email</th>
+                <th>Điện thoại</th>
+                <th>Lớp</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody id="studentTableBody">
+            <!-- Dữ liệu từ API nạp vào đây -->
+        </tbody>
+    </table>
+
+    <script>
+        const API_URL = '/api/students';
+
+        // 1. Tải danh sách sinh viên từ API
+        function loadStudents() {
+            const keyword = document.getElementById('keyword').value;
+            const url = keyword ? `${API_URL}?keyword=${encodeURIComponent(keyword)}` : API_URL;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('studentTableBody');
+                    tbody.innerHTML = '';
+                    data.forEach(s => {
+                        tbody.innerHTML += `
+                            <tr>
+                                : ${s.studentCode}</td>
+                                <td>${s.fullName}</td>
+                                <td>${s.email}</td>
+                                <td>${s.phone || ''}</td>
+                                <td>${s.className || ''}</td>
+                                <td>
+                                    <button class="btn-delete" onclick="deleteStudent('${s.id}')">Xóa</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch(err => console.error("Lỗi khi tải dữ liệu:", err));
+        }
+
+        // 2. Thêm sinh viên mới (gọi API POST)
+        document.getElementById('addStudentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const studentData = {
+                studentCode: document.getElementById('studentCode').value,
+                fullName: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                className: document.getElementById('className').value
+            };
+
+            fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(studentData)
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert('Thêm sinh viên thành công!');
+                    document.getElementById('addStudentForm').reset();
+                    loadStudents();
+                } else {
+                    alert('Có lỗi xảy ra khi thêm!');
+                }
+            });
+        });
+
+        // 3. Xóa sinh viên (gọi API DELETE)
+        function deleteStudent(id) {
+            if (confirm('Bạn có chắc chắn muốn xóa sinh viên này?')) {
+                fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+                    .then(res => {
+                        if (res.ok) {
+                            alert('Đã xóa thành công!');
+                            loadStudents();
+                        }
+                    });
+            }
+        }
+
+        // Tự động load dữ liệu khi vào trang
+        loadStudents();
+    </script>
+</body>
+</html>
