@@ -1,6 +1,8 @@
 package com.example.quanlydaotao.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import java.sql.Types;
 import org.hibernate.annotations.SQLDelete;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -12,6 +14,7 @@ import java.util.UUID;
 public class EmployeePosition extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @JdbcTypeCode(Types.VARCHAR)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)

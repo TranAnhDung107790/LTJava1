@@ -1,6 +1,8 @@
 package com.example.quanlydaotao.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import java.sql.Types;
 import org.hibernate.annotations.SQLDelete;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,9 +15,11 @@ import java.util.UUID;
 public class Employee extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @JdbcTypeCode(Types.VARCHAR)
     private UUID id;
 
     @Column(name = "user_id", unique = true)
+    @JdbcTypeCode(Types.VARCHAR)
     private UUID userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -23,7 +27,7 @@ public class Employee extends BaseEntity {
     private Department department;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "position_id", nullable = false)
+    @JoinColumn(name = "position_id", referencedColumnName = "code", nullable = false)
     private Position position;
 
     @Column(nullable = false, unique = true, length = 20)
@@ -32,8 +36,8 @@ public class Employee extends BaseEntity {
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
 
-    @Column(nullable = false)
-    private Short gender = 1;
+    @Column(nullable = false, length = 50)
+    private String gender = "Nam";
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
@@ -58,13 +62,12 @@ public class Employee extends BaseEntity {
 
     @Column(name = "hire_date")
     private LocalDate hireDate;
-    
+
     @Column(name = "contract_type", length = 50)
     private String contractType;
-    
+
     @Column(length = 100)
     private String specialization;
-
 
     // Getters and Setters
     public UUID getId() {
@@ -115,11 +118,11 @@ public class Employee extends BaseEntity {
         this.fullName = fullName;
     }
 
-    public Short getGender() {
+    public String getGender() {
         return gender;
     }
 
-    public void setGender(Short gender) {
+    public void setGender(String gender) {
         this.gender = gender;
     }
 
@@ -179,11 +182,22 @@ public class Employee extends BaseEntity {
         this.salaryCoefficient = salaryCoefficient;
     }
 
-    public String getContractType() { return contractType; }
-    public void setContractType(String contractType) { this.contractType = contractType; }
-    public String getSpecialization() { return specialization; }
-    public void setSpecialization(String specialization) { this.specialization = specialization; }
-    
+    public String getContractType() {
+        return contractType;
+    }
+
+    public void setContractType(String contractType) {
+        this.contractType = contractType;
+    }
+
+    public String getSpecialization() {
+        return specialization;
+    }
+
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
+    }
+
     public LocalDate getHireDate() {
         return hireDate;
     }

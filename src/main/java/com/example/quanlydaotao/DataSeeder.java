@@ -71,7 +71,7 @@ public class DataSeeder implements CommandLineRunner {
             emp1.setCode("GV202601");
             emp1.setFullName("Nguyễn Văn Hoàng");
             emp1.setDateOfBirth(LocalDate.of(1985, 4, 12));
-            emp1.setGender((short) 1);
+            emp1.setGender("Nam");
             emp1.setEmail("nguyenvanhoang@donga.edu.vn");
             emp1.setPhone("0905123999");
             emp1.setAddress("123 Điện Biên Phủ, Đà Nẵng");
@@ -89,7 +89,7 @@ public class DataSeeder implements CommandLineRunner {
             emp2.setCode("GV202602");
             emp2.setFullName("Trần Thị Mai Phương");
             emp2.setDateOfBirth(LocalDate.of(1992, 10, 25));
-            emp2.setGender((short) 0);
+            emp2.setGender("Nữ");
             emp2.setEmail("tranmaiphuong@donga.edu.vn");
             emp2.setPhone("0934567888");
             emp2.setAddress("45 Nguyễn Văn Linh, Đà Nẵng");
