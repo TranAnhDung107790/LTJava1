@@ -1,4 +1,4 @@
-package com.example.quanlydaotao.repository;
+package com.example.quanlydaotao.n11.repository;
 
 import com.example.quanlydaotao.n11.entity.GraduationResult;
 import org.springframework.data.domain.Page;

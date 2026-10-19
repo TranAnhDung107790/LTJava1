@@ -1,8 +1,8 @@
-package com.example.quanlydaotao.service;
+package com.example.quanlydaotao.n11.service;
 
-import com.example.quanlydaotao.dto.EvaluateGraduationRequest;
+import com.example.quanlydaotao.n11.dto.EvaluateGraduationRequest;
 import com.example.quanlydaotao.n11.entity.GraduationResult;
-import com.example.quanlydaotao.repository.GraduationResultRepository;
+import com.example.quanlydaotao.n11.repository.GraduationResultRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
