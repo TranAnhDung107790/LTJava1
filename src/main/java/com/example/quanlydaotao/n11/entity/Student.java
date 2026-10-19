@@ -1,4 +1,4 @@
-package com.example.quanlydaotao.entity;
+package com.example.quanlydaotao.n11.entity;
 
 import java.util.UUID;
 

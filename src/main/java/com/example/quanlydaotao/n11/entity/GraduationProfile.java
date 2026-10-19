@@ -1,20 +1,16 @@
 package com.example.quanlydaotao.n11.entity;
 
-import com.example.quanlydaotao.entity.Student;
 import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
 
-import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "graduation_profiles")
-public class GraduationProfile {
+@Table(name = "graduation_profiles", schema = "dbo")
+public class GraduationProfile extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @JdbcTypeCode(Types.VARCHAR)
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
@@ -42,12 +38,6 @@ public class GraduationProfile {
 
     @Column(name = "note", length = 500)
     private String note;
-
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 
     public GraduationProfile() {
     }
@@ -124,19 +114,4 @@ public class GraduationProfile {
         this.note = note;
     }
 
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setDeletedAt(LocalDateTime deletedAt) {
-        this.deletedAt = deletedAt;
-    }
 }
