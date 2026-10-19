@@ -17,5 +17,8 @@ public interface GraduationProfileRepository extends JpaRepository<GraduationPro
 
     List<GraduationProfile> findByStatusAndIsActiveTrue(String status);
 
-    List<GraduationProfile> findByProfileCodeContainingIgnoreCaseAndIsActiveTrue(String keyword);
+    List<GraduationProfile> findByProfileCodeContainingIgnoreCaseAndIsActiveTrueOrStudent_StudentCodeContainingIgnoreCaseAndIsActiveTrue(
+            String profileCode, String studentCode);
+
+    boolean existsByProfileCodeIgnoreCase(String profileCode);
 }

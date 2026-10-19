@@ -1,12 +1,12 @@
 package com.example.quanlydaotao.n11.controller;
 
+import com.example.quanlydaotao.n11.dto.GraduationProfileReviewRequest;
 import com.example.quanlydaotao.n11.entity.GraduationProfile;
 import com.example.quanlydaotao.n11.service.GraduationProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -26,15 +26,12 @@ public class GraduationProfileController {
 
     @GetMapping("/{id}")
     public ResponseEntity<GraduationProfile> getById(@PathVariable UUID id) {
-        try {
-            return ResponseEntity.ok(graduationProfileService.findById(id));
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(graduationProfileService.findById(id));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<GraduationProfile>> search(@RequestParam String keyword) {
+    public ResponseEntity<List<GraduationProfile>> search(
+            @RequestParam(required = false) String keyword) {
         return ResponseEntity.ok(graduationProfileService.search(keyword));
     }
 
@@ -57,8 +54,7 @@ public class GraduationProfileController {
     @PutMapping("/{id}")
     public ResponseEntity<GraduationProfile> update(@PathVariable UUID id,
                                                     @RequestBody GraduationProfile graduationProfile) {
-        graduationProfile.setId(id);
-        GraduationProfile updated = graduationProfileService.save(graduationProfile);
+        GraduationProfile updated = graduationProfileService.update(id, graduationProfile);
         return ResponseEntity.ok(updated);
     }
 
@@ -70,17 +66,12 @@ public class GraduationProfileController {
 
     @PutMapping("/{id}/review")
     public ResponseEntity<GraduationProfile> review(@PathVariable UUID id,
-                                                    @RequestBody Map<String, Object> body) {
-        String status = body.get("status") != null ? body.get("status").toString() : null;
-        String reviewerId = body.get("reviewerId") != null ? body.get("reviewerId").toString() :
-                (body.get("reviewer_id") != null ? body.get("reviewer_id").toString() : null);
-        String note = body.get("note") != null ? body.get("note").toString() : "";
-
+                                                    @RequestBody GraduationProfileReviewRequest request) {
         GraduationProfile updated = graduationProfileService.review(
                 id,
-                status,
-                reviewerId != null ? UUID.fromString(reviewerId) : null,
-                note
+                request.status(),
+                request.reviewerId(),
+                request.note()
         );
 
         return ResponseEntity.ok(updated);
