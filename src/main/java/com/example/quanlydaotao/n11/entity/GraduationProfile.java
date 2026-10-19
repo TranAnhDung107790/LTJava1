@@ -1,11 +1,8 @@
 package com.example.quanlydaotao.n11.entity;
 
-import com.example.quanlydaotao.entity.BaseEntity;
 import com.example.quanlydaotao.entity.Student;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
 
 import java.sql.Types;
 import java.time.LocalDateTime;
@@ -13,9 +10,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "graduation_profiles")
-@SQLDelete(sql = "UPDATE graduation_profiles SET is_active = 0, deleted_at = GETDATE() WHERE id = ?")
-@Where(clause = "is_active = 1")
-public class GraduationProfile extends BaseEntity {
+public class GraduationProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -47,6 +42,12 @@ public class GraduationProfile extends BaseEntity {
 
     @Column(name = "note", length = 500)
     private String note;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     public GraduationProfile() {
     }
@@ -121,5 +122,21 @@ public class GraduationProfile extends BaseEntity {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

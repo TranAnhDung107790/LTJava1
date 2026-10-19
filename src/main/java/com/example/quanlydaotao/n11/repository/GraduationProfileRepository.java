@@ -4,13 +4,18 @@ import com.example.quanlydaotao.n11.entity.GraduationProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface GraduationProfileRepository extends JpaRepository<GraduationProfile, UUID> {
 
-    List<GraduationProfile> findByStudentId(UUID studentId);
+    List<GraduationProfile> findByIsActiveTrue();
 
-    List<GraduationProfile> findByStatus(String status);
+    Optional<GraduationProfile> findByIdAndIsActiveTrue(UUID id);
 
-    List<GraduationProfile> findByProfileCodeContainingIgnoreCase(String keyword);
+    List<GraduationProfile> findByStudent_IdAndIsActiveTrue(UUID studentId);
+
+    List<GraduationProfile> findByStatusAndIsActiveTrue(String status);
+
+    List<GraduationProfile> findByProfileCodeContainingIgnoreCaseAndIsActiveTrue(String keyword);
 }

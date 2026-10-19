@@ -18,27 +18,27 @@ public class GraduationProfileService {
     }
 
     public List<GraduationProfile> findAll() {
-        return graduationProfileRepository.findAll();
+        return graduationProfileRepository.findByIsActiveTrue();
     }
 
     public GraduationProfile findById(UUID id) {
-        return graduationProfileRepository.findById(id)
+        return graduationProfileRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ xét tốt nghiệp với id: " + id));
     }
 
     public List<GraduationProfile> search(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return graduationProfileRepository.findAll();
+            return graduationProfileRepository.findByIsActiveTrue();
         }
-        return graduationProfileRepository.findByProfileCodeContainingIgnoreCase(keyword.trim());
+        return graduationProfileRepository.findByProfileCodeContainingIgnoreCaseAndIsActiveTrue(keyword.trim());
     }
 
     public List<GraduationProfile> findByStudentId(UUID studentId) {
-        return graduationProfileRepository.findByStudentId(studentId);
+        return graduationProfileRepository.findByStudent_IdAndIsActiveTrue(studentId);
     }
 
     public List<GraduationProfile> findByStatus(String status) {
-        return graduationProfileRepository.findByStatus(status);
+        return graduationProfileRepository.findByStatusAndIsActiveTrue(status);
     }
 
     public GraduationProfile save(GraduationProfile graduationProfile) {
