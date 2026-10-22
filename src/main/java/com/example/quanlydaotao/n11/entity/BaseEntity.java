@@ -12,11 +12,10 @@ import java.util.UUID;
 public abstract class BaseEntity {
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column( updatable = false, columnDefinition = "DATETIME2 DEFAULT GETDATE()")
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Column( columnDefinition = "DATETIME2 DEFAULT GETDATE()")
     private LocalDateTime updatedAt;
 
     @Column(name = "created_by")
