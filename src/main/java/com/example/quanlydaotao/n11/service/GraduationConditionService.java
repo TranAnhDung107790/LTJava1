@@ -1,10 +1,10 @@
-package com.example.graduationconditions.service;
+package com.example.quanlydaotao.n11.service;
 
-import com.example.graduationconditions.dto.GraduationConditionRequest;
-import com.example.graduationconditions.entity.GraduationCondition;
-import com.example.graduationconditions.exception.ConflictException;
-import com.example.graduationconditions.exception.NotFoundException;
-import com.example.graduationconditions.repository.GraduationConditionRepository;
+import com.example.quanlydaotao.n11.dto.GraduationConditionRequest;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
+import com.example.quanlydaotao.n11.exception.ConflictException;
+import com.example.quanlydaotao.n11.exception.NotFoundException;
+import com.example.quanlydaotao.n11.repository.GraduationConditionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;

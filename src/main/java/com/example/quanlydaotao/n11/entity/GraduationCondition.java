@@ -1,4 +1,4 @@
-package com.example.graduationconditions.entity;
+package com.example.quanlydaotao.n11.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;

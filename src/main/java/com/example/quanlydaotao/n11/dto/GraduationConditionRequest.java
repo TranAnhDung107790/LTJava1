@@ -1,4 +1,4 @@
-package com.example.graduationconditions.dto;
+package com.example.quanlydaotao.n11.dto;
 
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;

@@ -1,0 +1,11 @@
+[33m52c1d7e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnhom11[m[33m, [m[1;31morigin/nhom11[m[33m)[m HEAD@{0}: reset: moving to HEAD~4
+[33m4c7542b[m HEAD@{1}: commit: add
+[33m83cbf71[m HEAD@{2}: commit (merge): Merge branch 'nhom11' of https://github.com/truongvanhieu/quanlydaotaoit24ab into nhom11
+[33mf15c71e[m HEAD@{3}: commit: add
+[33m69e30c7[m HEAD@{4}: commit: .
+[33m52c1d7e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnhom11[m[33m, [m[1;31morigin/nhom11[m[33m)[m HEAD@{5}: commit: creater graduationProfile
+[33m3075733[m HEAD@{6}: commit: reset
+[33ma8f179c[m HEAD@{7}: reset: moving to HEAD
+[33ma8f179c[m HEAD@{8}: checkout: moving from nhom11 to nhom11
+[33ma8f179c[m HEAD@{9}: checkout: moving from main to nhom11
+[33m5779949[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{10}: clone: from https://github.com/truongvanhieu/quanlydaotaoit24ab.git

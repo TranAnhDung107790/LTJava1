@@ -67,6 +67,9 @@ public class GraduationProfileService {
 
     @Transactional(readOnly = true)
     public List<GraduationProfile> findByStatus(String status) {
+        if (status == null || status.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái hồ sơ không được để trống");
+        }
         return graduationProfileRepository.findByStatusAndIsActiveTrue(status.trim());
     }
 
@@ -81,6 +84,9 @@ public class GraduationProfileService {
         graduationProfile.setId(null);
         graduationProfile.setIsActive(true);
         graduationProfile.setDeletedAt(null);
+        graduationProfile.setStatus("Pending");
+        graduationProfile.setReviewDate(null);
+        graduationProfile.setReviewerId(null);
         if (graduationProfileRepository.existsByProfileCodeIgnoreCase(graduationProfile.getProfileCode().trim())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Mã hồ sơ đã tồn tại");
         }
@@ -120,11 +126,7 @@ public class GraduationProfileService {
         profile.setProfileCode(input.getProfileCode().trim());
         profile.setStudent(student);
         profile.setSessionId(input.getSessionId());
-        profile.setStatus(input.getStatus() == null || input.getStatus().isBlank()
-                ? profile.getStatus() : input.getStatus().trim());
         profile.setSubmittedDate(input.getSubmittedDate());
-        profile.setReviewDate(input.getReviewDate());
-        profile.setReviewerId(input.getReviewerId());
         profile.setNote(input.getNote());
         return graduationProfileRepository.save(profile);
     }
@@ -132,13 +134,14 @@ public class GraduationProfileService {
     @Transactional
     public GraduationProfile review(UUID id, String status, UUID reviewerId, String note) {
         GraduationProfile profile = findById(id);
-        if (status == null || (!status.equalsIgnoreCase("Approved") && !status.equalsIgnoreCase("Rejected"))) {
+        String normalizedStatus = status == null ? "" : status.trim();
+        if (!normalizedStatus.equalsIgnoreCase("Approved") && !normalizedStatus.equalsIgnoreCase("Rejected")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái duyệt phải là Approved hoặc Rejected");
         }
         if (reviewerId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cần cung cấp ID người duyệt");
         }
-        profile.setStatus(status.toLowerCase(Locale.ROOT).equals("approved") ? "Approved" : "Rejected");
+        profile.setStatus(normalizedStatus.toLowerCase(Locale.ROOT).equals("approved") ? "Approved" : "Rejected");
         profile.setReviewerId(reviewerId);
         profile.setReviewDate(LocalDateTime.now());
         profile.setNote(note);

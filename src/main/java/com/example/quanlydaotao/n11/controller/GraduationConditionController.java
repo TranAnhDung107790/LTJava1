@@ -1,8 +1,8 @@
-package com.example.graduationconditions.controller;
+package com.example.quanlydaotao.n11.controller;
 
-import com.example.graduationconditions.dto.GraduationConditionRequest;
-import com.example.graduationconditions.entity.GraduationCondition;
-import com.example.graduationconditions.service.GraduationConditionService;
+import com.example.quanlydaotao.n11.dto.GraduationConditionRequest;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
+import com.example.quanlydaotao.n11.service.GraduationConditionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

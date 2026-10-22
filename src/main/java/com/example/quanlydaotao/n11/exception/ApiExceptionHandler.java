@@ -1,4 +1,4 @@
-package com.example.graduationconditions.exception;
+package com.example.quanlydaotao.n11.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

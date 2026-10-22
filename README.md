@@ -215,10 +215,50 @@ This project aims to develop a web platform for University Training Management S
 - [Build, deploy, and scale]-https://railway.com/
 ---
 
+## API Hồ sơ xét tốt nghiệp
+
+Các endpoint hồ sơ được cung cấp tại `/api/graduation-profiles`. ID hồ sơ và sinh viên dùng UUID.
+
+| Method | Endpoint | Chức năng |
+| --- | --- | --- |
+| GET | `/api/graduation-profiles` | Danh sách hồ sơ đang hoạt động |
+| GET | `/api/graduation-profiles/{id}` | Chi tiết hồ sơ |
+| GET | `/api/graduation-profiles/search?keyword=` | Tìm theo mã hồ sơ, mã sinh viên hoặc UUID sinh viên |
+| GET | `/api/graduation-profiles/student/{studentId}` | Danh sách hồ sơ của sinh viên |
+| GET | `/api/graduation-profiles/status/{status}` | Lọc hồ sơ theo trạng thái |
+| POST | `/api/graduation-profiles` | Tạo hồ sơ mới, trạng thái ban đầu là `Pending` |
+| PUT | `/api/graduation-profiles/{id}` | Cập nhật thông tin hồ sơ |
+| PUT | `/api/graduation-profiles/{id}/review` | Duyệt hoặc từ chối hồ sơ |
+| DELETE | `/api/graduation-profiles/{id}` | Xóa mềm hồ sơ |
+
+Ví dụ tạo hồ sơ:
+
+```json
+{
+  "profileCode": "GP-2026-001",
+  "student": {
+    "id": "8ab544e2-9d99-4c3c-9c88-33d3bff7af0a"
+  },
+  "sessionId": "924f6115-5fa7-45a8-a3c2-5c5956d3f73a",
+  "note": "Hồ sơ đăng ký xét tốt nghiệp"
+}
+```
+
+Ví dụ duyệt hồ sơ:
+
+```json
+{
+  "status": "Approved",
+  "reviewer_id": "c0136e76-75fd-4c1c-835b-bb74af765c28",
+  "note": "Đã kiểm tra hồ sơ"
+}
+```
+
+Trạng thái chỉ được thay đổi qua endpoint review; endpoint review chấp nhận `Approved` hoặc `Rejected` và ghi nhận người duyệt cùng thời điểm duyệt. Xóa hồ sơ chỉ đặt `isActive=false` và `deletedAt`, không xóa dữ liệu vật lý.
+
 ### Notes
 
 - Regularly update this README.md to reflect the current state of the project.
 - Use GitHub Issues to track detailed tasks and bugs.
 - Utilize GitHub Projects for more advanced project management.
-
 

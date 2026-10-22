@@ -1,6 +1,6 @@
-package com.example.graduationconditions.repository;
+package com.example.quanlydaotao.n11.repository;
 
-import com.example.graduationconditions.entity.GraduationCondition;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
