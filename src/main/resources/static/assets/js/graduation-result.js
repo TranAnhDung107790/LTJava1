@@ -32,6 +32,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initEventListeners() {
+    // Search
+    const btnSearch = document.getElementById('btnSearch');
+    const searchKeyword = document.getElementById('searchKeyword');
+
+    if (btnSearch) {
+        btnSearch.addEventListener('click', () => {
+            currentPage = 0;
+            loadResults();
+        });
+    }
+
+    if (searchKeyword) {
+        searchKeyword.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                currentPage = 0;
+                loadResults();
+            }
+        });
+    }
+
     // Filter by Result status
     const filterResult = document.getElementById('filterResult');
     if (filterResult) {
@@ -56,6 +76,11 @@ function initEventListeners() {
     const btnRefresh = document.getElementById('btnRefresh');
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {
+            if (searchKeyword) searchKeyword.value = '';
+            currentFilterResult = '';
+            const filterResEl = document.getElementById('filterResult');
+            if (filterResEl) filterResEl.value = '';
+            currentPage = 0;
             loadResults();
         });
     }
@@ -120,7 +145,67 @@ async function loadResults() {
         </tr>
     `;
 
+    const keyword = document.getElementById('searchKeyword')?.value.trim() || '';
+
     try {
+        if (keyword) {
+            // Xử lý tìm kiếm theo mã SV, họ tên hoặc UUID
+            const kwLower = keyword.toLowerCase();
+            const matchedStudentIds = [];
+
+            for (const [sId, student] of studentsMap.entries()) {
+                if (
+                    (student.studentCode && student.studentCode.toLowerCase().includes(kwLower)) ||
+                    (student.fullName && student.fullName.toLowerCase().includes(kwLower)) ||
+                    (student.className && student.className.toLowerCase().includes(kwLower)) ||
+                    sId.toLowerCase() === kwLower
+                ) {
+                    matchedStudentIds.push(sId);
+                }
+            }
+
+            let searchResults = [];
+
+            if (matchedStudentIds.length > 0) {
+                // Tải kết quả của các sinh viên khớp
+                const promises = matchedStudentIds.map(sId =>
+                    fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}/student/${sId}`)
+                        .then(res => res.ok ? res.json() : [])
+                        .catch(() => [])
+                );
+                const resultsArrays = await Promise.all(promises);
+                searchResults = resultsArrays.flat();
+            } else {
+                // Thử tìm theo ID bản ghi nếu người dùng nhập UUID
+                const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(keyword);
+                if (isUuid) {
+                    const res = await fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}/${keyword}`);
+                    if (res.ok) {
+                        const item = await res.json();
+                        searchResults = [item];
+                    }
+                }
+            }
+
+            // Lọc theo trạng thái nếu có chọn Đạt / Chưa đạt
+            if (currentFilterResult !== '') {
+                const targetRes = parseInt(currentFilterResult, 10);
+                searchResults = searchResults.filter(r => r.result === targetRes);
+            }
+
+            const pageData = {
+                content: searchResults,
+                totalElements: searchResults.length,
+                totalPages: 1,
+                number: 0,
+                size: Math.max(searchResults.length, 10)
+            };
+
+            renderResultsTable(pageData);
+            renderPagination(pageData);
+            return;
+        }
+
         let url = `${API_ENDPOINTS.GRADUATION_RESULTS}?page=${currentPage}&size=${pageSize}&sortBy=createdAt&direction=desc`;
         if (currentFilterResult !== '') {
             url += `&result=${encodeURIComponent(currentFilterResult)}`;
@@ -150,6 +235,7 @@ async function loadResults() {
 function renderResultsTable(pageData) {
     const tableBody = document.getElementById('resultsTableBody');
     const items = pageData.content || [];
+    const keyword = document.getElementById('searchKeyword')?.value.trim();
 
     // Cập nhật tổng số
     const totalBadge = document.getElementById('totalBadge');
@@ -162,7 +248,7 @@ function renderResultsTable(pageData) {
             <tr>
                 <td colspan="10" class="text-center text-muted py-5">
                     <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary"></i>
-                    Chưa có kết quả xét tốt nghiệp nào.
+                    ${keyword ? `Không tìm thấy kết quả nào phù hợp với từ khóa "<strong>${escapeHtml(keyword)}</strong>".` : 'Chưa có kết quả xét tốt nghiệp nào.'}
                 </td>
             </tr>
         `;
@@ -308,10 +394,11 @@ function renderPagination(pageData) {
     pagination.innerHTML = html;
 
     pagination.querySelectorAll('.page-link').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const p = parseInt(btn.getAttribute('data-page'), 10);
-            if (!isNaN(p) && p !== currentPage && p >= 0 && p < totalPages) {
-                currentPage = p;
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetPage = parseInt(btn.getAttribute('data-page'), 10);
+            if (!isNaN(targetPage) && targetPage >= 0 && targetPage < totalPages && targetPage !== current) {
+                currentPage = targetPage;
                 loadResults();
             }
         });
@@ -319,27 +406,26 @@ function renderPagination(pageData) {
 }
 
 // =================================================================================
-// 2. KÍCH HOẠT TIẾN TRÌNH XÉT DUYỆT TỰ ĐỘNG
+// 2. KÍCH HOẠT XÉT DUYỆT TỰ ĐỘNG (/api/graduation-results/evaluate)
 // =================================================================================
 async function handleExecuteEvaluate() {
     const conditionId = document.getElementById('evalConditionSelect').value;
-    const reviewerIdInput = document.getElementById('evalReviewerId').value.trim();
-    const btnExecute = document.getElementById('btnExecuteEvaluate');
-
     if (!conditionId) {
         alert('Vui lòng chọn một bộ điều kiện tốt nghiệp!');
         return;
     }
 
+    const reviewerInput = document.getElementById('evalReviewerId').value.trim();
+    const payload = {
+        conditionId: conditionId,
+        reviewerId: reviewerInput || 'cedeed49-0178-4394-a16c-02bc11cdb15a'
+    };
+
+    const btnExecute = document.getElementById('btnExecuteEvaluate');
     btnExecute.disabled = true;
-    btnExecute.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Đang xét duyệt...`;
+    btnExecute.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span>Đang xử lý quét...`;
 
     try {
-        const payload = {
-            conditionId: conditionId,
-            reviewerId: reviewerIdInput || null
-        };
-
         const response = await fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}/evaluate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -449,7 +535,7 @@ async function handleSaveResult(e) {
             resultModalInstance.hide();
         }
 
-        showAlert('success', isEdit ? 'Cập nhật kết quả thành công!' : 'Đã thêm mới kết quả thành công!');
+        showAlert('success', isEdit ? 'Cập nhật kết quả tốt nghiệp thành công!' : 'Đã thêm mới kết quả tốt nghiệp thành công!');
         loadResults();
     } catch (error) {
         alert(`Lỗi khi lưu kết quả: ${error.message}`);
@@ -458,8 +544,11 @@ async function handleSaveResult(e) {
     }
 }
 
+// =================================================================================
+// 4. XÓA KẾT QUẢ
+// =================================================================================
 async function handleDeleteResult(id) {
-    if (!confirm('Bạn có chắc chắn muốn xóa bản ghi kết quả tốt nghiệp này?')) {
+    if (!confirm('Bạn có chắc chắn muốn xóa bản ghi kết quả này?')) {
         return;
     }
 
@@ -469,18 +558,18 @@ async function handleDeleteResult(id) {
         });
 
         if (!response.ok) {
-            throw new Error(`Lỗi máy chủ (${response.status})`);
+            throw new Error(`Lỗi xóa dữ liệu (${response.status})`);
         }
 
-        showAlert('success', 'Đã xóa kết quả thành công!');
+        showAlert('success', 'Đã xóa kết quả tốt nghiệp thành công!');
         loadResults();
     } catch (error) {
-        alert(`Không thể xóa bản ghi: ${error.message}`);
+        alert(`Không thể xóa: ${error.message}`);
     }
 }
 
 // =================================================================================
-// 4. TIỆN ÍCH TẢI SINH VIÊN VÀ BỘ ĐIỀU KIỆN
+// 5. TIỆN ÍCH TẢI DỮ LIỆU PHỤ TRỢ (STUDENTS & CONDITIONS)
 // =================================================================================
 async function loadStudents() {
     try {
@@ -500,7 +589,7 @@ async function loadStudents() {
             select.innerHTML = optionsHtml;
         }
     } catch (e) {
-        console.warn('Không thể tải trước danh sách sinh viên:', e);
+        console.warn('Không thể tải sinh viên:', e);
     }
 }
 
@@ -510,25 +599,35 @@ async function loadConditions() {
         if (!response.ok) return;
         const list = await response.json();
 
-        const evalSelect = document.getElementById('evalConditionSelect');
         const modalSelect = document.getElementById('modalConditionId');
+        const evalSelect = document.getElementById('evalConditionSelect');
 
-        let optionsHtml = '<option value="">-- Chọn bộ điều kiện --</option>';
+        let modalOptions = '<option value="">-- Chọn bộ điều kiện --</option>';
+        let evalOptions = '<option value="">-- Chọn bộ điều kiện xét duyệt --</option>';
 
         list.forEach(c => {
             conditionsMap.set(c.id, c);
-            optionsHtml += `<option value="${c.id}">Khóa ${escapeHtml(c.appliedCohort || 'Chung')} (GPA >= ${c.minGpa}, Tín chỉ >= ${c.minTotalCredits})</option>`;
+            const cohort = c.appliedCohort || 'Chung';
+            const opt = `<option value="${c.id}">Khóa ${cohort} (GPA sàn: ${c.minGpa}, Tín chỉ: ${c.minTotalCredits})</option>`;
+            modalOptions += opt;
+            evalOptions += opt;
         });
 
-        if (evalSelect) {
-            evalSelect.innerHTML = optionsHtml;
-        }
-        if (modalSelect) {
-            modalSelect.innerHTML = optionsHtml;
-        }
+        if (modalSelect) modalSelect.innerHTML = modalOptions;
+        if (evalSelect) evalSelect.innerHTML = evalOptions;
     } catch (e) {
-        console.warn('Không thể tải trước bộ điều kiện:', e);
+        console.warn('Không thể tải bộ điều kiện:', e);
     }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 function showAlert(type, message) {
@@ -538,7 +637,7 @@ function showAlert(type, message) {
     alertBox.innerHTML = `
         <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
             <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i>
-            ${message}
+            ${escapeHtml(message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     `;
@@ -546,18 +645,8 @@ function showAlert(type, message) {
     setTimeout(() => {
         const alertEl = alertBox.querySelector('.alert');
         if (alertEl && window.bootstrap) {
-            const bsAlert = new bootstrap.Alert(alertEl);
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
             bsAlert.close();
         }
-    }, 4000);
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+    }, 5000);
 }

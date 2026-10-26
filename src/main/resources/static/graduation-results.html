@@ -113,10 +113,17 @@
                     <div class="card-body py-3">
                         <div class="row g-2 align-items-center justify-content-between">
                             <div class="col-12 col-md-auto d-flex flex-wrap gap-2 align-items-center">
+                                <!-- Search Keyword -->
+                                <div class="input-group input-group-sm" style="width: 250px;">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="searchKeyword" class="form-control" placeholder="Tìm theo mã SV, họ tên..." />
+                                </div>
+                                <button id="btnSearch" class="btn btn-primary btn-sm" title="Tìm kiếm"><i class="bi bi-funnel me-1"></i>Tìm kiếm</button>
+
                                 <!-- Filter Result -->
                                 <div class="d-flex align-items-center gap-1">
                                     <label class="small text-muted fw-semibold text-nowrap">Trạng thái:</label>
-                                    <select id="filterResult" class="form-select form-select-sm" style="width: 140px;">
+                                    <select id="filterResult" class="form-select form-select-sm" style="width: 130px;">
                                         <option value="">Tất cả</option>
                                         <option value="1">Đạt tốt nghiệp</option>
                                         <option value="0">Chưa đạt</option>
