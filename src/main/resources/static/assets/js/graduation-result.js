@@ -154,9 +154,10 @@ async function loadResults() {
             const matchedStudentIds = [];
 
             for (const [sId, student] of studentsMap.entries()) {
+                const sName = formatStudentName(student.fullName || student.name || '');
                 if (
                     (student.studentCode && student.studentCode.toLowerCase().includes(kwLower)) ||
-                    (student.fullName && student.fullName.toLowerCase().includes(kwLower)) ||
+                    sName.toLowerCase().includes(kwLower) ||
                     (student.className && student.className.toLowerCase().includes(kwLower)) ||
                     sId.toLowerCase() === kwLower
                 ) {
@@ -189,10 +190,11 @@ async function loadResults() {
                     const res = await fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}?page=0&size=100&sortBy=createdAt&direction=desc`);
                     if (res.ok) {
                         const pData = await res.json();
-                        searchResults = (pData.content || []).filter(r => 
-                            (r.studentName && r.studentName.toLowerCase().includes(kwLower)) ||
-                            (r.studentCode && r.studentCode.toLowerCase().includes(kwLower))
-                        );
+                        searchResults = (pData.content || []).filter(r => {
+                            const name = formatStudentName(r.studentName || '');
+                            return name.toLowerCase().includes(kwLower) ||
+                                (r.studentCode && r.studentCode.toLowerCase().includes(kwLower));
+                        });
                     }
                 }
             }
@@ -268,10 +270,11 @@ function renderResultsTable(pageData) {
     const startIdx = pageData.number * pageData.size;
 
     tableBody.innerHTML = items.map((item, index) => {
-        // Thông tin sinh viên (ưu tiên tên sinh viên từ backend, sau đó tới studentsMap)
+        // Thông tin sinh viên (ưu tiên tên sinh viên từ studentsMap hoặc backend và làm sạch số đuôi)
         const student = studentsMap.get(item.studentId);
-        const fullName = item.studentName || student?.fullName || student?.name;
-        const studentCode = item.studentCode || student?.studentCode || '';
+        const rawName = student?.fullName || student?.name || item.studentName;
+        const fullName = formatStudentName(rawName);
+        const studentCode = student?.studentCode || item.studentCode || '';
 
         let studentDisplay = '';
         if (fullName) {
@@ -300,7 +303,8 @@ function renderResultsTable(pageData) {
 
         return `
             <tr>
-                <td class="text-center text-muted small">${startIdx + index + 1}</td>\n                <td>${studentDisplay}</td>
+                <td class="text-center text-muted small">${startIdx + index + 1}</td>
+                <td>${studentDisplay}</td>
                 <td class="text-center ${gpaClass}">${gpaValue}</td>
                 <td class="text-center fw-semibold">${item.totalCredits != null ? item.totalCredits : '-'}</td>
                 <td class="text-center ${item.failedCredits > 0 ? 'text-danger fw-bold' : 'text-muted'}">${item.failedCredits != null ? item.failedCredits : 0}</td>
@@ -497,7 +501,8 @@ function openEditModal(id, items) {
     if (item.studentId && !studentSelect.querySelector(`option[value="${item.studentId}"]`)) {
         const opt = document.createElement('option');
         opt.value = item.studentId;
-        opt.textContent = `${item.studentCode || 'SV'} - ${item.studentName || 'Sinh viên'}`;
+        const name = formatStudentName(item.studentName || 'Sinh viên');
+        opt.textContent = `${item.studentCode || 'SV'} - ${name}`;
         studentSelect.appendChild(opt);
     }
 
@@ -607,7 +612,8 @@ async function loadStudents() {
 
         list.forEach(s => {
             studentsMap.set(s.id, s);
-            optionsHtml += `<option value="${s.id}">${escapeHtml(s.studentCode)} - ${escapeHtml(s.fullName)} (${escapeHtml(s.className || 'Chưa xếp lớp')})</option>`;
+            const cleanName = formatStudentName(s.fullName || s.name || '');
+            optionsHtml += `<option value="${s.id}">${escapeHtml(s.studentCode)} - ${escapeHtml(cleanName)} (${escapeHtml(s.className || 'Chưa xếp lớp')})</option>`;
         });
 
         if (select) {
@@ -643,6 +649,12 @@ async function loadConditions() {
     } catch (e) {
         console.warn('Không thể tải bộ điều kiện:', e);
     }
+}
+
+// Hàm làm sạch tên sinh viên (loại bỏ các số ở đuôi nếu có do dữ liệu mẫu)
+function formatStudentName(rawName) {
+    if (!rawName) return '';
+    return rawName.replace(/\s+\d+$/, '').trim();
 }
 
 function escapeHtml(str) {

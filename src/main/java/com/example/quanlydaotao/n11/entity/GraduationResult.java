@@ -19,10 +19,10 @@ public class GraduationResult extends BaseEntity {
     @Column(name = "student_id", nullable = false)
     private UUID studentId;
 
-    @Formula("(SELECT COALESCE((SELECT s_.full_name FROM dbo.students_ s_ WHERE s_.id = student_id), (SELECT s.full_name FROM dbo.students s WHERE s.id = student_id), 'Sinh viên'))")
+    @Formula("(SELECT COALESCE((SELECT s.full_name FROM dbo.students s WHERE s.id = student_id), (SELECT s_.full_name FROM dbo.students_ s_ WHERE s_.id = student_id), 'Sinh viên'))")
     private String studentName;
 
-    @Formula("(SELECT COALESCE((SELECT s_.code FROM dbo.students_ s_ WHERE s_.id = student_id), (SELECT s.student_code FROM dbo.students s WHERE s.id = student_id), ''))")
+    @Formula("(SELECT COALESCE((SELECT s.student_code FROM dbo.students s WHERE s.id = student_id), (SELECT s_.code FROM dbo.students_ s_ WHERE s_.id = student_id), ''))")
     private String studentCode;
 
     @Column(name = "condition_id", nullable = false)
