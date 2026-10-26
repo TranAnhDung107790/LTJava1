@@ -16,6 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/graduation-results")
+@CrossOrigin(origins = "*")
 public class GraduationResultController {
 
     private final GraduationResultService service;

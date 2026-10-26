@@ -184,6 +184,16 @@ async function loadResults() {
                         const item = await res.json();
                         searchResults = [item];
                     }
+                } else {
+                    // Lọc theo tên sinh viên hoặc mã sinh viên trả về trong trang kết quả
+                    const res = await fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}?page=0&size=100&sortBy=createdAt&direction=desc`);
+                    if (res.ok) {
+                        const pData = await res.json();
+                        searchResults = (pData.content || []).filter(r => 
+                            (r.studentName && r.studentName.toLowerCase().includes(kwLower)) ||
+                            (r.studentCode && r.studentCode.toLowerCase().includes(kwLower))
+                        );
+                    }
                 }
             }
 
@@ -258,11 +268,17 @@ function renderResultsTable(pageData) {
     const startIdx = pageData.number * pageData.size;
 
     tableBody.innerHTML = items.map((item, index) => {
-        // Thông tin sinh viên
+        // Thông tin sinh viên (ưu tiên tên sinh viên từ backend, sau đó tới studentsMap)
         const student = studentsMap.get(item.studentId);
-        const studentDisplay = student 
-            ? `<strong>${escapeHtml(student.fullName)}</strong><br/><small class="text-muted"><i class="bi bi-person-vcard me-1"></i>${escapeHtml(student.studentCode)} - ${escapeHtml(student.className || '')}</small>`
-            : `<span class="font-monospace small text-muted" title="${item.studentId}">${item.studentId.substring(0, 8)}...</span>`;
+        const fullName = item.studentName || student?.fullName || student?.name;
+        const studentCode = item.studentCode || student?.studentCode || '';
+
+        let studentDisplay = '';
+        if (fullName) {
+            studentDisplay = `<strong>${escapeHtml(fullName)}</strong>${studentCode ? `<br/><small class="text-muted"><i class="bi bi-person-vcard me-1"></i>${escapeHtml(studentCode)}</small>` : ''}`;
+        } else {
+            studentDisplay = `<span class="fw-semibold text-dark">Sinh viên #${item.studentId ? item.studentId.substring(0, 8) : '-'}</span>`;
+        }
 
         // Badge Kết quả Đạt / Chưa đạt
         const resultBadge = item.result === 1
@@ -284,8 +300,7 @@ function renderResultsTable(pageData) {
 
         return `
             <tr>
-                <td class="text-center text-muted small">${startIdx + index + 1}</td>
-                <td>${studentDisplay}</td>
+                <td class="text-center text-muted small">${startIdx + index + 1}</td>\n                <td>${studentDisplay}</td>
                 <td class="text-center ${gpaClass}">${gpaValue}</td>
                 <td class="text-center fw-semibold">${item.totalCredits != null ? item.totalCredits : '-'}</td>
                 <td class="text-center ${item.failedCredits > 0 ? 'text-danger fw-bold' : 'text-muted'}">${item.failedCredits != null ? item.failedCredits : 0}</td>
@@ -476,6 +491,16 @@ function openEditModal(id, items) {
 
     document.getElementById('resultModalLabel').innerHTML = `<i class="bi bi-pencil-square me-2"></i>Cập nhật kết quả tốt nghiệp`;
     document.getElementById('resultId').value = item.id;
+
+    // Đảm bảo dropdown sinh viên có option tương ứng
+    const studentSelect = document.getElementById('modalStudentId');
+    if (item.studentId && !studentSelect.querySelector(`option[value="${item.studentId}"]`)) {
+        const opt = document.createElement('option');
+        opt.value = item.studentId;
+        opt.textContent = `${item.studentCode || 'SV'} - ${item.studentName || 'Sinh viên'}`;
+        studentSelect.appendChild(opt);
+    }
+
     document.getElementById('modalStudentId').value = item.studentId || '';
     document.getElementById('modalStudentId').disabled = true;
     document.getElementById('modalConditionId').value = item.conditionId || '';
