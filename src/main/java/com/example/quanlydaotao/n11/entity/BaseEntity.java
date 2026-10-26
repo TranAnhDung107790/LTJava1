@@ -12,10 +12,11 @@ import java.util.UUID;
 public abstract class BaseEntity {
 
     @CreationTimestamp
-    @Column( updatable = false, columnDefinition = "DATETIME2 DEFAULT GETDATE()")
+    @Column(updatable = false, columnDefinition = "DATETIME2 DEFAULT GETDATE()")
     private LocalDateTime createdAt;
 
-    @Column( columnDefinition = "DATETIME2 DEFAULT GETDATE()")
+    @UpdateTimestamp
+    @Column(columnDefinition = "DATETIME2 DEFAULT GETDATE()")
     private LocalDateTime updatedAt;
 
     @Column(name = "created_by")
@@ -37,8 +38,16 @@ public abstract class BaseEntity {
         return createdAt;
     }
 
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public UUID getCreatedBy() {
@@ -79,5 +88,18 @@ public abstract class BaseEntity {
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    // Alias methods để tương thích với JSON serialization và code cũ
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public Boolean getActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        this.isActive = active;
     }
 }
