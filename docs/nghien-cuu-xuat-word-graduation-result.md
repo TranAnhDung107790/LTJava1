@@ -1257,6 +1257,170 @@ List<GraduationResult> findByIsActiveTrue();
 
 ---
 
+## Phụ lục B: Bổ sung thiếu sót — Checklist kỹ thuật trước khi code
+
+> ⚠️ **Đây là 3 điểm BẮT BUỘC phải sửa. Nếu bỏ qua, dự án sẽ lỗi compile.**
+
+---
+
+### B.1 — Repository: Thêm 2 method còn thiếu
+
+**File:** [`GraduationResultRepository.java`](../src/main/java/com/example/quanlydaotao/n11/repository/GraduationResultRepository.java)
+
+**Vấn đề:** `GraduationResultService.getResultsForExport()` gọi `findByConditionIdAndIsActiveTrue()` và `findByIsActiveTrue()` nhưng 2 method này **chưa có** trong interface.
+
+**Cần thêm vào cuối interface:**
+
+```java
+// =====================================================
+// Thêm vào cuối GraduationResultRepository — dùng cho export Word
+// =====================================================
+
+/**
+ * Lấy tất cả kết quả active theo bộ điều kiện (dùng khi export theo conditionId)
+ */
+List<GraduationResult> findByConditionIdAndIsActiveTrue(UUID conditionId);
+
+/**
+ * Lấy tất cả kết quả active (dùng khi export không lọc conditionId)
+ */
+List<GraduationResult> findByIsActiveTrue();
+```
+
+**Vị trí chèn** — sau dòng `findActiveStudentIds()`, trước dấu `}` đóng interface.
+
+---
+
+### B.2 — Service: Inject thêm `GraduationConditionRepository`
+
+**File:** [`GraduationResultService.java`](../src/main/java/com/example/quanlydaotao/n11/service/GraduationResultService.java)
+
+**Vấn đề:** Method `getResultsForExport()` gọi `conditionRepository.findById()` nhưng field này **chưa được khai báo hay inject**.
+
+**Sửa phần khai báo field + constructor:**
+
+```java
+// =====================================================
+// TRƯỚC (hiện tại chỉ có):
+// =====================================================
+private final GraduationResultRepository repository;
+
+public GraduationResultService(GraduationResultRepository repository) {
+    this.repository = repository;
+}
+
+// =====================================================
+// SAU (cần sửa thành):
+// =====================================================
+import com.example.quanlydaotao.n11.repository.GraduationConditionRepository; // thêm import
+
+private final GraduationResultRepository repository;
+private final GraduationConditionRepository conditionRepository;  // thêm field
+
+public GraduationResultService(GraduationResultRepository repository,
+                                GraduationConditionRepository conditionRepository) {
+    this.repository = repository;
+    this.conditionRepository = conditionRepository;  // thêm dòng này
+}
+```
+
+**Import bổ sung cần thêm vào đầu file Service:**
+
+```java
+import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
+import com.example.quanlydaotao.n11.repository.GraduationConditionRepository;
+import java.util.HashMap;
+import java.util.Map;
+```
+
+---
+
+### B.3 — Controller: Inject thêm 2 service mới
+
+**File:** [`GraduationResultController.java`](../src/main/java/com/example/quanlydaotao/n11/controller/GraduationResultController.java)
+
+**Vấn đề:** Endpoint `GET /export/word` gọi `conditionService.findById()` và `wordExportService.generateReport()` nhưng cả 2 **chưa được inject**.
+
+**Sửa phần khai báo field + constructor:**
+
+```java
+// =====================================================
+// TRƯỚC (hiện tại chỉ có):
+// =====================================================
+private final GraduationResultService service;
+
+public GraduationResultController(GraduationResultService service) {
+    this.service = service;
+}
+
+// =====================================================
+// SAU (cần sửa thành):
+// =====================================================
+private final GraduationResultService service;
+private final GraduationResultWordExportService wordExportService;  // thêm
+private final GraduationConditionService conditionService;          // thêm
+
+public GraduationResultController(GraduationResultService service,
+                                   GraduationResultWordExportService wordExportService,
+                                   GraduationConditionService conditionService) {
+    this.service = service;
+    this.wordExportService = wordExportService;    // thêm
+    this.conditionService = conditionService;      // thêm
+}
+```
+
+**Import bổ sung cần thêm vào đầu file Controller:**
+
+```java
+import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
+import com.example.quanlydaotao.n11.service.GraduationConditionService;
+import com.example.quanlydaotao.n11.service.GraduationResultWordExportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+```
+
+---
+
+### B.4 — Thứ tự tạo/sửa file khi thực hiện code
+
+| Thứ tự | File | Thao tác | Ghi chú |
+|--------|------|----------|---------|
+| 1 | `pom.xml` | **Sửa** — Thêm dependency POI | Bắt buộc trước tiên |
+| 2 | `dto/GraduationResultExportDTO.java` | **Tạo mới** | Copy từ Bước 2, Mục 7 |
+| 3 | `repository/GraduationResultRepository.java` | **Sửa** — Thêm 2 method | Xem Phụ lục B.1 |
+| 4 | `service/GraduationResultService.java` | **Sửa** — Inject + thêm 2 method | Xem Phụ lục B.2 |
+| 5 | `service/GraduationResultWordExportService.java` | **Tạo mới** | Copy từ Bước 3, Mục 7 |
+| 6 | `controller/GraduationResultController.java` | **Sửa** — Inject + thêm endpoint | Xem Phụ lục B.3 |
+| 7 | Test qua Swagger UI | `http://localhost:8080/swagger-ui.html` | `GET /api/graduation-results/export/word` |
+
+---
+
+### B.5 — Test nhanh sau khi code xong
+
+```bash
+# Test export toàn bộ (không lọc condition)
+GET http://localhost:8080/api/graduation-results/export/word
+
+# Test export theo bộ điều kiện K24 (active)
+GET http://localhost:8080/api/graduation-results/export/word?conditionId=276a95ec-a78d-4033-886c-6c3b0cabd8dd
+```
+
+**Kết quả mong đợi:**
+- File `.docx` tải về tên dạng `BaoCao_XetTotNghiep_01112026.docx`
+- Phần I: 667 sinh viên ĐẠT (Xuất sắc: 57, Giỏi: 155, Khá: 349, TB: 106)
+- Phần II: 133 sinh viên CHƯA ĐẠT, mỗi SV có 2 lý do:
+  - *"GPA chưa đạt yêu cầu (có: X.XX, yêu cầu: 2.20)"*
+  - *"Chưa đủ tín chỉ tích lũy (có: 115, yêu cầu: 125)"*
+
+---
+
 > **Tài liệu này là kết quả nghiên cứu của Nhóm 11 trên nhánh `nhom11-test`.**
 > **Mọi thay đổi chỉ commit local, KHÔNG push lên GitHub.**
 
