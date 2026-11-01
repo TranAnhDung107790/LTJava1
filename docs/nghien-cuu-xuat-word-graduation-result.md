@@ -77,6 +77,62 @@ com.example.quanlydaotao.n11
 - Không có endpoint export Word/Excel/PDF
 - Dữ liệu chỉ trả về dạng JSON qua REST API
 
+### 1.4 Dữ liệu thực tế trong Database (đã xác minh)
+
+> ✅ **Dữ liệu trong DB đã được sửa chữa trước đó, KHÔNG CÒN là hardcoded mock.**
+
+Dữ liệu `graduation_results` đã được xét duyệt với GPA **đa dạng** (từ 1.52 đến 4.00), tín chỉ (115 hoặc 125), tín chỉ nợ (0 hoặc 10).
+
+**Thống kê thực tế từ DB:**
+
+| Chỉ số | Giá trị |
+|--------|---------|
+| Tổng số SV được xét | **800** |
+| Số đạt yêu cầu | **667** (83.4%) |
+| Số chưa đạt | **133** (16.6%) |
+| GPA thấp nhất | 1.52 |
+| GPA cao nhất | 4.00 |
+| GPA trung bình | 2.80 |
+| Tín chỉ tích lũy | 115 – 125 |
+| Tín chỉ nợ | 0 – 10 |
+
+**Phân loại tốt nghiệp (667 SV đạt):**
+
+| Xếp loại | Số lượng | Tỷ lệ |
+|----------|----------|--------|
+| Xuất sắc (GPA ≥ 3.60) | 57 | 8.5% |
+| Giỏi (GPA ≥ 3.20) | 155 | 23.2% |
+| Khá (GPA ≥ 2.50) | 349 | 52.3% |
+| Trung bình (GPA < 2.50) | 106 | 15.9% |
+
+**Phân tích 133 SV không đạt — Lý do:**
+
+| Lý do | Số lượng |
+|-------|----------|
+| GPA thấp (< 2.20) **VÀ** Thiếu tín chỉ (115 < 125) | **133 SV (100%)** |
+
+> Tất cả SV không đạt đều vi phạm **2 điều kiện đồng thời**: GPA dưới 2.20 và chỉ tích lũy 115/125 tín chỉ, tín chỉ nợ = 10.
+
+**Bộ điều kiện đang sử dụng (Active):**
+
+| Thuộc tính | Giá trị |
+|-----------|---------|
+| ID | `276a95ec-a78d-4033-886c-6c3b0cabd8dd` |
+| Khóa áp dụng | **K24** |
+| Tín chỉ tối thiểu | **125** |
+| GPA tối thiểu | **2.20** |
+| Tín chỉ nợ tối đa | **10** |
+| Yêu cầu Tiếng Anh | B1 |
+| Yêu cầu Tin học | CNTT cơ bản |
+| Yêu cầu Hạnh kiểm | Tốt |
+
+**Bảng nguồn dữ liệu sinh viên:**
+
+| Bảng | Số lượng |
+|------|----------|
+| `dbo.students_` (bảng chính cho xét TN) | **800 SV active** |
+| `dbo.students` (bảng phụ) | 820 SV |
+
 ---
 
 ## 2. Phân tích cấu trúc dữ liệu
@@ -135,12 +191,14 @@ com.example.quanlydaotao.n11
 Một sinh viên **ĐẠT** tốt nghiệp khi thỏa TẤT CẢ các điều kiện:
 
 ```
-✅ total_credits >= min_total_credits   (đủ tín chỉ)
-✅ gpa >= min_gpa                        (đủ điểm GPA)
-✅ failed_credits <= max_failed_credits  (không nợ quá mức)
+✅ total_credits >= min_total_credits   (đủ tín chỉ, VD: ≥ 125)
+✅ gpa >= min_gpa                        (đủ điểm GPA, VD: ≥ 2.20)
+✅ failed_credits <= max_failed_credits  (không nợ quá mức, VD: ≤ 10)
 ```
 
 Một sinh viên **KHÔNG ĐẠT** khi vi phạm BẤT KỲ điều kiện nào ở trên.
+
+> **Thực tế trong DB (K24):** Tất cả 133 SV không đạt đều vi phạm 2 điều kiện đồng thời: GPA < 2.20 VÀ tín chỉ chỉ đạt 115 (< 125 yêu cầu).
 
 **Phân loại tốt nghiệp** (chỉ áp dụng cho sinh viên Đạt):
 
@@ -364,11 +422,12 @@ public List<String> buildFailureReasons(GraduationResult result,
 ║     Ngày xuất báo cáo: dd/MM/yyyy                            ║
 ║                                                              ║
 ║  ┌──────────── TIÊU CHÍ XÉT TỐT NGHIỆP ────────────┐      ║
-║  │ • Tín chỉ tối thiểu: 120                          │      ║
-║  │ • GPA tối thiểu: 2.00                              │      ║
-║  │ • Tín chỉ nợ tối đa: 0                             │      ║
-║  │ • Yêu cầu Tiếng Anh: TOEIC 450                     │      ║
-║  │ • Yêu cầu Tin học: IC3/MOS                          │      ║
+║  │ • Tín chỉ tối thiểu: 125                          │      ║
+║  │ • GPA tối thiểu: 2.20                              │      ║
+║  │ • Tín chỉ nợ tối đa: 10                            │      ║
+║  │ • Yêu cầu Tiếng Anh: B1                            │      ║
+║  │ • Yêu cầu Tin học: CNTT cơ bản                     │      ║
+║  │ • Yêu cầu Hạnh kiểm: Tốt                           │      ║
 ║  └────────────────────────────────────────────────────┘      ║
 ║                                                              ║
 ║  ═══ PHẦN I: SINH VIÊN ĐẠT YÊU CẦU TỐT NGHIỆP ═══        ║
@@ -395,11 +454,11 @@ public List<String> buildFailureReasons(GraduationResult result,
 ║  └───┴──────────┴──────────────┴─────┴──────┴───┴──────────┘║
 ║                                                              ║
 ║  ═══ THỐNG KÊ TỔNG HỢP ═══                                 ║
-║  • Tổng số sinh viên xét: XX                                 ║
-║  • Số đạt yêu cầu: XX (XX.X%)                               ║
-║  •   Xuất sắc: XX    Giỏi: XX                               ║
-║  •   Khá: XX         Trung bình: XX                          ║
-║  • Số chưa đạt: XX (XX.X%)                                  ║
+║  • Tổng số sinh viên xét: 800                                ║
+║  • Số đạt yêu cầu: 667 (83.4%)                              ║
+║  •   Xuất sắc: 57    Giỏi: 155                              ║
+║  •   Khá: 349        Trung bình: 106                         ║
+║  • Số chưa đạt: 133 (16.6%)                                 ║
 ║                                                              ║
 ║  Người lập báo cáo         Trưởng khoa                       ║
 ║  (Ký, ghi rõ họ tên)      (Ký, ghi rõ họ tên)               ║
@@ -410,18 +469,21 @@ public List<String> buildFailureReasons(GraduationResult result,
 
 | STT | Mã sinh viên | Họ và tên | GPA | Tổng tín chỉ | Xếp loại |
 |-----|-------------|-----------|-----|--------------|----------|
-| 1 | SV001 | Nguyễn Văn A | 3.65 | 130 | Xuất sắc |
-| 2 | SV002 | Trần Thị B | 3.45 | 128 | Giỏi |
-| 3 | SV003 | Lê Văn C | 2.80 | 125 | Khá |
+| 1 | 26785 | Hoàng Thanh Phúc | 3.67 | 125 | Xuất sắc |
+| 2 | 26793 | Nguyễn Hồng Vinh | 3.48 | 125 | Giỏi |
+| 3 | 26799 | Lương Khánh Hải | 3.05 | 125 | Khá |
+| 4 | 26792 | Nguyễn Thùy Phương | 2.29 | 125 | Trung bình |
 
 ### 6.3 Chi tiết bảng Sinh viên KHÔNG ĐẠT (7 cột, có lý do)
 
 | STT | Mã SV | Họ và tên | GPA | Tín chỉ | Nợ | Lý do không đạt |
 |-----|-------|-----------|-----|---------|-----|-----------------|
-| 1 | SV010 | Phạm Văn D | 1.80 | 100 | 5 | - GPA chưa đạt (1.80 < 2.00) |
-| | | | | | | - Chưa đủ tín chỉ (100 < 120) |
-| | | | | | | - Nợ vượt mức (5 > 0) |
-| 2 | SV011 | Hoàng Thị E | 2.50 | 110 | 0 | - Chưa đủ tín chỉ (110 < 120) |
+| 1 | 26681 | Trần Minh Phúc | 1.52 | 115 | 10 | - GPA chưa đạt (1.52 < 2.20) |
+| | | | | | | - Chưa đủ tín chỉ (115 < 125) |
+| 2 | 26798 | Trần Diễm Thu | 1.53 | 115 | 10 | - GPA chưa đạt (1.53 < 2.20) |
+| | | | | | | - Chưa đủ tín chỉ (115 < 125) |
+| 3 | 26796 | Hứa Bảo Vy | 2.19 | 115 | 10 | - GPA chưa đạt (2.19 < 2.20) |
+| | | | | | | - Chưa đủ tín chỉ (115 < 125) |
 
 ---
 
@@ -1113,10 +1175,14 @@ List<GraduationResult> findByIsActiveTrue();
 
 ### 8.3 Lưu ý quan trọng
 
-> ⚠️ **Hiện tại method `evaluate()` dùng dữ liệu GPA/tín chỉ HARDCODED (giả lập)**
-> - GPA mặc định = 2.85, tín chỉ = 125, nợ = 0
-> - Tất cả sinh viên đều ra kết quả giống nhau
-> - Cần thay bằng dữ liệu thực từ bảng tổng kết điểm khi có
+> ✅ **Dữ liệu GPA/tín chỉ trong DB đã được cập nhật là DỮ LIỆU THỰC (đa dạng)**
+> - GPA: từ 1.52 đến 4.00 (đa dạng theo từng SV)
+> - Tín chỉ: 115 (chưa đủ) hoặc 125 (đủ)
+> - Tín chỉ nợ: 0 hoặc 10
+> - Tổng 800 SV: 667 đạt, 133 không đạt
+> - Bộ điều kiện K24: MinTC=125, MinGPA=2.20, MaxFailed=10
+
+> ⚠️ **Mặc dù code `evaluate()` vẫn có dòng hardcoded GPA=2.85**, dữ liệu trong DB đã được sửa chữa trước đó nên kết quả xét duyệt hiện tại là chính xác và đa dạng. Khi chạy `evaluate()` lại, code sẽ ghi đè dữ liệu — cần cập nhật code trước khi chạy evaluate lần nữa.
 
 > ⚠️ **Entity GraduationResult dùng `@Formula` cho studentName/studentCode**
 > - Khi load từ DB, Hibernate tự chạy subselect SQL
@@ -1124,5 +1190,73 @@ List<GraduationResult> findByIsActiveTrue();
 
 ---
 
+## Phụ lục A: Tổng hợp toàn bộ API trong dự án (đã xác minh)
+
+### A.1 GraduationResultController — `/api/graduation-results`
+
+| Method | Endpoint | Chức năng | Params |
+|--------|----------|-----------|--------|
+| `GET` | `/` | Danh sách có phân trang + lọc theo kết quả | `result`, `page`, `size`, `sortBy`, `direction` |
+| `GET` | `/{id}` | Chi tiết 1 bản ghi | `id` (UUID) |
+| `GET` | `/student/{studentId}` | Tra cứu theo sinh viên | `studentId` (UUID) |
+| `POST` | `/` | Nhập kết quả thủ công | Body: GraduationResult |
+| `POST` | `/evaluate` | Xét duyệt tự động hàng loạt | Body: EvaluateGraduationRequest |
+| `PUT` | `/{id}` | Cập nhật kết quả | `id` + Body |
+| `DELETE` | `/{id}` | Xóa mềm | `id` (UUID) |
+| 🆕 `GET` | `/export/word` | **Xuất báo cáo Word (ĐỀ XUẤT)** | `conditionId` (optional) |
+
+### A.2 GraduationConditionController — `/api/graduation-conditions`
+
+| Method | Endpoint | Chức năng |
+|--------|----------|-----------|
+| `GET` | `/` | Tất cả điều kiện TN |
+| `GET` | `/cohort/{cohort}` | Theo khóa |
+| `GET` | `/program/{programId}` | Theo chương trình đào tạo |
+| `GET` | `/program/{programId}/cohort/{cohort}` | Theo CT + khóa |
+| `GET` | `/{id}` | Chi tiết 1 bộ điều kiện |
+| `POST` | `/` | Tạo mới (có validation) |
+| `PUT` | `/{id}` | Cập nhật |
+| `PATCH` | `/{id}/toggle-status` | Bật/tắt trạng thái |
+| `DELETE` | `/{id}` | Xóa mềm |
+
+### A.3 GraduationSessionController — `/api/graduation-sessions`
+
+| Method | Endpoint | Chức năng |
+|--------|----------|-----------|
+| `GET` | `/` | Tất cả đợt xét TN |
+| `GET` | `/{id}` | Chi tiết 1 đợt |
+| `GET` | `/search?keyword=` | Tìm kiếm theo mã/tên |
+| `GET` | `/active` | Đợt đang hoạt động (theo ngày) |
+| `POST` | `/` | Tạo đợt mới |
+| `PUT` | `/{id}` | Cập nhật |
+| `DELETE` | `/{id}?deletedBy=` | Xóa mềm |
+
+### A.4 GraduationProfileController — `/api/graduation-profiles`
+
+| Method | Endpoint | Chức năng |
+|--------|----------|-----------|
+| `GET` | `/` | Tất cả hồ sơ TN |
+| `GET` | `/{id}` | Chi tiết 1 hồ sơ |
+| `GET` | `/search?keyword=` | Tìm kiếm |
+| `GET` | `/student/{studentId}` | Theo sinh viên |
+| `GET` | `/status/{status}` | Theo trạng thái (Pending/Approved/Rejected) |
+| `POST` | `/` | Tạo hồ sơ mới |
+| `PUT` | `/{id}` | Cập nhật |
+| `DELETE` | `/{id}` | Xóa mềm |
+| `PUT` | `/{id}/review` | Duyệt hồ sơ (approve/reject) |
+
+### A.5 StudentController — `/api/students`
+
+| Method | Endpoint | Chức năng |
+|--------|----------|-----------|
+| `GET` | `/?keyword=` | Danh sách / tìm kiếm |
+| `GET` | `/{id}` | Chi tiết sinh viên |
+| `POST` | `/` | Tạo mới |
+| `PUT` | `/{id}` | Cập nhật |
+| `DELETE` | `/{id}` | Xóa cứng (hard delete) |
+
+---
+
 > **Tài liệu này là kết quả nghiên cứu của Nhóm 11 trên nhánh `nhom11-test`.**
 > **Mọi thay đổi chỉ commit local, KHÔNG push lên GitHub.**
+
