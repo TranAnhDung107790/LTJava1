@@ -16,9 +16,11 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
 
     @Query("SELECT r FROM GraduationResult r " +
             "WHERE r.isActive = true " +
-            "AND (:result IS NULL OR r.result = :result)")
+            "AND (:result IS NULL OR r.result = :result) " +
+            "AND (:conditionId IS NULL OR r.conditionId = :conditionId)")
     Page<GraduationResult> findByIsActiveTrueAndResult(
             @Param("result") Short result,
+            @Param("conditionId") UUID conditionId,
             Pageable pageable
     );
 
@@ -35,8 +37,10 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
     @Query(value = "SELECT COUNT(1) FROM dbo.graduation_conditions WHERE id = :conditionId AND is_active = 1", nativeQuery = true)
     int countActiveConditionById(@Param("conditionId") UUID conditionId);
 
-    // Kiểm tra sinh viên (Hàm vừa bổ sung)
-    @Query(value = "SELECT COUNT(1) FROM dbo.students_ WHERE id = :studentId AND is_active = 1", nativeQuery = true)
+    // Kiểm tra sinh viên trên bảng students (UI) hoặc students_ (nếu có)
+    @Query(value = "SELECT CASE WHEN EXISTS (SELECT 1 FROM dbo.students WHERE id = :studentId) " +
+            "OR EXISTS (SELECT 1 FROM dbo.students_ WHERE id = :studentId AND is_active = 1) " +
+            "THEN 1 ELSE 0 END", nativeQuery = true)
     int countActiveStudentById(@Param("studentId") UUID studentId);
 
     // Lấy tiêu chí từ bộ điều kiện
@@ -45,9 +49,19 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
             "WHERE id = :conditionId AND is_active = 1", nativeQuery = true)
     List<Object[]> getConditionCriteria(@Param("conditionId") UUID conditionId);
 
-    // Lấy danh sách ID sinh viên
-    @Query(value = "SELECT id FROM dbo.students_ WHERE is_active = 1", nativeQuery = true)
+    // Lấy danh sách ID sinh viên (ưu tiên students_, bổ sung students nếu thiếu)
+    @Query(value = "SELECT DISTINCT id FROM (" +
+            "SELECT id FROM dbo.students " +
+            "UNION " +
+            "SELECT id FROM dbo.students_ WHERE is_active = 1" +
+            ") t", nativeQuery = true)
     List<UUID> findActiveStudentIds();
+
+    // Lấy thông tin tổng kết học tập thực tế từ student_summaries (student_id, gpa_value, total_credits, failed_credits)
+    @Query(value = "SELECT student_id, gpa_value, total_credits, failed_credits " +
+            "FROM dbo.student_summaries " +
+            "WHERE is_active = 1 AND student_id IS NOT NULL", nativeQuery = true)
+    List<Object[]> findAllStudentSummaries();
 
     // =====================================================
     // Dùng cho chức năng xuất báo cáo Word (Nhóm 11) - Phương án 3: JPQL Query Join

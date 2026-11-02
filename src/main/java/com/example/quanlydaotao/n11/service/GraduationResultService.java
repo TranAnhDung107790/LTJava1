@@ -35,8 +35,8 @@ public class GraduationResultService {
     }
 
     // 1. Lấy danh sách có phân trang và lọc theo trạng thái (result: 1-Đạt, 0-Chưa đạt)
-    public Page<GraduationResult> findAll(Short result, Pageable pageable) {
-        return repository.findByIsActiveTrueAndResult(result, pageable);
+    public Page<GraduationResult> findAll(Short result, UUID conditionId, Pageable pageable) {
+        return repository.findByIsActiveTrueAndResult(result, conditionId, pageable);
     }
 
     // 2. Tìm theo ID
@@ -123,6 +123,9 @@ public class GraduationResultService {
         repository.save(current);
     }
 
+    // DTO nội bộ lưu dữ liệu điểm đọc từ student_summaries
+    private record StudentSummaryItem(BigDecimal gpa, int totalCredits, int failedCredits) {}
+
     // 7. TIẾN TRÌNH QUÉT & XÉT DUYỆT TỰ ĐỘNG
     @Transactional
     public List<GraduationResult> evaluate(EvaluateGraduationRequest request) {
@@ -147,13 +150,42 @@ public class GraduationResultService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không có sinh viên nào trong hệ thống để xét duyệt");
         }
 
+        // 3. Đọc dữ liệu tổng kết học tập thực tế từ bảng student_summaries
+        List<Object[]> summaryRows = repository.findAllStudentSummaries();
+        if (summaryRows.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không có dữ liệu tổng kết điểm trong bảng student_summaries để xét duyệt");
+        }
+
+        Map<UUID, StudentSummaryItem> summaryMap = new HashMap<>();
+        for (Object[] row : summaryRows) {
+            if (row[0] == null) continue;
+            UUID sId = (row[0] instanceof UUID) ? (UUID) row[0] : UUID.fromString(row[0].toString());
+            BigDecimal gpa = row[1] != null ? new BigDecimal(row[1].toString()) : BigDecimal.ZERO;
+            int totalCredits = row[2] != null ? ((Number) row[2]).intValue() : 0;
+            int failedCredits = row[3] != null ? ((Number) row[3]).intValue() : 0;
+            summaryMap.put(sId, new StudentSummaryItem(gpa, totalCredits, failedCredits));
+        }
+
+        // 4. Lấy danh sách kết quả đã tồn tại theo conditionId để tối ưu hóa cập nhật
+        List<GraduationResult> existingList = repository.findByConditionIdAndIsActiveTrue(request.getConditionId());
+        Map<UUID, GraduationResult> existingMap = new HashMap<>();
+        for (GraduationResult item : existingList) {
+            existingMap.put(item.getStudentId(), item);
+        }
+
         List<GraduationResult> evaluatedResults = new ArrayList<>();
 
-        // 3. Tiến hành quét từng sinh viên
+        // 5. Tiến hành quét từng sinh viên dựa trên điểm thực tế từ student_summaries
         for (UUID studentId : studentIds) {
-            BigDecimal studentGpa = new BigDecimal("2.85");
-            int studentTotalCredits = 125;
-            int studentFailedCredits = 0;
+            StudentSummaryItem summary = summaryMap.get(studentId);
+            if (summary == null) {
+                // Bỏ qua sinh viên chưa có dữ liệu tổng kết điểm trong student_summaries
+                continue;
+            }
+
+            BigDecimal studentGpa = summary.gpa();
+            int studentTotalCredits = summary.totalCredits();
+            int studentFailedCredits = summary.failedCredits();
 
             // Đánh giá Đạt (1) hay Chưa đạt (0)
             boolean isPass = (studentTotalCredits >= minCredits)
@@ -171,9 +203,7 @@ public class GraduationResultService {
             }
 
             // Tìm bản ghi đã tồn tại để cập nhật, hoặc tạo mới nếu chưa có
-            GraduationResult gr = repository
-                    .findFirstByStudentIdAndConditionIdAndIsActiveTrueOrderByCreatedAtDesc(studentId, request.getConditionId())
-                    .orElseGet(GraduationResult::new);
+            GraduationResult gr = existingMap.getOrDefault(studentId, new GraduationResult());
 
             gr.setStudentId(studentId);
             gr.setConditionId(request.getConditionId());
@@ -184,13 +214,14 @@ public class GraduationResultService {
             gr.setClassification(classification);
             gr.setDecisionDate(LocalDate.now());
             gr.setReviewer(request.getReviewerId());
-            gr.setNote("Xét duyệt tự động cho khóa " + (request.getCohort() != null ? request.getCohort() : ""));
+            gr.setNote("Xét duyệt tự động" + (request.getCohort() != null && !request.getCohort().isBlank() ? " cho khóa " + request.getCohort() : ""));
             gr.setIsActive(true);
 
-            evaluatedResults.add(repository.save(gr));
+            evaluatedResults.add(gr);
         }
 
-        return evaluatedResults;
+        // 6. Lưu toàn bộ kết quả theo batch để đạt hiệu năng cao nhất
+        return repository.saveAll(evaluatedResults);
     }
 
     // =====================================================
