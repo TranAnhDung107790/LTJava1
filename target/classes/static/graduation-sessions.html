@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đợt xét tốt nghiệp | School Manager</title>
+    <meta name="color-scheme" content="light dark" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="/adminlte/css/adminlte.css" />
+    <link rel="stylesheet" href="/assets/css/graduation.css" />
+</head>
+
+<body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+<div class="app-wrapper">
+    <!-- Navbar Header -->
+    <nav class="app-header navbar navbar-expand bg-body shadow-sm">
+        <div class="container-fluid">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
+                        <i class="bi bi-list fs-5"></i>
+                    </a>
+                </li>
+                <li class="nav-item d-none d-md-block">
+                    <span class="nav-link fw-semibold text-primary">
+                        Quản lý đào tạo - Nhóm 11 (Quản lý tốt nghiệp)
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+        <div class="sidebar-brand">
+            <a href="index.html" class="brand-link text-decoration-none">
+                <img src="/adminlte/assets/img/AdminLTELogo.png" alt="Logo" class="brand-image opacity-75 shadow" />
+                <span class="brand-text fw-light">School Manager</span>
+            </a>
+        </div>
+
+        <div class="sidebar-wrapper">
+            <nav class="mt-2">
+                <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="navigation" data-accordion="false">
+                    <li class="nav-header">QUẢN LÝ CHUNG</li>
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">
+                            <i class="nav-icon bi bi-people-fill"></i>
+                            <p>Sinh viên</p>
+                        </a>
+                    </li>
+                    <li class="nav-header">NHÓM 11 - QUẢN LÝ TỐT NGHIỆP</li>
+                    <li class="nav-item">
+                        <a href="graduation-conditions.html" class="nav-link">
+                            <i class="nav-icon bi bi-card-checklist"></i>
+                            <p>Tiêu chuẩn tốt nghiệp</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="graduation-sessions.html" class="nav-link active">
+                            <i class="nav-icon bi bi-calendar-event"></i>
+                            <p>Đợt xét tốt nghiệp</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="graduation-profiles.html" class="nav-link">
+                            <i class="nav-icon bi bi-folder2-open"></i>
+                            <p>Hồ sơ tốt nghiệp</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="graduation-results.html" class="nav-link">
+                            <i class="nav-icon bi bi-award-fill"></i>
+                            <p>Kết quả tốt nghiệp</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <!-- Page Header -->
+        <div class="app-content-header py-3">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h3 class="mb-0 text-dark fw-bold">
+                            <i class="bi bi-calendar-event text-primary me-2"></i>Quản lý đợt xét tốt nghiệp
+                        </h3>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-end mb-0">
+                            <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none">Trang chủ</a></li>
+                            <li class="breadcrumb-item">Quản lý tốt nghiệp</li>
+                            <li class="breadcrumb-item active" aria-current="page">Đợt xét tốt nghiệp</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-content">
+            <div class="container-fluid">
+                <!-- Alert Box -->
+                <div id="alertBox"></div>
+
+                <!-- Action Bar -->
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-body py-3">
+                        <div class="row g-2 align-items-center justify-content-between">
+                            <div class="col-12 col-md-auto d-flex flex-wrap gap-2 align-items-center">
+                                <!-- Filter Active only -->
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" id="btnFilterAll" class="btn btn-outline-primary active">Tất cả đợt</button>
+                                    <button type="button" id="btnFilterActiveOnly" class="btn btn-outline-primary">Đang mở nộp</button>
+                                </div>
+
+                                <!-- Search -->
+                                <div class="input-group input-group-sm" style="width: 250px;">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="searchKeyword" class="form-control" placeholder="Mã hoặc tên đợt xét..." />
+                                </div>
+                                <button id="btnSearch" class="btn btn-primary btn-sm">Tìm kiếm</button>
+                                <button id="btnRefresh" class="btn btn-outline-secondary btn-sm" title="Tải lại">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+
+                            <div class="col-12 col-md-auto d-flex flex-wrap gap-2">
+                                <button id="btnOpenAutoModal" class="btn btn-outline-success btn-sm fw-semibold shadow-sm">
+                                    <i class="bi bi-lightning-charge me-1"></i>Tự động tạo đợt theo năm học
+                                </button>
+                                <button id="btnOpenCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>Tạo đợt xét mới
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Card -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                        <h5 class="card-title mb-0 fw-semibold">
+                            <i class="bi bi-calendar2-check me-2 text-primary"></i>Danh sách các đợt xét tốt nghiệp
+                        </h5>
+                        <span id="totalBadge" class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                            Tổng số: 0
+                        </span>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;" class="text-center">#</th>
+                                    <th style="width: 140px;">Mã đợt</th>
+                                    <th>Tên đợt xét tốt nghiệp</th>
+                                    <th class="text-center" style="width: 130px;">Năm học</th>
+                                    <th class="text-center" style="width: 90px;">Học kỳ</th>
+                                    <th style="width: 120px;">Ngày mở nộp</th>
+                                    <th style="width: 120px;">Hạn chót</th>
+                                    <th class="text-center" style="width: 130px;">Tình trạng</th>
+                                    <th>Ghi chú</th>
+                                    <th style="width: 110px;" class="text-end">Hành động</th>
+                                </tr>
+                                </thead>
+                                <tbody id="sessionsTableBody">
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-5">
+                                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                        Đang tải danh sách đợt xét...
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer text-muted small py-3">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <div><strong>Hệ thống Quản lý Đào tạo</strong> &copy; 2026 - Nhóm 11</div>
+            <div>AdminLTE 4 UI</div>
+        </div>
+    </footer>
+</div>
+
+<!-- ================================================================================= -->
+<!-- MODAL: THÊM / CẬP NHẬT ĐỢT XÉT TỐT NGHIỆP                                         -->
+<!-- ================================================================================= -->
+<div class="modal fade" id="sessionModal" tabindex="-1" aria-labelledby="sessionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="sessionModalLabel">
+                    <i class="bi bi-calendar-plus me-2"></i>Tạo đợt xét tốt nghiệp mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="sessionForm">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="sessionId" />
+
+                    <div class="row g-3">
+                        <!-- Session Code -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mã đợt xét <span class="text-danger">*</span></label>
+                            <input type="text" id="modalSessionCode" class="form-control" placeholder="Ví dụ: DOT_2026_01" required />
+                        </div>
+
+                        <!-- Session Name -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tên đợt xét tốt nghiệp <span class="text-danger">*</span></label>
+                            <input type="text" id="modalSessionName" class="form-control" placeholder="Ví dụ: Đợt xét tốt nghiệp đợt 1 năm 2026" required />
+                        </div>
+
+                        <!-- Academic Year -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Năm học</label>
+                            <input type="text" id="modalAcademicYear" class="form-control" placeholder="2025-2026" />
+                        </div>
+
+                        <!-- Semester -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Học kỳ</label>
+                            <select id="modalSemester" class="form-select">
+                                <option value="1">Học kỳ 1</option>
+                                <option value="2" selected>Học kỳ 2</option>
+                                <option value="3">Học kỳ hè</option>
+                            </select>
+                        </div>
+
+                        <!-- Start Date -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ngày bắt đầu nhận hồ sơ</label>
+                            <input type="date" id="modalStartDate" class="form-control" />
+                        </div>
+
+                        <!-- Due Date -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Hạn chót nộp hồ sơ</label>
+                            <input type="date" id="modalDueDate" class="form-control" />
+                        </div>
+
+                        <!-- Note -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Ghi chú / Hướng dẫn sinh viên</label>
+                            <textarea id="modalNote" class="form-control" rows="2" placeholder="Ghi chú thêm về đợt xét..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" id="btnSaveSession" class="btn btn-primary btn-sm fw-bold">
+                        <i class="bi bi-save me-1"></i>Lưu đợt xét
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================================= -->
+<!-- MODAL: TỰ ĐỘNG KHỞI TẠO ĐỢT XÉT THEO NĂM HỌC                                      -->
+<!-- ================================================================================= -->
+<div class="modal fade" id="autoModal" tabindex="-1" aria-labelledby="autoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="autoModalLabel">
+                    <i class="bi bi-lightning-charge me-2"></i>Tự động khởi tạo đợt xét theo năm học
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="autoForm">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn Năm học áp dụng <span class="text-danger">*</span></label>
+                        <select id="autoAcademicYear" class="form-select" required>
+                            <option value="2026-2027" selected>Năm học 2026 - 2027</option>
+                            <option value="2027-2028">Năm học 2027 - 2028</option>
+                            <option value="2025-2026">Năm học 2025 - 2026</option>
+                        </select>
+                        <div class="form-text text-muted small mt-2">
+                            <i class="bi bi-info-circle me-1"></i>Hệ thống sẽ tự động quét và sinh 3 đợt xét chuẩn:
+                            <ul class="mb-0 mt-1 ps-3">
+                                <li><strong>Đợt 1 (HK1):</strong> Mở từ 01/10 đến 30/11</li>
+                                <li><strong>Đợt 2 (HK2):</strong> Mở từ 01/03 đến 30/04</li>
+                                <li><strong>Đợt 3 (Kỳ hè):</strong> Mở từ 01/07 đến 31/08</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnExecuteAuto" class="btn btn-success btn-sm fw-bold">
+                        <i class="bi bi-play-circle-fill me-1"></i>Bắt đầu khởi tạo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/adminlte/js/adminlte.js"></script>
+<script type="module" src="/assets/js/graduation-session.js"></script>
+</body>
+</html>

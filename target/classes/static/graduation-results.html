@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kết quả xét tốt nghiệp | School Manager</title>
+    <meta name="color-scheme" content="light dark" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="/adminlte/css/adminlte.css" />
+    <link rel="stylesheet" href="/assets/css/graduation.css" />
+</head>
+
+<body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+<div class="app-wrapper">
+    <!-- Navbar Header -->
+    <nav class="app-header navbar navbar-expand bg-body shadow-sm">
+        <div class="container-fluid">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
+                        <i class="bi bi-list fs-5"></i>
+                    </a>
+                </li>
+                <li class="nav-item d-none d-md-block">
+                    <span class="nav-link fw-semibold text-primary">
+                        Quản lý đào tạo - Nhóm 11 (Quản lý tốt nghiệp)
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+        <div class="sidebar-brand">
+            <a href="index.html" class="brand-link text-decoration-none">
+                <img src="/adminlte/assets/img/AdminLTELogo.png" alt="Logo" class="brand-image opacity-75 shadow" />
+                <span class="brand-text fw-light">School Manager</span>
+            </a>
+        </div>
+
+        <div class="sidebar-wrapper">
+            <nav class="mt-2">
+                <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="navigation" data-accordion="false">
+                    <li class="nav-header">QUẢN LÝ CHUNG</li>
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">
+                            <i class="nav-icon bi bi-people-fill"></i>
+                            <p>Sinh viên</p>
+                        </a>
+                    </li>
+                    <li class="nav-header">NHÓM 11 - QUẢN LÝ TỐT NGHIỆP</li>
+                    <li class="nav-item">
+                        <a href="graduation-conditions.html" class="nav-link">
+                            <i class="nav-icon bi bi-card-checklist"></i>
+                            <p>Tiêu chuẩn tốt nghiệp</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="graduation-sessions.html" class="nav-link">
+                            <i class="nav-icon bi bi-calendar-event"></i>
+                            <p>Đợt xét tốt nghiệp</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="graduation-profiles.html" class="nav-link">
+                            <i class="nav-icon bi bi-folder2-open"></i>
+                            <p>Hồ sơ tốt nghiệp</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="graduation-results.html" class="nav-link active">
+                            <i class="nav-icon bi bi-award-fill"></i>
+                            <p>Kết quả tốt nghiệp</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <!-- Page Header -->
+        <div class="app-content-header py-3">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h3 class="mb-0 text-dark fw-bold">
+                            <i class="bi bi-award-fill text-primary me-2"></i>Kết quả xét tốt nghiệp
+                        </h3>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-end mb-0">
+                            <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none">Trang chủ</a></li>
+                            <li class="breadcrumb-item">Quản lý tốt nghiệp</li>
+                            <li class="breadcrumb-item active" aria-current="page">Kết quả xét</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-content">
+            <div class="container-fluid">
+                <!-- Alert Box -->
+                <div id="alertBox"></div>
+
+                <!-- Action & Filter Bar -->
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-body py-3">
+                        <div class="row g-2 align-items-center justify-content-between">
+                            <div class="col-12 col-md-auto d-flex flex-wrap gap-2 align-items-center">
+                                <!-- Search Keyword -->
+                                <div class="input-group input-group-sm" style="width: 250px;">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="searchKeyword" class="form-control" placeholder="Tìm theo mã SV, họ tên..." />
+                                </div>
+                                <button id="btnSearch" class="btn btn-primary btn-sm" title="Tìm kiếm"><i class="bi bi-funnel me-1"></i>Tìm kiếm</button>
+
+                                <!-- Filter Result -->
+                                <div class="d-flex align-items-center gap-1">
+                                    <label class="small text-muted fw-semibold text-nowrap">Trạng thái:</label>
+                                    <select id="filterResult" class="form-select form-select-sm" style="width: 130px;">
+                                        <option value="">Tất cả</option>
+                                        <option value="1">Đạt tốt nghiệp</option>
+                                        <option value="0">Chưa đạt</option>
+                                    </select>
+                                </div>
+
+                                <!-- Filter Page Size -->
+                                <div class="d-flex align-items-center gap-1">
+                                    <label class="small text-muted fw-semibold text-nowrap">Số lượng:</label>
+                                    <select id="filterSize" class="form-select form-select-sm" style="width: 80px;">
+                                        <option value="10">10</option>
+                                        <option value="20">20</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </div>
+
+                                <!-- Refresh -->
+                                <button id="btnRefresh" class="btn btn-outline-secondary btn-sm" title="Tải lại">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+
+                            <div class="col-12 col-md-auto d-flex flex-wrap gap-2">
+                                <!-- Evaluate Trigger Button -->
+                                <button id="btnOpenEvaluateModal" class="btn btn-warning btn-sm text-dark fw-semibold shadow-sm">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i>Kích hoạt xét duyệt tự động
+                                </button>
+
+                                <!-- Manual Create Button -->
+                                <button id="btnOpenCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>Nhập kết quả thủ công
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Card -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                        <h5 class="card-title mb-0 fw-semibold">
+                            <i class="bi bi-table me-2 text-primary"></i>Danh sách kết quả xét tốt nghiệp
+                        </h5>
+                        <span id="totalBadge" class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                            Tổng số: 0
+                        </span>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;" class="text-center">#</th>
+                                    <th>Sinh viên</th>
+                                    <th class="text-center" style="width: 100px;">GPA</th>
+                                    <th class="text-center" style="width: 110px;">Tổng tín chỉ</th>
+                                    <th class="text-center" style="width: 110px;">Tín chỉ rớt</th>
+                                    <th class="text-center" style="width: 130px;">Kết quả</th>
+                                    <th class="text-center" style="width: 130px;">Xếp loại</th>
+                                    <th style="width: 130px;">Ngày quyết định</th>
+                                    <th>Ghi chú</th>
+                                    <th style="width: 110px;" class="text-end">Hành động</th>
+                                </tr>
+                                </thead>
+                                <tbody id="resultsTableBody">
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-5">
+                                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                        Đang tải danh sách kết quả...
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer: Pagination -->
+                    <div class="card-footer bg-white border-top py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <div class="small text-muted" id="pageInfo">
+                            Đang hiển thị 0 - 0 của 0 bản ghi
+                        </div>
+                        <nav aria-label="Pagination">
+                            <ul class="pagination pagination-sm mb-0" id="pagination">
+                                <!-- Pagination items rendered via JS -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer text-muted small py-3">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Hệ thống Quản lý Đào tạo</strong> &copy; 2026 - Nhóm 11
+            </div>
+            <div>AdminLTE 4 UI</div>
+        </div>
+    </footer>
+</div>
+
+<!-- ================================================================================= -->
+<!-- MODAL 1: KÍCH HOẠT XÉT DUYỆT TỰ ĐỘNG                                              -->
+<!-- ================================================================================= -->
+<div class="modal fade" id="evaluateModal" tabindex="-1" aria-labelledby="evaluateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold" id="evaluateModalLabel">
+                    <i class="bi bi-lightning-charge-fill me-2"></i>Kích hoạt tiến trình xét duyệt tự động
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small">
+                    Hệ thống sẽ đối chiếu toàn bộ dữ liệu học tập của sinh viên với bộ tiêu chuẩn được chọn (GPA tối thiểu, Tổng tín chỉ đạt, Số tín chỉ rớt tối đa) để tự động phân loại Đạt / Chưa đạt và Xếp loại tốt nghiệp.
+                </p>
+                <form id="evaluateForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn bộ điều kiện xét tốt nghiệp <span class="text-danger">*</span></label>
+                        <select id="evalConditionSelect" class="form-select" required>
+                            <option value="">-- Đang tải danh sách bộ điều kiện --</option>
+                        </select>
+                        <div class="form-text small" id="evalConditionDetail"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mã cán bộ / Hội đồng xét duyệt (UUID)</label>
+                        <input type="text" id="evalReviewerId" class="form-control" placeholder="Để trống nếu xét tự động theo hệ thống" />
+                    </div>
+
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Tiến trình này sẽ quét toàn bộ sinh viên đang hoạt động trong hệ thống.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" id="btnExecuteEvaluate" class="btn btn-warning btn-sm fw-bold">
+                    <i class="bi bi-play-circle-fill me-1"></i>Bắt đầu quét & Đánh giá
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================================= -->
+<!-- MODAL 2: THÊM / CẬP NHẬT KẾT QUẢ THỦ CÔNG                                         -->
+<!-- ================================================================================= -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="resultModalLabel">
+                    <i class="bi bi-file-earmark-medical me-2"></i>Nhập kết quả xét tốt nghiệp
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="resultForm">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="resultId" />
+
+                    <div class="row g-3">
+                        <!-- Student -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Sinh viên <span class="text-danger">*</span></label>
+                            <select id="modalStudentId" class="form-select" required>
+                                <option value="">-- Chọn sinh viên --</option>
+                            </select>
+                        </div>
+
+                        <!-- Condition -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Bộ điều kiện <span class="text-danger">*</span></label>
+                            <select id="modalConditionId" class="form-select" required>
+                                <option value="">-- Chọn bộ điều kiện --</option>
+                            </select>
+                        </div>
+
+                        <!-- GPA -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Điểm GPA <span class="text-danger">*</span></label>
+                            <input type="number" id="modalGpa" class="form-control" step="0.01" min="0" max="4.00" placeholder="0.00 - 4.00" required />
+                        </div>
+
+                        <!-- Total Credits -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tổng tín chỉ <span class="text-danger">*</span></label>
+                            <input type="number" id="modalTotalCredits" class="form-control" min="0" placeholder="Ví dụ: 125" required />
+                        </div>
+
+                        <!-- Failed Credits -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tín chỉ rớt</label>
+                            <input type="number" id="modalFailedCredits" class="form-control" min="0" value="0" />
+                        </div>
+
+                        <!-- Result Status -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Kết quả xét duyệt <span class="text-danger">*</span></label>
+                            <select id="modalResultStatus" class="form-select" required>
+                                <option value="1">Đạt tốt nghiệp</option>
+                                <option value="0">Chưa đạt</option>
+                            </select>
+                        </div>
+
+                        <!-- Classification -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Xếp loại tốt nghiệp</label>
+                            <select id="modalClassification" class="form-select">
+                                <option value="">-- Không xếp loại --</option>
+                                <option value="1">Xuất sắc</option>
+                                <option value="2">Giỏi</option>
+                                <option value="3">Khá</option>
+                                <option value="4">Trung bình</option>
+                            </select>
+                        </div>
+
+                        <!-- Decision Date -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ngày ra quyết định</label>
+                            <input type="date" id="modalDecisionDate" class="form-control" />
+                        </div>
+
+                        <!-- Reviewer -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Người duyệt (UUID)</label>
+                            <input type="text" id="modalReviewer" class="form-control" placeholder="UUID người duyệt" />
+                        </div>
+
+                        <!-- Note -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Ghi chú</label>
+                            <textarea id="modalNote" class="form-control" rows="2" placeholder="Ghi chú thêm..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" id="btnSaveResult" class="btn btn-primary btn-sm fw-bold">
+                        <i class="bi bi-save me-1"></i>Lưu kết quả
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/adminlte/js/adminlte.js"></script>
+<script type="module" src="/assets/js/graduation-result.js"></script>
+</body>
+</html>

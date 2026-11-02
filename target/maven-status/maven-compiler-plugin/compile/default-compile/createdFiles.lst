@@ -1,9 +1,1 @@
-com\example\graduationconditions\exception\NotFoundException.class
-com\example\graduationconditions\exception\ApiExceptionHandler.class
-com\example\graduationconditions\dto\GraduationConditionRequest.class
 com\example\quanlydaotao\QuanlydaotaoApplication.class
-com\example\graduationconditions\entity\GraduationCondition.class
-com\example\graduationconditions\repository\GraduationConditionRepository.class
-com\example\graduationconditions\controller\GraduationConditionController.class
-com\example\graduationconditions\exception\ConflictException.class
-com\example\graduationconditions\service\GraduationConditionService.class
