@@ -4,6 +4,10 @@ import { API_ENDPOINTS } from './config.js';
 let currentPage = 0;
 let pageSize = 10;
 let currentFilterResult = '';
+            currentFilterCondition = '';
+            const filterCondEl = document.getElementById('filterCondition');
+            if (filterCondEl) filterCondEl.value = '';
+let currentFilterCondition = '';
 const studentsMap = new Map();
 const conditionsMap = new Map();
 
@@ -78,6 +82,9 @@ function initEventListeners() {
         btnRefresh.addEventListener('click', () => {
             if (searchKeyword) searchKeyword.value = '';
             currentFilterResult = '';
+            currentFilterCondition = '';
+            const filterCondEl = document.getElementById('filterCondition');
+            if (filterCondEl) filterCondEl.value = '';
             const filterResEl = document.getElementById('filterResult');
             if (filterResEl) filterResEl.value = '';
             currentPage = 0;
@@ -686,4 +693,76 @@ function showAlert(type, message) {
             bsAlert.close();
         }
     }, 5000);
+}
+
+
+// =================================================================================
+// 6. XUẤT BÁO CÁO WORD (.DOCX) - PHƯƠNG ÁN 3
+// =================================================================================
+async function handleExportWord() {
+    const btnExport = document.getElementById('btnExportWord');
+    if (!btnExport) return;
+
+    const originalHtml = btnExport.innerHTML;
+    btnExport.disabled = true;
+    btnExport.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        Đang tạo Word...
+    `;
+
+    try {
+        const params = new URLSearchParams();
+        if (currentFilterCondition) {
+            params.append('conditionId', currentFilterCondition);
+        }
+
+        const queryString = params.toString();
+        const url = `${API_ENDPOINTS.GRADUATION_RESULTS}/export/word${queryString ? '?' + queryString : ''}`;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Máy chủ phản hồi mã lỗi (${response.status})`);
+        }
+
+        let filename = '';
+        const disposition = response.headers.get('Content-Disposition');
+        if (disposition && disposition.includes('filename=')) {
+            const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (match && match[1]) {
+                filename = match[1].replace(/['"]/g, '').trim();
+            }
+        }
+        if (!filename) {
+            const now = new Date();
+            const dateStr = String(now.getDate()).padStart(2, '0') +
+                            String(now.getMonth() + 1).padStart(2, '0') +
+                            now.getFullYear();
+            filename = `BaoCao_XetTotNghiep_${dateStr}.docx`;
+        }
+
+        const blob = await response.blob();
+        if (blob.size === 0) {
+            throw new Error('Dữ liệu tải về trống (0 byte)');
+        }
+
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl);
+        }, 300);
+
+        showAlert('success', `Đã xuất báo cáo Word thành công: ${filename}`);
+    } catch (error) {
+        console.error('Lỗi khi xuất file Word:', error);
+        showAlert('danger', `Không thể xuất file Word: ${error.message}`);
+    } finally {
+        btnExport.disabled = false;
+        btnExport.innerHTML = originalHtml;
+    }
 }

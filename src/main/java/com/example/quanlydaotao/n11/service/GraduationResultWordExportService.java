@@ -12,11 +12,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Service tao file Word (.docx) bao cao ket qua xet tot nghiep.
- * Su dung Apache POI (poi-ooxml 5.2.5).
- * Phan ro 2 phan: Sinh vien DAT va CHUA DAT (co ly do cu the).
- */
 @Service
 public class GraduationResultWordExportService {
 
@@ -30,12 +25,12 @@ public class GraduationResultWordExportService {
     private static final String FAIL_COLOR = "E74C3C";
 
     /**
-     * Tao bao cao Word hoan chinh tu danh sach sinh vien dat/chua dat.
+     * Tạo báo cáo Word hoàn chỉnh từ danh sách sinh viên Đạt / Chưa đạt có kèm tên lớp.
      *
-     * @param passedStudents Danh sach sinh vien DAT
-     * @param failedStudents Danh sach sinh vien CHUA DAT (co ly do)
-     * @param condition      Bo dieu kien TN dang ap dung (co the null)
-     * @return Mang byte cua file .docx
+     * @param passedStudents Danh sách sinh viên đạt yêu cầu tốt nghiệp
+     * @param failedStudents Danh sách sinh viên chưa đạt
+     * @param condition      Bộ điều kiện tốt nghiệp áp dụng (nếu có)
+     * @return Mảng byte của file .docx
      */
     public byte[] generateReport(
             List<GraduationResultExportDTO> passedStudents,
@@ -45,40 +40,37 @@ public class GraduationResultWordExportService {
         try (XWPFDocument document = new XWPFDocument();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            // 1. Header bao cao
-            createReportHeader(document, condition);
+            // 1. Quốc hiệu - Tiêu ngữ & Header đơn vị
+            createReportHeader(document);
 
-            // 2. Thong tin tieu chi xet TN
+            // 2. Tiêu đề chính của báo cáo
+            createReportTitle(document, condition);
+
+            // 3. Thông tin bộ tiêu chí xét tốt nghiệp
             createConditionInfo(document, condition);
 
-            // 3. Phan I - Sinh vien DAT
-            createSectionTitle(document,
-                "PHAN I: DANH SACH SINH VIEN DAT YEU CAU TOT NGHIEP",
-                PASS_COLOR);
-            createSubInfo(document, "Tong so: " + passedStudents.size() + " sinh vien");
-
-            if (!passedStudents.isEmpty()) {
+            // 4. Bảng I: Danh sách sinh viên ĐẠT (7 cột: có cột Lớp)
+            createSectionTitle(document, "PHẦN I: DANH SÁCH SINH VIÊN ĐẠT YÊU CẦU TỐT NGHIỆP", PASS_COLOR);
+            createSubInfo(document, "Tổng số sinh viên đạt: " + passedStudents.size() + " sinh viên");
+            if (passedStudents.isEmpty()) {
+                createEmptyNotice(document);
+            } else {
                 createPassedStudentsTable(document, passedStudents);
-            } else {
-                createSubInfo(document, "(Khong co sinh vien nao dat yeu cau)");
             }
 
-            // 4. Phan II - Sinh vien CHUA DAT
-            createSectionTitle(document,
-                "PHAN II: DANH SACH SINH VIEN CHUA DAT YEU CAU",
-                FAIL_COLOR);
-            createSubInfo(document, "Tong so: " + failedStudents.size() + " sinh vien");
-
-            if (!failedStudents.isEmpty()) {
+            // 5. Bảng II: Danh sách sinh viên CHƯA ĐẠT (8 cột: có cột Lớp và Lý do chi tiết)
+            createSectionTitle(document, "PHẦN II: DANH SÁCH SINH VIÊN CHƯA ĐẠT YÊU CẦU", FAIL_COLOR);
+            createSubInfo(document, "Tổng số sinh viên chưa đạt: " + failedStudents.size() + " sinh viên");
+            if (failedStudents.isEmpty()) {
+                createEmptyNotice(document);
+            } else {
                 createFailedStudentsTable(document, failedStudents);
-            } else {
-                createSubInfo(document, "(Khong co sinh vien nao chua dat)");
             }
 
-            // 5. Thong ke tong hop
+            // 6. Thống kê tổng hợp
             createSummarySection(document, passedStudents, failedStudents);
 
-            // 6. Phan ky ten
+            // 7. Khu vực chữ ký xác nhận
             createSignatureSection(document);
 
             document.write(out);
@@ -87,53 +79,87 @@ public class GraduationResultWordExportService {
     }
 
     // ===========================
-    // Header + tieu de bao cao
+    // Header hành chính
     // ===========================
 
-    private void createReportHeader(XWPFDocument document, GraduationCondition condition) {
-        // Ten truong/khoa
-        XWPFParagraph orgP = document.createParagraph();
-        orgP.setAlignment(ParagraphAlignment.CENTER);
-        XWPFRun orgR = orgP.createRun();
-        orgR.setText("TRUONG DAI HOC ... - KHOA CONG NGHE THONG TIN");
-        orgR.setFontFamily(FONT_NAME);
-        orgR.setFontSize(FONT_SIZE_BODY);
+    private void createReportHeader(XWPFDocument document) {
+        XWPFTable headerTable = document.createTable(1, 2);
+        headerTable.setWidth("100%");
+        headerTable.getCTTbl().getTblPr().unsetTblBorders();
 
-        // Tieu de chinh
-        XWPFParagraph titleP = document.createParagraph();
-        titleP.setAlignment(ParagraphAlignment.CENTER);
-        titleP.setSpacingAfter(200);
-        XWPFRun titleR = titleP.createRun();
-        titleR.setText("BAO CAO KET QUA XET TOT NGHIEP");
-        titleR.setBold(true);
-        titleR.setFontFamily(FONT_NAME);
-        titleR.setFontSize(FONT_SIZE_TITLE);
-        titleR.setColor("1A237E");
+        // Cột trái: Tên trường & Khoa
+        XWPFTableCell leftCell = headerTable.getRow(0).getCell(0);
+        XWPFParagraph pLeft1 = leftCell.getParagraphs().get(0);
+        pLeft1.setAlignment(ParagraphAlignment.CENTER);
+        XWPFRun rLeft1 = pLeft1.createRun();
+        rLeft1.setText("TRƯỜNG ĐẠI HỌC ĐÔNG Á");
+        rLeft1.setBold(true);
+        rLeft1.setFontFamily(FONT_NAME);
+        rLeft1.setFontSize(10);
 
-        // Khoa ap dung
-        if (condition != null && condition.getAppliedCohort() != null) {
-            XWPFParagraph subP = document.createParagraph();
-            subP.setAlignment(ParagraphAlignment.CENTER);
-            XWPFRun subR = subP.createRun();
-            subR.setText("Khoa ap dung: " + condition.getAppliedCohort());
-            subR.setFontFamily(FONT_NAME);
-            subR.setFontSize(FONT_SIZE_SUBTITLE);
-            subR.setItalic(true);
-        }
+        XWPFParagraph pLeft2 = leftCell.addParagraph();
+        pLeft2.setAlignment(ParagraphAlignment.CENTER);
+        XWPFRun rLeft2 = pLeft2.createRun();
+        rLeft2.setText("KHOA CÔNG NGHỆ THÔNG TIN");
+        rLeft2.setBold(true);
+        rLeft2.setFontFamily(FONT_NAME);
+        rLeft2.setFontSize(10);
+        rLeft2.setUnderline(UnderlinePatterns.SINGLE);
 
-        // Ngay xuat
-        XWPFParagraph dateP = document.createParagraph();
-        dateP.setAlignment(ParagraphAlignment.CENTER);
-        dateP.setSpacingAfter(400);
-        XWPFRun dateR = dateP.createRun();
-        dateR.setText("Ngay xuat bao cao: "
-            + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-        dateR.setFontFamily(FONT_NAME);
-        dateR.setFontSize(FONT_SIZE_BODY);
+        // Cột phải: Quốc hiệu - Tiêu ngữ
+        XWPFTableCell rightCell = headerTable.getRow(0).getCell(1);
+        XWPFParagraph pRight1 = rightCell.getParagraphs().get(0);
+        pRight1.setAlignment(ParagraphAlignment.CENTER);
+        XWPFRun rRight1 = pRight1.createRun();
+        rRight1.setText("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM");
+        rRight1.setBold(true);
+        rRight1.setFontFamily(FONT_NAME);
+        rRight1.setFontSize(10);
+
+        XWPFParagraph pRight2 = rightCell.addParagraph();
+        pRight2.setAlignment(ParagraphAlignment.CENTER);
+        XWPFRun rRight2 = pRight2.createRun();
+        rRight2.setText("Độc lập - Tự do - Hạnh phúc");
+        rRight2.setBold(true);
+        rRight2.setFontFamily(FONT_NAME);
+        rRight2.setFontSize(10);
+        rRight2.setUnderline(UnderlinePatterns.SINGLE);
+
+        document.createParagraph(); // Dòng trống
     }
 
     // ===========================
-    // Thong tin tieu chi TN
+    // Tiêu đề báo cáo
+    // ===========================
+
+    private void createReportTitle(XWPFDocument document, GraduationCondition condition) {
+        XWPFParagraph titleP = document.createParagraph();
+        titleP.setAlignment(ParagraphAlignment.CENTER);
+        titleP.setSpacingAfter(100);
+
+        XWPFRun titleR = titleP.createRun();
+        titleR.setText("BÁO CÁO KẾT QUẢ XÉT TỐT NGHIỆP");
+        titleR.setBold(true);
+        titleR.setFontFamily(FONT_NAME);
+        titleR.setFontSize(FONT_SIZE_TITLE);
+        titleR.setColor(HEADER_BG_COLOR);
+
+        XWPFParagraph subTitleP = document.createParagraph();
+        subTitleP.setAlignment(ParagraphAlignment.CENTER);
+        subTitleP.setSpacingAfter(150);
+
+        XWPFRun subTitleR = subTitleP.createRun();
+        String cohort = condition != null && condition.getAppliedCohort() != null
+            ? condition.getAppliedCohort() : "Tất cả các khóa";
+        subTitleR.setText("Khóa áp dụng: " + cohort
+            + " — Ngày xuất báo cáo: " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        subTitleR.setItalic(true);
+        subTitleR.setFontFamily(FONT_NAME);
+        subTitleR.setFontSize(FONT_SIZE_BODY);
+    }
+
+    // ===========================
+    // Tiêu chuẩn tốt nghiệp
     // ===========================
 
     private void createConditionInfo(XWPFDocument document, GraduationCondition condition) {
@@ -141,19 +167,19 @@ public class GraduationResultWordExportService {
 
         XWPFParagraph condP = document.createParagraph();
         XWPFRun condR = condP.createRun();
-        condR.setText("TIEU CHI XET TOT NGHIEP:");
+        condR.setText("TIÊU CHÍ XÉT TỐT NGHIỆP:");
         condR.setBold(true);
         condR.setFontFamily(FONT_NAME);
         condR.setFontSize(FONT_SIZE_BODY);
         condR.setUnderline(UnderlinePatterns.SINGLE);
 
         String[] criteria = {
-            "So tin chi toi thieu: " + condition.getMinTotalCredits(),
-            "GPA toi thieu: " + condition.getMinGpa(),
-            "So tin chi no toi da cho phep: " + condition.getMaxFailedCredits(),
-            "Yeu cau Tieng Anh: " + nvl(condition.getEnglishRequirement()),
-            "Yeu cau Tin hoc: " + nvl(condition.getItRequirement()),
-            "Yeu cau Hanh kiem: " + nvl(condition.getConductRequired())
+            "Số tín chỉ tích lũy tối thiểu: " + condition.getMinTotalCredits(),
+            "Điểm trung bình (GPA) tối thiểu: " + condition.getMinGpa(),
+            "Số tín chỉ nợ tối đa cho phép: " + condition.getMaxFailedCredits(),
+            "Yêu cầu Tiếng Anh: " + nvl(condition.getEnglishRequirement()),
+            "Yêu cầu Tin học: " + nvl(condition.getItRequirement()),
+            "Yêu cầu Hạnh kiểm: " + nvl(condition.getConductRequired())
         };
 
         for (String text : criteria) {
@@ -165,88 +191,99 @@ public class GraduationResultWordExportService {
             run.setFontSize(FONT_SIZE_BODY);
         }
 
-        document.createParagraph(); // dong trong
+        document.createParagraph(); // Dòng trống
     }
 
     // ===========================
-    // Bang SV DAT (6 cot)
+    // Bảng SV ĐẠT (7 cột: bổ sung Lớp)
     // ===========================
 
     private void createPassedStudentsTable(XWPFDocument document,
                                            List<GraduationResultExportDTO> students) {
-        String[] headers = {"STT", "Ma SV", "Ho va ten", "GPA", "Tong tin chi", "Xep loai TN"};
+        String[] headers = {"STT", "Mã SV", "Họ và tên", "Lớp", "Điểm TB (GPA)", "Tổng tín chỉ", "Xếp loại TN"};
         XWPFTable table = document.createTable(students.size() + 1, headers.length);
         table.setWidth("100%");
 
         // Header row
         XWPFTableRow headerRow = table.getRow(0);
         for (int i = 0; i < headers.length; i++) {
-            setCellStyle(headerRow.getCell(i), headers[i], true, HEADER_BG_COLOR, HEADER_TEXT_COLOR);
+            setCellStyle(headerRow.getCell(i), headers[i], true, HEADER_BG_COLOR, HEADER_TEXT_COLOR, ParagraphAlignment.CENTER);
         }
 
         // Data rows
         for (int i = 0; i < students.size(); i++) {
             GraduationResultExportDTO dto = students.get(i);
             XWPFTableRow row = table.getRow(i + 1);
-            setCellStyle(row.getCell(0), String.valueOf(dto.getStt()), false, null, null);
-            setCellStyle(row.getCell(1), nvl(dto.getStudentCode()), false, null, null);
-            setCellStyle(row.getCell(2), nvl(dto.getStudentName()), false, null, null);
-            setCellStyle(row.getCell(3),
-                dto.getGpa() != null ? dto.getGpa().toString() : "", false, null, null);
+            setCellStyle(row.getCell(0), String.valueOf(dto.getStt()), false, null, null, ParagraphAlignment.CENTER);
+            setCellStyle(row.getCell(1), nvl(dto.getStudentCode()), false, null, null, ParagraphAlignment.CENTER);
+            setCellStyle(row.getCell(2), nvl(dto.getStudentName()), false, null, null, ParagraphAlignment.LEFT);
+            setCellStyle(row.getCell(3), nvl(dto.getClassName()), false, null, null, ParagraphAlignment.CENTER);
             setCellStyle(row.getCell(4),
-                dto.getTotalCredits() != null ? dto.getTotalCredits().toString() : "", false, null, null);
-            setCellStyle(row.getCell(5), nvl(dto.getClassificationText()), false, null, null);
+                dto.getGpa() != null ? dto.getGpa().toString() : "", false, null, null, ParagraphAlignment.CENTER);
+            setCellStyle(row.getCell(5),
+                dto.getTotalCredits() != null ? dto.getTotalCredits().toString() : "", false, null, null, ParagraphAlignment.CENTER);
+            setCellStyle(row.getCell(6), nvl(dto.getClassificationText()), false, null, null, ParagraphAlignment.CENTER);
         }
     }
 
     // ===========================
-    // Bang SV CHUA DAT (7 cot)
+    // Bảng SV CHƯA ĐẠT (8 cột: bổ sung Lớp và Lý do chi tiết)
     // ===========================
 
     private void createFailedStudentsTable(XWPFDocument document,
                                            List<GraduationResultExportDTO> students) {
-        String[] headers = {"STT", "Ma SV", "Ho va ten", "GPA", "Tin chi", "No", "Ly do khong dat"};
+        String[] headers = {"STT", "Mã SV", "Họ và tên", "Lớp", "Điểm TB", "Tín chỉ", "Nợ TC", "Lý do chưa đạt chi tiết"};
         XWPFTable table = document.createTable(students.size() + 1, headers.length);
         table.setWidth("100%");
 
         // Header row
         XWPFTableRow headerRow = table.getRow(0);
         for (int i = 0; i < headers.length; i++) {
-            setCellStyle(headerRow.getCell(i), headers[i], true, HEADER_BG_COLOR, HEADER_TEXT_COLOR);
+            setCellStyle(headerRow.getCell(i), headers[i], true, HEADER_BG_COLOR, HEADER_TEXT_COLOR, ParagraphAlignment.CENTER);
         }
 
         // Data rows
         for (int i = 0; i < students.size(); i++) {
             GraduationResultExportDTO dto = students.get(i);
             XWPFTableRow row = table.getRow(i + 1);
-            setCellStyle(row.getCell(0), String.valueOf(dto.getStt()), false, null, null);
-            setCellStyle(row.getCell(1), nvl(dto.getStudentCode()), false, null, null);
-            setCellStyle(row.getCell(2), nvl(dto.getStudentName()), false, null, null);
-            setCellStyle(row.getCell(3),
-                dto.getGpa() != null ? dto.getGpa().toString() : "", false, null, null);
+            setCellStyle(row.getCell(0), String.valueOf(dto.getStt()), false, null, null, ParagraphAlignment.CENTER);
+            setCellStyle(row.getCell(1), nvl(dto.getStudentCode()), false, null, null, ParagraphAlignment.CENTER);
+            setCellStyle(row.getCell(2), nvl(dto.getStudentName()), false, null, null, ParagraphAlignment.LEFT);
+            setCellStyle(row.getCell(3), nvl(dto.getClassName()), false, null, null, ParagraphAlignment.CENTER);
             setCellStyle(row.getCell(4),
-                dto.getTotalCredits() != null ? dto.getTotalCredits().toString() : "", false, null, null);
+                dto.getGpa() != null ? dto.getGpa().toString() : "", false, null, null, ParagraphAlignment.CENTER);
             setCellStyle(row.getCell(5),
-                dto.getFailedCredits() != null ? dto.getFailedCredits().toString() : "", false, null, null);
+                dto.getTotalCredits() != null ? dto.getTotalCredits().toString() : "", false, null, null, ParagraphAlignment.CENTER);
+            setCellStyle(row.getCell(6),
+                dto.getFailedCredits() != null ? dto.getFailedCredits().toString() : "", false, null, null, ParagraphAlignment.CENTER);
 
-            // Cot ly do: moi ly do 1 dong
-            XWPFTableCell reasonCell = row.getCell(6);
+            // Cột lý do: mỗi lý do 1 dòng kèm bullet đỏ
+            XWPFTableCell reasonCell = row.getCell(7);
             reasonCell.removeParagraph(0);
-            if (dto.getFailureReasons() != null) {
+            if (dto.getFailureReasons() != null && !dto.getFailureReasons().isEmpty()) {
                 for (String reason : dto.getFailureReasons()) {
                     XWPFParagraph p = reasonCell.addParagraph();
+                    p.setAlignment(ParagraphAlignment.LEFT);
                     XWPFRun run = p.createRun();
                     run.setText("- " + reason);
                     run.setFontFamily(FONT_NAME);
                     run.setFontSize(9);
                     run.setColor("C0392B");
                 }
+            } else {
+                XWPFParagraph p = reasonCell.addParagraph();
+                p.setAlignment(ParagraphAlignment.LEFT);
+                XWPFRun run = p.createRun();
+                run.setText("- Chưa đạt yêu cầu tốt nghiệp");
+                run.setFontFamily(FONT_NAME);
+                run.setFontSize(9);
+                run.setColor("C0392B");
             }
         }
     }
 
     // ===========================
-    // Thong ke tong hop
+    // Thống kê tổng hợp
     // ===========================
 
     private void createSummarySection(XWPFDocument document,
@@ -256,7 +293,7 @@ public class GraduationResultWordExportService {
 
         XWPFParagraph summaryTitle = document.createParagraph();
         XWPFRun summaryRun = summaryTitle.createRun();
-        summaryRun.setText("THONG KE TONG HOP");
+        summaryRun.setText("THỐNG KÊ TỔNG HỢP");
         summaryRun.setBold(true);
         summaryRun.setFontFamily(FONT_NAME);
         summaryRun.setFontSize(FONT_SIZE_SUBTITLE);
@@ -267,20 +304,20 @@ public class GraduationResultWordExportService {
         double failRate = total > 0 ? (double) failed.size() / total * 100 : 0;
 
         long excellent = passed.stream()
-            .filter(s -> "Xuat sac".equals(s.getClassificationText())).count();
+            .filter(s -> "Xuất sắc".equals(s.getClassificationText())).count();
         long good = passed.stream()
-            .filter(s -> "Gioi".equals(s.getClassificationText())).count();
+            .filter(s -> "Giỏi".equals(s.getClassificationText())).count();
         long fair = passed.stream()
-            .filter(s -> "Kha".equals(s.getClassificationText())).count();
+            .filter(s -> "Khá".equals(s.getClassificationText())).count();
         long average = passed.stream()
-            .filter(s -> "Trung binh".equals(s.getClassificationText())).count();
+            .filter(s -> "Trung bình".equals(s.getClassificationText())).count();
 
         String[] stats = {
-            "Tong so sinh vien duoc xet: " + total,
-            String.format("So dat yeu cau: %d (%.1f%%)", passed.size(), passRate),
-            String.format("   Xuat sac: %d  |  Gioi: %d  |  Kha: %d  |  Trung binh: %d",
+            "Tổng số sinh viên được xét duyệt: " + total,
+            String.format("Số sinh viên đạt yêu cầu: %d (%.1f%%)", passed.size(), passRate),
+            String.format("   Trong đó: Xuất sắc: %d  |  Giỏi: %d  |  Khá: %d  |  Trung bình: %d",
                           excellent, good, fair, average),
-            String.format("So chua dat: %d (%.1f%%)", failed.size(), failRate)
+            String.format("Số sinh viên chưa đạt: %d (%.1f%%)", failed.size(), failRate)
         };
 
         for (String text : stats) {
@@ -294,7 +331,7 @@ public class GraduationResultWordExportService {
     }
 
     // ===========================
-    // Phan chu ky
+    // Phần chữ ký
     // ===========================
 
     private void createSignatureSection(XWPFDocument document) {
@@ -305,15 +342,26 @@ public class GraduationResultWordExportService {
         sigTable.setWidth("100%");
         sigTable.getCTTbl().getTblPr().unsetTblBorders();
 
-        setCellStyle(sigTable.getRow(0).getCell(0), "Nguoi lap bao cao", true, null, null);
-        setCellStyle(sigTable.getRow(0).getCell(1), "Truong Khoa", true, null, null);
-        setCellStyle(sigTable.getRow(1).getCell(0), "(Ky, ghi ro ho ten)", false, null, null);
-        setCellStyle(sigTable.getRow(1).getCell(1), "(Ky, dong dau, ghi ro ho ten)", false, null, null);
+        setCellStyle(sigTable.getRow(0).getCell(0), "Người lập báo cáo", true, null, null, ParagraphAlignment.CENTER);
+        setCellStyle(sigTable.getRow(0).getCell(1), "Trưởng Khoa", true, null, null, ParagraphAlignment.CENTER);
+        setCellStyle(sigTable.getRow(1).getCell(0), "(Ký, ghi rõ họ tên)", false, null, null, ParagraphAlignment.CENTER);
+        setCellStyle(sigTable.getRow(1).getCell(1), "(Ký, đóng dấu, ghi rõ họ tên)", false, null, null, ParagraphAlignment.CENTER);
     }
 
     // ===========================
     // Helper methods
     // ===========================
+
+    private void createEmptyNotice(XWPFDocument document) {
+        XWPFParagraph p = document.createParagraph();
+        p.setIndentationLeft(720);
+        XWPFRun r = p.createRun();
+        r.setText("Không có sinh viên nào trong danh sách này.");
+        r.setItalic(true);
+        r.setFontFamily(FONT_NAME);
+        r.setFontSize(FONT_SIZE_BODY);
+        r.setColor("7F8C8D");
+    }
 
     private void createSectionTitle(XWPFDocument document, String title, String color) {
         document.createParagraph();
@@ -338,10 +386,11 @@ public class GraduationResultWordExportService {
     }
 
     private void setCellStyle(XWPFTableCell cell, String text,
-                               boolean isBold, String bgColor, String textColor) {
+                              boolean isBold, String bgColor, String textColor,
+                              ParagraphAlignment alignment) {
         XWPFParagraph paragraph = cell.getParagraphs().isEmpty()
             ? cell.addParagraph() : cell.getParagraphs().get(0);
-        paragraph.setAlignment(ParagraphAlignment.CENTER);
+        paragraph.setAlignment(alignment != null ? alignment : ParagraphAlignment.CENTER);
 
         XWPFRun run = paragraph.createRun();
         run.setText(text != null ? text : "");

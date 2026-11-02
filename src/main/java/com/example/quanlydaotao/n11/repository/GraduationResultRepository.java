@@ -1,5 +1,6 @@
 package com.example.quanlydaotao.n11.repository;
 
+import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
 import com.example.quanlydaotao.n11.entity.GraduationResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,17 +48,43 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
     // Lấy danh sách ID sinh viên
     @Query(value = "SELECT id FROM dbo.students_ WHERE is_active = 1", nativeQuery = true)
     List<UUID> findActiveStudentIds();
+
     // =====================================================
-    // Dung cho chuc nang xuat bao cao Word (Nhom 11)
+    // Dùng cho chức năng xuất báo cáo Word (Nhóm 11) - Phương án 3: JPQL Query Join
     // =====================================================
 
     /**
-     * Lay tat ca ket qua active theo bo dieu kien (dung khi export theo conditionId)
+     * Truy vấn dữ liệu xuất Word kết hợp bảng Student để lấy class_name theo bộ điều kiện.
+     */
+    @Query("SELECT new com.example.quanlydaotao.n11.dto.GraduationResultExportDTO(" +
+           "s.studentCode, s.fullName, s.className, gr.gpa, gr.totalCredits, " +
+           "gr.failedCredits, gr.result, gr.classification, gr.note) " +
+           "FROM GraduationResult gr " +
+           "JOIN Student s ON gr.studentId = s.id " +
+           "WHERE gr.isActive = true " +
+           "AND (:conditionId IS NULL OR gr.conditionId = :conditionId) " +
+           "ORDER BY s.studentCode ASC")
+    List<GraduationResultExportDTO> findExportDataByConditionId(@Param("conditionId") UUID conditionId);
+
+    /**
+     * Truy vấn toàn bộ dữ liệu xuất Word kèm class_name (không lọc theo conditionId).
+     */
+    @Query("SELECT new com.example.quanlydaotao.n11.dto.GraduationResultExportDTO(" +
+           "s.studentCode, s.fullName, s.className, gr.gpa, gr.totalCredits, " +
+           "gr.failedCredits, gr.result, gr.classification, gr.note) " +
+           "FROM GraduationResult gr " +
+           "JOIN Student s ON gr.studentId = s.id " +
+           "WHERE gr.isActive = true " +
+           "ORDER BY s.studentCode ASC")
+    List<GraduationResultExportDTO> findAllExportData();
+
+    /**
+     * Lấy tất cả kết quả active theo bộ điều kiện (tương thích backward)
      */
     List<GraduationResult> findByConditionIdAndIsActiveTrue(UUID conditionId);
 
     /**
-     * Lay tat ca ket qua active (dung khi export khong loc conditionId)
+     * Lấy tất cả kết quả active (tương thích backward)
      */
     List<GraduationResult> findByIsActiveTrue();
 }

@@ -1,7 +1,10 @@
 package com.example.quanlydaotao.n11.service;
 
 import com.example.quanlydaotao.n11.dto.EvaluateGraduationRequest;
+import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
 import com.example.quanlydaotao.n11.entity.GraduationResult;
+import com.example.quanlydaotao.n11.repository.GraduationConditionRepository;
 import com.example.quanlydaotao.n11.repository.GraduationResultRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,13 +17,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
-import com.example.quanlydaotao.n11.entity.GraduationCondition;
-import com.example.quanlydaotao.n11.repository.GraduationConditionRepository;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class GraduationResultService {
@@ -151,8 +151,6 @@ public class GraduationResultService {
 
         // 3. Tiến hành quét từng sinh viên
         for (UUID studentId : studentIds) {
-            // TODO: Nếu hệ thống đã có bảng tổng kết điểm thực tế, bạn lấy GPA và số tín chỉ từ bảng student_summaries
-            // Dưới đây là dữ liệu giả lập chuẩn để quét đánh giá:
             BigDecimal studentGpa = new BigDecimal("2.85");
             int studentTotalCredits = 125;
             int studentFailedCredits = 0;
@@ -196,56 +194,49 @@ public class GraduationResultService {
     }
 
     // =====================================================
-    // Xuat bao cao Word (Nhom 11)
+    // Xuất báo cáo Word (Nhóm 11) - Phương án 3: JPQL Query Join
     // =====================================================
 
     /**
-     * Lay danh sach ket qua xet TN phan theo Dat/Chua dat,
-     * kem ly do khong dat chi tiet.
+     * Lấy danh sách kết quả xét TN phân theo Đạt / Chưa đạt,
+     * kèm tên lớp lấy từ bảng students thông qua JPQL Join và lý do không đạt chi tiết.
      */
     public Map<String, List<GraduationResultExportDTO>> getResultsForExport(UUID conditionId) {
 
-        // 1. Lay tat ca ket qua active (theo conditionId neu co)
-        List<GraduationResult> results;
+        // 1. Thực thi truy vấn JPQL lấy trực tiếp danh sách DTO kèm tên lớp
+        List<GraduationResultExportDTO> rawList;
         if (conditionId != null) {
-            results = repository.findByConditionIdAndIsActiveTrue(conditionId);
+            rawList = repository.findExportDataByConditionId(conditionId);
         } else {
-            results = repository.findByIsActiveTrue();
+            rawList = repository.findAllExportData();
         }
 
-        // 2. Lay thong tin bo dieu kien
+        // 2. Lấy thông tin bộ điều kiện để tính lý do không đạt
         GraduationCondition condition = null;
         if (conditionId != null) {
             condition = conditionRepository.findById(conditionId).orElse(null);
         }
 
-        // 3. Phan loai va tao DTO
+        // 3. Phân loại và tạo danh sách Đạt / Chưa đạt
         List<GraduationResultExportDTO> passedList = new ArrayList<>();
         List<GraduationResultExportDTO> failedList = new ArrayList<>();
 
         int passStt = 1, failStt = 1;
 
-        for (GraduationResult r : results) {
-            GraduationResultExportDTO dto = new GraduationResultExportDTO();
-            dto.setStudentCode(r.getStudentCode());
-            dto.setStudentName(r.getStudentName());
-            dto.setGpa(r.getGpa());
-            dto.setTotalCredits(r.getTotalCredits());
-            dto.setFailedCredits(r.getFailedCredits());
-            dto.setResult(r.getResult() != null ? r.getResult() : (short) 0);
+        for (GraduationResultExportDTO dto : rawList) {
+            // Làm sạch số thừa ở đuôi tên sinh viên (nếu có do dữ liệu mẫu)
+            dto.setStudentName(cleanStudentName(dto.getStudentName()));
 
-            if (r.getResult() != null && r.getResult() == 1) {
-                // DAT
+            if (dto.getResult() != null && dto.getResult() == 1) {
+                // ĐẠT
                 dto.setStt(passStt++);
-                dto.setResultText("Dat");
-                dto.setClassificationText(
-                    GraduationResultExportDTO.classificationToText(r.getClassification()));
+                dto.setResultText("Đạt");
                 passedList.add(dto);
             } else {
-                // CHUA DAT
+                // CHƯA ĐẠT
                 dto.setStt(failStt++);
-                dto.setResultText("Chua dat");
-                dto.setFailureReasons(buildFailureReasons(r, condition));
+                dto.setResultText("Chưa đạt");
+                dto.setFailureReasons(buildFailureReasons(dto, condition));
                 failedList.add(dto);
             }
         }
@@ -257,41 +248,49 @@ public class GraduationResultService {
     }
 
     /**
-     * Xac dinh ly do cu the sinh vien khong dat TN.
+     * Loại bỏ các chữ số mock data ở cuối tên sinh viên (ví dụ: 'Nguyễn Văn A 12' -> 'Nguyễn Văn A')
      */
-    private List<String> buildFailureReasons(GraduationResult r, GraduationCondition condition) {
+    private String cleanStudentName(String raw) {
+        if (raw == null) return "";
+        return raw.replaceAll("\\s+\\d+$", "").trim();
+    }
+
+    /**
+     * Xác định lý do cụ thể sinh viên không đạt tốt nghiệp.
+     */
+    private List<String> buildFailureReasons(GraduationResultExportDTO dto, GraduationCondition condition) {
         List<String> reasons = new ArrayList<>();
 
         if (condition == null) {
-            reasons.add(r.getNote() != null && !r.getNote().isEmpty()
-                ? r.getNote() : "Chua dat yeu cau tot nghiep");
+            reasons.add(dto.getNote() != null && !dto.getNote().isEmpty()
+                ? dto.getNote() : "Chưa đạt yêu cầu tốt nghiệp");
             return reasons;
         }
 
-        if (r.getTotalCredits() != null && condition.getMinTotalCredits() != null
-                && r.getTotalCredits() < condition.getMinTotalCredits()) {
+        if (dto.getTotalCredits() != null && condition.getMinTotalCredits() != null
+                && dto.getTotalCredits() < condition.getMinTotalCredits()) {
             reasons.add(String.format(
-                "Chua du tin chi tich luy (co: %d, yeu cau: %d)",
-                r.getTotalCredits(), condition.getMinTotalCredits()));
+                "Chưa đủ tín chỉ tích lũy (có: %d, yêu cầu: %d)",
+                dto.getTotalCredits(), condition.getMinTotalCredits()));
         }
 
-        if (r.getGpa() != null && condition.getMinGpa() != null
-                && r.getGpa().compareTo(condition.getMinGpa()) < 0) {
+        if (dto.getGpa() != null && condition.getMinGpa() != null
+                && dto.getGpa().compareTo(condition.getMinGpa()) < 0) {
             reasons.add(String.format(
-                "GPA chua dat yeu cau (co: %s, yeu cau: %s)",
-                r.getGpa(), condition.getMinGpa()));
+                "GPA chưa đạt yêu cầu (có: %s, yêu cầu: %s)",
+                dto.getGpa(), condition.getMinGpa()));
         }
 
-        if (r.getFailedCredits() != null && condition.getMaxFailedCredits() != null
-                && r.getFailedCredits() > condition.getMaxFailedCredits()) {
+        if (dto.getFailedCredits() != null && condition.getMaxFailedCredits() != null
+                && dto.getFailedCredits() > condition.getMaxFailedCredits()) {
             reasons.add(String.format(
-                "So tin chi no vuot muc cho phep (co: %d, toi da: %d)",
-                r.getFailedCredits(), condition.getMaxFailedCredits()));
+                "Số tín chỉ nợ vượt mức cho phép (có: %d, tối đa: %d)",
+                dto.getFailedCredits(), condition.getMaxFailedCredits()));
         }
 
         if (reasons.isEmpty()) {
-            reasons.add(r.getNote() != null && !r.getNote().isEmpty()
-                ? r.getNote() : "Chua dat yeu cau theo danh gia tong hop");
+            reasons.add(dto.getNote() != null && !dto.getNote().isEmpty()
+                ? dto.getNote() : "Chưa đạt yêu cầu theo đánh giá tổng hợp");
         }
 
         return reasons;

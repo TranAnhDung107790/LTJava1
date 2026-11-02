@@ -130,6 +130,14 @@
                                     </select>
                                 </div>
 
+                                <!-- Filter Condition -->
+                                <div class="d-flex align-items-center gap-1">
+                                    <label class="small text-muted fw-semibold text-nowrap">Bộ tiêu chí:</label>
+                                    <select id="filterCondition" class="form-select form-select-sm" style="width: 160px;">
+                                        <option value="">Tất cả tiêu chí</option>
+                                    </select>
+                                </div>
+
                                 <!-- Filter Page Size -->
                                 <div class="d-flex align-items-center gap-1">
                                     <label class="small text-muted fw-semibold text-nowrap">Số lượng:</label>
@@ -148,6 +156,11 @@
                             </div>
 
                             <div class="col-12 col-md-auto d-flex flex-wrap gap-2">
+                                <!-- Export Word Button -->
+                                <button id="btnExportWord" class="btn btn-success btn-sm fw-semibold shadow-sm" title="Xuất báo cáo kết quả xét tốt nghiệp ra file Word (.docx)">
+                                    <i class="bi bi-file-earmark-word me-1"></i>Xuất Word
+                                </button>
+
                                 <!-- Evaluate Trigger Button -->
                                 <button id="btnOpenEvaluateModal" class="btn btn-warning btn-sm text-dark fw-semibold shadow-sm">
                                     <i class="bi bi-lightning-charge-fill me-1"></i>Kích hoạt xét duyệt tự động
