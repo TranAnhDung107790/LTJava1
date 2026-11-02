@@ -47,4 +47,17 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
     // Lấy danh sách ID sinh viên
     @Query(value = "SELECT id FROM dbo.students_ WHERE is_active = 1", nativeQuery = true)
     List<UUID> findActiveStudentIds();
+    // =====================================================
+    // Dung cho chuc nang xuat bao cao Word (Nhom 11)
+    // =====================================================
+
+    /**
+     * Lay tat ca ket qua active theo bo dieu kien (dung khi export theo conditionId)
+     */
+    List<GraduationResult> findByConditionIdAndIsActiveTrue(UUID conditionId);
+
+    /**
+     * Lay tat ca ket qua active (dung khi export khong loc conditionId)
+     */
+    List<GraduationResult> findByIsActiveTrue();
 }

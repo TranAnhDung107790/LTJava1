@@ -12,7 +12,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
+import com.example.quanlydaotao.n11.service.GraduationConditionService;
+import com.example.quanlydaotao.n11.service.GraduationResultWordExportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/graduation-results")
@@ -20,9 +30,15 @@ import java.util.UUID;
 public class GraduationResultController {
 
     private final GraduationResultService service;
+    private final GraduationResultWordExportService wordExportService;
+    private final GraduationConditionService conditionService;
 
-    public GraduationResultController(GraduationResultService service) {
+    public GraduationResultController(GraduationResultService service,
+                                       GraduationResultWordExportService wordExportService,
+                                       GraduationConditionService conditionService) {
         this.service = service;
+        this.wordExportService = wordExportService;
+        this.conditionService = conditionService;
     }
 
     // 1. Lấy danh sách có phân trang và lọc theo trạng thái (result: 1=Đạt, 0=Chưa đạt)
@@ -79,5 +95,42 @@ public class GraduationResultController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // 8. Xuat bao cao ket qua xet tot nghiep ra file Word
+    @GetMapping("/export/word")
+    public ResponseEntity<byte[]> exportToWord(
+            @RequestParam(required = false) UUID conditionId) {
+        try {
+            // 1. Lay du lieu phan loai Dat / Chua dat
+            Map<String, List<GraduationResultExportDTO>> data =
+                service.getResultsForExport(conditionId);
+
+            // 2. Lay thong tin bo dieu kien (neu co)
+            GraduationCondition condition = null;
+            if (conditionId != null) {
+                condition = conditionService.one(conditionId);
+            }
+
+            // 3. Tao file Word
+            byte[] docBytes = wordExportService.generateReport(
+                data.get("passed"), data.get("failed"), condition);
+
+            // 4. Tra ve file download
+            String filename = "BaoCao_XetTotNghiep_"
+                + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy"))
+                + ".docx";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setContentLength(docBytes.length);
+
+            return ResponseEntity.ok().headers(headers).body(docBytes);
+
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

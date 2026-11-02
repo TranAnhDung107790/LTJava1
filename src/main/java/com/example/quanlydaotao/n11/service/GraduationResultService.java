@@ -16,14 +16,22 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
+import com.example.quanlydaotao.n11.repository.GraduationConditionRepository;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class GraduationResultService {
 
     private final GraduationResultRepository repository;
+    private final GraduationConditionRepository conditionRepository;
 
-    public GraduationResultService(GraduationResultRepository repository) {
+    public GraduationResultService(GraduationResultRepository repository,
+                                    GraduationConditionRepository conditionRepository) {
         this.repository = repository;
+        this.conditionRepository = conditionRepository;
     }
 
     // 1. Lấy danh sách có phân trang và lọc theo trạng thái (result: 1-Đạt, 0-Chưa đạt)
@@ -185,5 +193,107 @@ public class GraduationResultService {
         }
 
         return evaluatedResults;
+    }
+
+    // =====================================================
+    // Xuat bao cao Word (Nhom 11)
+    // =====================================================
+
+    /**
+     * Lay danh sach ket qua xet TN phan theo Dat/Chua dat,
+     * kem ly do khong dat chi tiet.
+     */
+    public Map<String, List<GraduationResultExportDTO>> getResultsForExport(UUID conditionId) {
+
+        // 1. Lay tat ca ket qua active (theo conditionId neu co)
+        List<GraduationResult> results;
+        if (conditionId != null) {
+            results = repository.findByConditionIdAndIsActiveTrue(conditionId);
+        } else {
+            results = repository.findByIsActiveTrue();
+        }
+
+        // 2. Lay thong tin bo dieu kien
+        GraduationCondition condition = null;
+        if (conditionId != null) {
+            condition = conditionRepository.findById(conditionId).orElse(null);
+        }
+
+        // 3. Phan loai va tao DTO
+        List<GraduationResultExportDTO> passedList = new ArrayList<>();
+        List<GraduationResultExportDTO> failedList = new ArrayList<>();
+
+        int passStt = 1, failStt = 1;
+
+        for (GraduationResult r : results) {
+            GraduationResultExportDTO dto = new GraduationResultExportDTO();
+            dto.setStudentCode(r.getStudentCode());
+            dto.setStudentName(r.getStudentName());
+            dto.setGpa(r.getGpa());
+            dto.setTotalCredits(r.getTotalCredits());
+            dto.setFailedCredits(r.getFailedCredits());
+            dto.setResult(r.getResult() != null ? r.getResult() : (short) 0);
+
+            if (r.getResult() != null && r.getResult() == 1) {
+                // DAT
+                dto.setStt(passStt++);
+                dto.setResultText("Dat");
+                dto.setClassificationText(
+                    GraduationResultExportDTO.classificationToText(r.getClassification()));
+                passedList.add(dto);
+            } else {
+                // CHUA DAT
+                dto.setStt(failStt++);
+                dto.setResultText("Chua dat");
+                dto.setFailureReasons(buildFailureReasons(r, condition));
+                failedList.add(dto);
+            }
+        }
+
+        Map<String, List<GraduationResultExportDTO>> resultMap = new HashMap<>();
+        resultMap.put("passed", passedList);
+        resultMap.put("failed", failedList);
+        return resultMap;
+    }
+
+    /**
+     * Xac dinh ly do cu the sinh vien khong dat TN.
+     */
+    private List<String> buildFailureReasons(GraduationResult r, GraduationCondition condition) {
+        List<String> reasons = new ArrayList<>();
+
+        if (condition == null) {
+            reasons.add(r.getNote() != null && !r.getNote().isEmpty()
+                ? r.getNote() : "Chua dat yeu cau tot nghiep");
+            return reasons;
+        }
+
+        if (r.getTotalCredits() != null && condition.getMinTotalCredits() != null
+                && r.getTotalCredits() < condition.getMinTotalCredits()) {
+            reasons.add(String.format(
+                "Chua du tin chi tich luy (co: %d, yeu cau: %d)",
+                r.getTotalCredits(), condition.getMinTotalCredits()));
+        }
+
+        if (r.getGpa() != null && condition.getMinGpa() != null
+                && r.getGpa().compareTo(condition.getMinGpa()) < 0) {
+            reasons.add(String.format(
+                "GPA chua dat yeu cau (co: %s, yeu cau: %s)",
+                r.getGpa(), condition.getMinGpa()));
+        }
+
+        if (r.getFailedCredits() != null && condition.getMaxFailedCredits() != null
+                && r.getFailedCredits() > condition.getMaxFailedCredits()) {
+            reasons.add(String.format(
+                "So tin chi no vuot muc cho phep (co: %d, toi da: %d)",
+                r.getFailedCredits(), condition.getMaxFailedCredits()));
+        }
+
+        if (reasons.isEmpty()) {
+            reasons.add(r.getNote() != null && !r.getNote().isEmpty()
+                ? r.getNote() : "Chua dat yeu cau theo danh gia tong hop");
+        }
+
+        return reasons;
     }
 }
