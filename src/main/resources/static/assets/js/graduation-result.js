@@ -141,7 +141,12 @@ function initEventListeners() {
             const cond = conditionsMap.get(e.target.value);
             const detailEl = document.getElementById('evalConditionDetail');
             if (cond && detailEl) {
-                detailEl.innerHTML = `<strong>Tiêu chuẩn:</strong> Khóa: ${cond.appliedCohort || 'Chung'} | GPA sàn: ${cond.minGpa} | Tín chỉ sàn: ${cond.minTotalCredits} | Rớt tối đa: ${cond.maxFailedCredits}`;
+                const cohort = cond.appliedCohort || 'Chung';
+                detailEl.innerHTML = `<div class="mt-2 p-2 bg-light rounded border border-warning">
+                    <div><i class="bi bi-mortarboard-fill text-warning me-1"></i><strong>Khóa áp dụng:</strong> <span class="badge bg-primary">${cohort}</span></div>
+                    <div class="mt-1"><i class="bi bi-shield-check text-success me-1"></i><strong>Tiêu chuẩn:</strong> GPA sàn: <b>${cond.minGpa}</b> | Tín chỉ sàn: <b>${cond.minTotalCredits}</b> | Nợ tối đa: <b>${cond.maxFailedCredits}</b></div>
+                    <div class="mt-1 text-muted small"><i class="bi bi-info-circle me-1"></i>Hệ thống sẽ <strong>chỉ quét và xét duyệt sinh viên thuộc khóa ${cohort}</strong>.</div>
+                </div>`;
             } else if (detailEl) {
                 detailEl.innerHTML = '';
             }
@@ -458,6 +463,9 @@ async function handleExecuteEvaluate() {
         return;
     }
 
+    const cond = conditionsMap.get(conditionId);
+    const cohort = cond ? cond.appliedCohort : null;
+
     const reviewerInput = document.getElementById('evalReviewerId').value.trim();
     if (reviewerInput && !isUuid(reviewerInput)) {
         alert('Mã cán bộ / người duyệt phải là UUID hợp lệ, hoặc để trống.');
@@ -465,6 +473,7 @@ async function handleExecuteEvaluate() {
     }
     const payload = {
         conditionId: conditionId,
+        cohort: cohort,
         reviewerId: reviewerInput || null
     };
 
@@ -490,7 +499,8 @@ async function handleExecuteEvaluate() {
             evaluateModalInstance.hide();
         }
 
-        showAlert('success', `Đã kích hoạt xét duyệt tự động thành công! Cập nhật kết quả cho ${evaluatedList.length} sinh viên.`);
+        const cohortText = cohort ? ` khóa ${cohort}` : '';
+        showAlert('success', `Đã xét duyệt tự động thành công cho ${evaluatedList.length} sinh viên${cohortText}!`);
         currentPage = 0;
         loadResults();
     } catch (error) {

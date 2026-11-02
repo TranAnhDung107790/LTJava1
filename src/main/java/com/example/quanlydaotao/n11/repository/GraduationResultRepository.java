@@ -63,6 +63,14 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
             "WHERE is_active = 1 AND student_id IS NOT NULL", nativeQuery = true)
     List<Object[]> findAllStudentSummaries();
 
+    // Lấy danh sách ID sinh viên thuộc riêng một khóa cụ thể (VD: '24' cho K24, '25' cho K25, '23' cho K23)
+    @Query(value = "SELECT DISTINCT id FROM (" +
+            "SELECT id FROM dbo.students WHERE (:cohortSuffix IS NULL OR student_code LIKE :cohortSuffix + '%' OR class_name LIKE 'IT' + :cohortSuffix + '%') " +
+            "UNION " +
+            "SELECT id FROM dbo.students_ WHERE is_active = 1 AND (:cohortSuffix IS NULL OR code LIKE :cohortSuffix + '%' OR RIGHT(CAST(YEAR(admission_year) AS VARCHAR(4)), 2) = :cohortSuffix)" +
+            ") t", nativeQuery = true)
+    List<UUID> findActiveStudentIdsByCohortSuffix(@Param("cohortSuffix") String cohortSuffix);
+
     // =====================================================
     // Dùng cho chức năng xuất báo cáo Word (Nhóm 11) - Phương án 3: JPQL Query Join
     // =====================================================
