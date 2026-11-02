@@ -2,12 +2,18 @@ import { API_ENDPOINTS } from './config.js';
 
 let sessionsList = [];
 let sessionModalInstance = null;
+let autoModalInstance = null;
 let activeOnlyFilter = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     const modalEl = document.getElementById('sessionModal');
     if (modalEl && window.bootstrap) {
         sessionModalInstance = new bootstrap.Modal(modalEl);
+    }
+
+    const autoModalEl = document.getElementById('autoModal');
+    if (autoModalEl && window.bootstrap) {
+        autoModalInstance = new bootstrap.Modal(autoModalEl);
     }
 
     initEventListeners();
@@ -69,10 +75,26 @@ function initEventListeners() {
         btnOpenCreateModal.addEventListener('click', openCreateModal);
     }
 
+    // Auto Generate Modal
+    const btnOpenAutoModal = document.getElementById('btnOpenAutoModal');
+    if (btnOpenAutoModal) {
+        btnOpenAutoModal.addEventListener('click', () => {
+            if (autoModalInstance) {
+                autoModalInstance.show();
+            }
+        });
+    }
+
     // Save Form
     const sessionForm = document.getElementById('sessionForm');
     if (sessionForm) {
         sessionForm.addEventListener('submit', handleSaveSession);
+    }
+
+    // Auto Generate Form Submit
+    const autoForm = document.getElementById('autoForm');
+    if (autoForm) {
+        autoForm.addEventListener('submit', handleAutoGenerateSessions);
     }
 }
 
@@ -280,6 +302,43 @@ async function handleDeleteSession(id) {
         loadSessions();
     } catch (error) {
         alert(`Không thể xóa: ${error.message}`);
+    }
+}
+
+async function handleAutoGenerateSessions(e) {
+    e.preventDefault();
+    const selectYear = document.getElementById('autoAcademicYear');
+    const academicYear = selectYear ? selectYear.value : '2026-2027';
+    const submitBtn = document.getElementById('btnExecuteAuto');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${API_ENDPOINTS.GRADUATION_SESSIONS}/auto-generate?academicYear=${encodeURIComponent(academicYear)}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || err.error || `Lỗi máy chủ (${response.status})`);
+        }
+
+        const createdList = await response.json();
+
+        if (autoModalInstance) {
+            autoModalInstance.hide();
+        }
+
+        if (createdList && createdList.length > 0) {
+            showAlert('success', `Đã khởi tạo thành công ${createdList.length} đợt xét mới cho năm học ${academicYear}!`);
+        } else {
+            showAlert('info', `Các đợt xét chuẩn cho năm học ${academicYear} đã tồn tại từ trước (không tạo trùng).`);
+        }
+
+        loadSessions();
+    } catch (error) {
+        alert(`Lỗi khi tự động khởi tạo: ${error.message}`);
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 

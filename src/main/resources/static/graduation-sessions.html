@@ -130,7 +130,10 @@
                                 </button>
                             </div>
 
-                            <div class="col-12 col-md-auto">
+                            <div class="col-12 col-md-auto d-flex flex-wrap gap-2">
+                                <button id="btnOpenAutoModal" class="btn btn-outline-success btn-sm fw-semibold shadow-sm">
+                                    <i class="bi bi-lightning-charge me-1"></i>Tự động tạo đợt theo năm học
+                                </button>
                                 <button id="btnOpenCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm">
                                     <i class="bi bi-plus-circle me-1"></i>Tạo đợt xét mới
                                 </button>
@@ -260,6 +263,48 @@
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" id="btnSaveSession" class="btn btn-primary btn-sm fw-bold">
                         <i class="bi bi-save me-1"></i>Lưu đợt xét
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================================= -->
+<!-- MODAL: TỰ ĐỘNG KHỞI TẠO ĐỢT XÉT THEO NĂM HỌC                                      -->
+<!-- ================================================================================= -->
+<div class="modal fade" id="autoModal" tabindex="-1" aria-labelledby="autoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="autoModalLabel">
+                    <i class="bi bi-lightning-charge me-2"></i>Tự động khởi tạo đợt xét theo năm học
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="autoForm">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn Năm học áp dụng <span class="text-danger">*</span></label>
+                        <select id="autoAcademicYear" class="form-select" required>
+                            <option value="2026-2027" selected>Năm học 2026 - 2027</option>
+                            <option value="2027-2028">Năm học 2027 - 2028</option>
+                            <option value="2025-2026">Năm học 2025 - 2026</option>
+                        </select>
+                        <div class="form-text text-muted small mt-2">
+                            <i class="bi bi-info-circle me-1"></i>Hệ thống sẽ tự động quét và sinh 3 đợt xét chuẩn:
+                            <ul class="mb-0 mt-1 ps-3">
+                                <li><strong>Đợt 1 (HK1):</strong> Mở từ 01/10 đến 30/11</li>
+                                <li><strong>Đợt 2 (HK2):</strong> Mở từ 01/03 đến 30/04</li>
+                                <li><strong>Đợt 3 (Kỳ hè):</strong> Mở từ 01/07 đến 31/08</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnExecuteAuto" class="btn btn-success btn-sm fw-bold">
+                        <i class="bi bi-play-circle-fill me-1"></i>Bắt đầu khởi tạo
                     </button>
                 </div>
             </form>

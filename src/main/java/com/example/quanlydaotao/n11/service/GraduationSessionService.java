@@ -9,6 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -97,5 +98,74 @@ public class GraduationSessionService {
         session.setDeletedBy(deletedBy);
         repository.save(session);
     }
-}
 
+    @Transactional
+    public List<GraduationSession> generateAnnualSessions(String academicYear) {
+        if (academicYear == null || academicYear.isBlank()) {
+            academicYear = "2026-2027";
+        }
+        academicYear = academicYear.trim();
+
+        int startYear = 2026;
+        try {
+            String[] parts = academicYear.split("-");
+            if (parts.length > 0) {
+                startYear = Integer.parseInt(parts[0].trim());
+            }
+        } catch (Exception ignored) {
+        }
+        int nextYear = startYear + 1;
+        String cleanYearCode = startYear + "_" + nextYear;
+
+        List<GraduationSession> generated = new ArrayList<>();
+
+        // Đợt 1: HK1 (Tháng 10 - Tháng 11)
+        createIfNotExists(generated,
+                "DOT1_" + cleanYearCode,
+                "Xét tốt nghiệp Đợt 1 năm học " + academicYear,
+                academicYear,
+                1,
+                LocalDate.of(startYear, 10, 1),
+                LocalDate.of(startYear, 11, 30),
+                "Khởi tạo tự động theo niên giám đào tạo " + academicYear + " (HK1)");
+
+        // Đợt 2: HK2 (Tháng 3 - Tháng 4)
+        createIfNotExists(generated,
+                "DOT2_" + cleanYearCode,
+                "Xét tốt nghiệp Đợt 2 năm học " + academicYear,
+                academicYear,
+                2,
+                LocalDate.of(nextYear, 3, 1),
+                LocalDate.of(nextYear, 4, 30),
+                "Khởi tạo tự động theo niên giám đào tạo " + academicYear + " (HK2)");
+
+        // Đợt 3: HK Hè (Tháng 7 - Tháng 8)
+        createIfNotExists(generated,
+                "DOT3_" + cleanYearCode,
+                "Xét tốt nghiệp Đợt 3 năm học " + academicYear,
+                academicYear,
+                3,
+                LocalDate.of(nextYear, 7, 1),
+                LocalDate.of(nextYear, 8, 31),
+                "Khởi tạo tự động theo niên giám đào tạo " + academicYear + " (Kỳ hè)");
+
+        return generated;
+    }
+
+    private void createIfNotExists(List<GraduationSession> list, String code, String name,
+                                   String academicYear, int semester, LocalDate startDate,
+                                   LocalDate dueDate, String note) {
+        if (!repository.existsBySessionCodeIgnoreCase(code)) {
+            GraduationSession s = new GraduationSession();
+            s.setSessionCode(code);
+            s.setSessionName(name);
+            s.setAcademicYear(academicYear);
+            s.setSemester(semester);
+            s.setStartDate(startDate);
+            s.setDueDate(dueDate);
+            s.setNote(note);
+            s.setIsActive(true);
+            list.add(repository.save(s));
+        }
+    }
+}

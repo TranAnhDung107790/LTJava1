@@ -65,5 +65,11 @@ public class GraduationSessionController {
         service.deleteSoft(id, deletedBy);
         return ResponseEntity.noContent().build();
     }
-}
 
+    // 8. Tự động sinh các đợt xét tốt nghiệp theo niên giám năm học
+    @PostMapping("/auto-generate")
+    public ResponseEntity<List<GraduationSession>> autoGenerate(
+            @RequestParam(required = false, defaultValue = "2026-2027") String academicYear) {
+        return ResponseEntity.ok(service.generateAnnualSessions(academicYear));
+    }
+}
