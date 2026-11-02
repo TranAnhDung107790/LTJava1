@@ -46,6 +46,7 @@ public class GraduationResultController {
     @GetMapping
     public ResponseEntity<Page<GraduationResult>> findAll(
             @RequestParam(required = false) Short result,
+            @RequestParam(required = false) UUID conditionId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -54,7 +55,7 @@ public class GraduationResultController {
         Sort sort = direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return ResponseEntity.ok(service.findAll(result, pageable));
+        return ResponseEntity.ok(service.findAll(result, conditionId, pageable));
     }
 
     // 2. Chi tiết 1 bản ghi

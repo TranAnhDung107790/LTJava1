@@ -4,9 +4,6 @@ import { API_ENDPOINTS } from './config.js';
 let currentPage = 0;
 let pageSize = 10;
 let currentFilterResult = '';
-            currentFilterCondition = '';
-            const filterCondEl = document.getElementById('filterCondition');
-            if (filterCondEl) filterCondEl.value = '';
 let currentFilterCondition = '';
 const studentsMap = new Map();
 const conditionsMap = new Map();
@@ -64,6 +61,20 @@ function initEventListeners() {
             currentPage = 0;
             loadResults();
         });
+    }
+
+    const filterCondition = document.getElementById('filterCondition');
+    if (filterCondition) {
+        filterCondition.addEventListener('change', (e) => {
+            currentFilterCondition = e.target.value;
+            currentPage = 0;
+            loadResults();
+        });
+    }
+
+    const btnExportWord = document.getElementById('btnExportWord');
+    if (btnExportWord) {
+        btnExportWord.addEventListener('click', handleExportWord);
     }
 
     // Filter by Page Size
@@ -209,7 +220,10 @@ async function loadResults() {
             // Lọc theo trạng thái nếu có chọn Đạt / Chưa đạt
             if (currentFilterResult !== '') {
                 const targetRes = parseInt(currentFilterResult, 10);
-                searchResults = searchResults.filter(r => r.result === targetRes);
+                searchResults = searchResults.filter(r => Number(r.result) === targetRes);
+            }
+            if (currentFilterCondition) {
+                searchResults = searchResults.filter(r => r.conditionId === currentFilterCondition);
             }
 
             const pageData = {
@@ -228,6 +242,9 @@ async function loadResults() {
         let url = `${API_ENDPOINTS.GRADUATION_RESULTS}?page=${currentPage}&size=${pageSize}&sortBy=createdAt&direction=desc`;
         if (currentFilterResult !== '') {
             url += `&result=${encodeURIComponent(currentFilterResult)}`;
+        }
+        if (currentFilterCondition) {
+            url += `&conditionId=${encodeURIComponent(currentFilterCondition)}`;
         }
 
         const response = await fetch(url);
@@ -291,7 +308,7 @@ function renderResultsTable(pageData) {
         }
 
         // Badge Kết quả Đạt / Chưa đạt
-        const resultBadge = item.result === 1
+        const resultBadge = Number(item.result) === 1
             ? `<span class="badge badge-pass shadow-sm"><i class="bi bi-check-circle-fill me-1"></i>Đạt</span>`
             : `<span class="badge badge-fail shadow-sm"><i class="bi bi-x-circle-fill me-1"></i>Chưa đạt</span>`;
 
@@ -342,7 +359,7 @@ function renderResultsTable(pageData) {
 }
 
 function getClassificationBadge(classification) {
-    switch (classification) {
+    switch (Number(classification)) {
         case 1:
             return `<span class="badge badge-class-1"><i class="bi bi-star-fill me-1"></i>Xuất sắc</span>`;
         case 2:
@@ -442,9 +459,13 @@ async function handleExecuteEvaluate() {
     }
 
     const reviewerInput = document.getElementById('evalReviewerId').value.trim();
+    if (reviewerInput && !isUuid(reviewerInput)) {
+        alert('Mã cán bộ / người duyệt phải là UUID hợp lệ, hoặc để trống.');
+        return;
+    }
     const payload = {
         conditionId: conditionId,
-        reviewerId: reviewerInput || 'cedeed49-0178-4394-a16c-02bc11cdb15a'
+        reviewerId: reviewerInput || null
     };
 
     const btnExecute = document.getElementById('btnExecuteEvaluate');
@@ -535,6 +556,12 @@ async function handleSaveResult(e) {
     const id = document.getElementById('resultId').value;
     const isEdit = Boolean(id);
 
+    const reviewerValue = document.getElementById('modalReviewer').value.trim();
+    if (reviewerValue && !isUuid(reviewerValue)) {
+        alert('Người duyệt phải là UUID hợp lệ, hoặc để trống.');
+        return;
+    }
+
     const payload = {
         studentId: document.getElementById('modalStudentId').value,
         conditionId: document.getElementById('modalConditionId').value,
@@ -544,7 +571,7 @@ async function handleSaveResult(e) {
         result: parseInt(document.getElementById('modalResultStatus').value, 10),
         classification: document.getElementById('modalClassification').value ? parseInt(document.getElementById('modalClassification').value, 10) : null,
         decisionDate: document.getElementById('modalDecisionDate').value || null,
-        reviewer: document.getElementById('modalReviewer').value.trim() || null,
+        reviewer: reviewerValue || null,
         note: document.getElementById('modalNote').value.trim() || null
     };
 
@@ -639,20 +666,27 @@ async function loadConditions() {
 
         const modalSelect = document.getElementById('modalConditionId');
         const evalSelect = document.getElementById('evalConditionSelect');
+        const filterSelect = document.getElementById('filterCondition');
 
         let modalOptions = '<option value="">-- Chọn bộ điều kiện --</option>';
         let evalOptions = '<option value="">-- Chọn bộ điều kiện xét duyệt --</option>';
+        let filterOptions = '<option value="">Tất cả tiêu chí</option>';
 
         list.forEach(c => {
             conditionsMap.set(c.id, c);
             const cohort = c.appliedCohort || 'Chung';
-            const opt = `<option value="${c.id}">Khóa ${cohort} (GPA sàn: ${c.minGpa}, Tín chỉ: ${c.minTotalCredits})</option>`;
+            const opt = `<option value="${c.id}">Khóa ${escapeHtml(String(cohort))} (GPA sàn: ${c.minGpa}, Tín chỉ: ${c.minTotalCredits})</option>`;
             modalOptions += opt;
             evalOptions += opt;
+            filterOptions += opt;
         });
 
         if (modalSelect) modalSelect.innerHTML = modalOptions;
         if (evalSelect) evalSelect.innerHTML = evalOptions;
+        if (filterSelect) {
+            filterSelect.innerHTML = filterOptions;
+            filterSelect.value = currentFilterCondition;
+        }
     } catch (e) {
         console.warn('Không thể tải bộ điều kiện:', e);
     }
@@ -662,6 +696,10 @@ async function loadConditions() {
 function formatStudentName(rawName) {
     if (!rawName) return '';
     return rawName.replace(/\s+\d+$/, '').trim();
+}
+
+function isUuid(value) {
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value);
 }
 
 function escapeHtml(str) {
