@@ -1,5 +1,6 @@
 # 📋 BÁO CÁO NGHIÊN CỨU: Chức năng xuất báo cáo Graduation Result ra file Word
 
+
 > **Nhóm 11 — Quản lý Tốt nghiệp**
 > **Nhánh**: `nhom11-test`
 > **Ngày**: 01/11/2026
@@ -17,6 +18,7 @@
 6. [Mẫu file Word đầu ra](#6-mẫu-file-word-đầu-ra)
 7. [Hướng dẫn triển khai từng bước](#7-hướng-dẫn-triển-khai-từng-bước)
 8. [Kế hoạch thực hiện](#8-kế-hoạch-thực-hiện)
+9. [Hướng dẫn kiểm thử](#9-hướng-dẫn-kiểm-thử)
 
 ---
 
@@ -353,60 +355,6 @@ GET /api/graduation-results/export/word?conditionId={uuid}
 | `service/GraduationResultService.java` | Thêm method lấy data cho export |
 | `repository/GraduationResultRepository.java` | Thêm query lọc theo conditionId |
 
-### 5.4 DTO xuất báo cáo
-
-```java
-public class GraduationResultExportDTO {
-    private int stt;                    // Số thứ tự
-    private String studentCode;         // Mã sinh viên
-    private String studentName;         // Họ và tên
-    private BigDecimal gpa;             // GPA
-    private Integer totalCredits;       // Tổng tín chỉ
-    private Integer failedCredits;      // Số tín chỉ nợ
-    private Short result;               // 1=Đạt, 0=Chưa đạt
-    private String classificationText;  // "Xuất sắc", "Giỏi", ...
-    private String resultText;          // "Đạt" / "Chưa đạt"
-    private List<String> failureReasons;// Danh sách lý do không đạt
-}
-```
-
-### 5.5 Logic xác định lý do không đạt
-
-```java
-public List<String> buildFailureReasons(GraduationResult result, 
-                                         GraduationCondition condition) {
-    List<String> reasons = new ArrayList<>();
-    
-    // 1. Kiểm tra tín chỉ
-    if (result.getTotalCredits() < condition.getMinTotalCredits()) {
-        reasons.add(String.format(
-            "Chưa đủ tín chỉ tích lũy (hiện có: %d, yêu cầu: %d)", 
-            result.getTotalCredits(), condition.getMinTotalCredits()));
-    }
-    
-    // 2. Kiểm tra GPA
-    if (result.getGpa().compareTo(condition.getMinGpa()) < 0) {
-        reasons.add(String.format(
-            "GPA chưa đạt yêu cầu (hiện tại: %.2f, yêu cầu tối thiểu: %.2f)", 
-            result.getGpa(), condition.getMinGpa()));
-    }
-    
-    // 3. Kiểm tra tín chỉ nợ
-    if (result.getFailedCredits() > condition.getMaxFailedCredits()) {
-        reasons.add(String.format(
-            "Số tín chỉ nợ vượt mức cho phép (hiện có: %d, tối đa: %d)", 
-            result.getFailedCredits(), condition.getMaxFailedCredits()));
-    }
-    
-    // Nếu không có lý do cụ thể nhưng vẫn chưa đạt
-    if (reasons.isEmpty() && result.getResult() == 0) {
-        reasons.add("Chưa đạt yêu cầu theo đánh giá tổng hợp");
-    }
-    
-    return reasons;
-}
-```
-
 ---
 
 ## 6. Mẫu file Word đầu ra
@@ -477,7 +425,7 @@ public List<String> buildFailureReasons(GraduationResult result,
 ### 6.3 Chi tiết bảng Sinh viên KHÔNG ĐẠT (7 cột, có lý do)
 
 | STT | Mã SV | Họ và tên | GPA | Tín chỉ | Nợ | Lý do không đạt |
-|-----|-------|-----------|-----|---------|-----|-----------------|
+|-----|-------|-----------|-----|---------|-----|-----------------| 
 | 1 | 26681 | Trần Minh Phúc | 1.52 | 115 | 10 | - GPA chưa đạt (1.52 < 2.20) |
 | | | | | | | - Chưa đủ tín chỉ (115 < 125) |
 | 2 | 26798 | Trần Diễm Thu | 1.53 | 115 | 10 | - GPA chưa đạt (1.53 < 2.20) |
@@ -488,6 +436,21 @@ public List<String> buildFailureReasons(GraduationResult result,
 ---
 
 ## 7. Hướng dẫn triển khai từng bước
+
+> ⚠️ **Quan trọng:** Các bước được sắp xếp theo **thứ tự dependency** — tạo/sửa file theo đúng thứ tự này để tránh lỗi compile.
+
+### Tổng quan thứ tự thực hiện
+
+| Thứ tự | File | Thao tác | Ghi chú |
+|--------|------|----------|---------|
+| 1 | `pom.xml` | **Sửa** — Thêm dependency POI | Bắt buộc trước tiên |
+| 2 | `dto/GraduationResultExportDTO.java` | **Tạo mới** | DTO chứa data + lý do không đạt |
+| 3 | `repository/GraduationResultRepository.java` | **Sửa** — Thêm 2 method | Query cho export |
+| 4 | `service/GraduationResultService.java` | **Sửa** — Inject + thêm 2 method | Logic phân loại + lý do |
+| 5 | `service/GraduationResultWordExportService.java` | **Tạo mới** | Service tạo file Word |
+| 6 | `controller/GraduationResultController.java` | **Sửa** — Inject + thêm endpoint | API download file |
+
+---
 
 ### Bước 1: Thêm dependency Apache POI vào `pom.xml`
 
@@ -500,7 +463,11 @@ public List<String> buildFailureReasons(GraduationResult result,
 </dependency>
 ```
 
+---
+
 ### Bước 2: Tạo DTO `GraduationResultExportDTO.java`
+
+**Tạo mới file:** `src/main/java/com/example/quanlydaotao/n11/dto/GraduationResultExportDTO.java`
 
 ```java
 package com.example.quanlydaotao.n11.dto;
@@ -573,7 +540,199 @@ public class GraduationResultExportDTO {
 }
 ```
 
-### Bước 3: Tạo Service `GraduationResultWordExportService.java`
+---
+
+### Bước 3: Thêm query vào `GraduationResultRepository.java`
+
+**Sửa file:** `src/main/java/com/example/quanlydaotao/n11/repository/GraduationResultRepository.java`
+
+**Lý do:** `GraduationResultService.getResultsForExport()` (Bước 4) gọi `findByConditionIdAndIsActiveTrue()` và `findByIsActiveTrue()` — 2 method này **chưa có** trong interface hiện tại.
+
+**Vị trí chèn:** Sau method `findActiveStudentIds()`, trước dấu `}` đóng interface.
+
+```java
+// =====================================================
+// Thêm vào cuối GraduationResultRepository — dùng cho export Word
+// =====================================================
+
+/**
+ * Lấy tất cả kết quả active theo bộ điều kiện (dùng khi export theo conditionId)
+ */
+List<GraduationResult> findByConditionIdAndIsActiveTrue(UUID conditionId);
+
+/**
+ * Lấy tất cả kết quả active (dùng khi export không lọc conditionId)
+ */
+List<GraduationResult> findByIsActiveTrue();
+```
+
+---
+
+### Bước 4: Sửa `GraduationResultService.java` — Inject + thêm 2 method
+
+**Sửa file:** `src/main/java/com/example/quanlydaotao/n11/service/GraduationResultService.java`
+
+#### 4a. Thêm import (đầu file)
+
+```java
+import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
+import com.example.quanlydaotao.n11.repository.GraduationConditionRepository;
+import java.util.HashMap;
+import java.util.Map;
+```
+
+#### 4b. Sửa phần khai báo field + constructor (BẮT BUỘC)
+
+> ⚠️ Method `getResultsForExport()` gọi `conditionRepository.findById()` nhưng field này **chưa được khai báo** trong Service hiện tại. Phải inject thêm `GraduationConditionRepository`.
+
+```java
+// =====================================================
+// TRƯỚC (hiện tại chỉ có):
+// =====================================================
+private final GraduationResultRepository repository;
+
+public GraduationResultService(GraduationResultRepository repository) {
+    this.repository = repository;
+}
+
+// =====================================================
+// SAU (cần sửa thành):
+// =====================================================
+private final GraduationResultRepository repository;
+private final GraduationConditionRepository conditionRepository;  // ← THÊM
+
+public GraduationResultService(GraduationResultRepository repository,
+                                GraduationConditionRepository conditionRepository) {
+    this.repository = repository;
+    this.conditionRepository = conditionRepository;  // ← THÊM
+}
+```
+
+#### 4c. Thêm 2 method mới (cuối class, trước dấu `}`)
+
+```java
+/**
+ * Lấy danh sách kết quả xét TN phân theo Đạt/Chưa đạt,
+ * kèm lý do không đạt chi tiết
+ */
+public Map<String, List<GraduationResultExportDTO>> getResultsForExport(
+        UUID conditionId) {
+    
+    // 1. Lấy tất cả kết quả active (theo conditionId nếu có)
+    List<GraduationResult> results;
+    if (conditionId != null) {
+        results = repository.findByConditionIdAndIsActiveTrue(conditionId);
+    } else {
+        results = repository.findByIsActiveTrue();
+    }
+    
+    // 2. Lấy thông tin bộ điều kiện
+    GraduationCondition condition = null;
+    if (conditionId != null) {
+        condition = conditionRepository.findById(conditionId).orElse(null);
+    }
+    
+    // 3. Phân loại và tạo DTO
+    List<GraduationResultExportDTO> passedList = new ArrayList<>();
+    List<GraduationResultExportDTO> failedList = new ArrayList<>();
+    
+    int passStt = 1, failStt = 1;
+    
+    for (GraduationResult r : results) {
+        GraduationResultExportDTO dto = new GraduationResultExportDTO();
+        dto.setStudentCode(r.getStudentCode());
+        dto.setStudentName(r.getStudentName());
+        dto.setGpa(r.getGpa());
+        dto.setTotalCredits(r.getTotalCredits());
+        dto.setFailedCredits(r.getFailedCredits());
+        dto.setResult(r.getResult());
+        
+        if (r.getResult() != null && r.getResult() == 1) {
+            // ĐẠT
+            dto.setStt(passStt++);
+            dto.setResultText("Đạt");
+            dto.setClassificationText(
+                GraduationResultExportDTO
+                    .classificationToText(r.getClassification()));
+            passedList.add(dto);
+        } else {
+            // CHƯA ĐẠT - xác định lý do
+            dto.setStt(failStt++);
+            dto.setResultText("Chưa đạt");
+            dto.setFailureReasons(
+                buildFailureReasons(r, condition));
+            failedList.add(dto);
+        }
+    }
+    
+    Map<String, List<GraduationResultExportDTO>> result = new HashMap<>();
+    result.put("passed", passedList);
+    result.put("failed", failedList);
+    return result;
+}
+
+/**
+ * Xác định lý do cụ thể sinh viên không đạt TN
+ */
+private List<String> buildFailureReasons(GraduationResult result,
+                                          GraduationCondition condition) {
+    List<String> reasons = new ArrayList<>();
+    
+    if (condition == null) {
+        if (result.getNote() != null && !result.getNote().isEmpty()) {
+            reasons.add(result.getNote());
+        } else {
+            reasons.add("Chưa đạt yêu cầu tốt nghiệp");
+        }
+        return reasons;
+    }
+    
+    // Kiểm tra tín chỉ
+    if (result.getTotalCredits() != null && 
+        condition.getMinTotalCredits() != null &&
+        result.getTotalCredits() < condition.getMinTotalCredits()) {
+        reasons.add(String.format(
+            "Chưa đủ tín chỉ tích lũy (có: %d, yêu cầu: %d)",
+            result.getTotalCredits(), condition.getMinTotalCredits()));
+    }
+    
+    // Kiểm tra GPA
+    if (result.getGpa() != null && 
+        condition.getMinGpa() != null &&
+        result.getGpa().compareTo(condition.getMinGpa()) < 0) {
+        reasons.add(String.format(
+            "GPA chưa đạt yêu cầu (có: %s, yêu cầu: %s)",
+            result.getGpa(), condition.getMinGpa()));
+    }
+    
+    // Kiểm tra tín chỉ nợ
+    if (result.getFailedCredits() != null && 
+        condition.getMaxFailedCredits() != null &&
+        result.getFailedCredits() > condition.getMaxFailedCredits()) {
+        reasons.add(String.format(
+            "Số tín chỉ nợ vượt mức cho phép (có: %d, tối đa: %d)",
+            result.getFailedCredits(), condition.getMaxFailedCredits()));
+    }
+    
+    // Fallback
+    if (reasons.isEmpty()) {
+        if (result.getNote() != null && !result.getNote().isEmpty()) {
+            reasons.add(result.getNote());
+        } else {
+            reasons.add("Chưa đạt yêu cầu theo đánh giá tổng hợp");
+        }
+    }
+    
+    return reasons;
+}
+```
+
+---
+
+### Bước 5: Tạo Service `GraduationResultWordExportService.java`
+
+**Tạo mới file:** `src/main/java/com/example/quanlydaotao/n11/service/GraduationResultWordExportService.java`
 
 ```java
 package com.example.quanlydaotao.n11.service;
@@ -963,139 +1122,61 @@ public class GraduationResultWordExportService {
 }
 ```
 
-### Bước 4: Thêm method vào `GraduationResultService.java`
+---
+
+### Bước 6: Sửa `GraduationResultController.java` — Inject + thêm endpoint
+
+**Sửa file:** `src/main/java/com/example/quanlydaotao/n11/controller/GraduationResultController.java`
+
+#### 6a. Thêm import (đầu file)
 
 ```java
-// Thêm vào GraduationResultService.java
+import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
+import com.example.quanlydaotao.n11.service.GraduationConditionService;
+import com.example.quanlydaotao.n11.service.GraduationResultWordExportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+```
 
-/**
- * Lấy danh sách kết quả xét TN phân theo Đạt/Chưa đạt,
- * kèm lý do không đạt chi tiết
- */
-public Map<String, List<GraduationResultExportDTO>> getResultsForExport(
-        UUID conditionId) {
-    
-    // 1. Lấy tất cả kết quả active (theo conditionId nếu có)
-    List<GraduationResult> results;
-    if (conditionId != null) {
-        results = repository.findByConditionIdAndIsActiveTrue(conditionId);
-    } else {
-        results = repository.findByIsActiveTrue();
-    }
-    
-    // 2. Lấy thông tin bộ điều kiện
-    GraduationCondition condition = null;
-    if (conditionId != null) {
-        condition = conditionRepository.findById(conditionId).orElse(null);
-    }
-    
-    // 3. Phân loại và tạo DTO
-    List<GraduationResultExportDTO> passedList = new ArrayList<>();
-    List<GraduationResultExportDTO> failedList = new ArrayList<>();
-    
-    int passStt = 1, failStt = 1;
-    
-    for (GraduationResult r : results) {
-        GraduationResultExportDTO dto = new GraduationResultExportDTO();
-        dto.setStudentCode(r.getStudentCode());
-        dto.setStudentName(r.getStudentName());
-        dto.setGpa(r.getGpa());
-        dto.setTotalCredits(r.getTotalCredits());
-        dto.setFailedCredits(r.getFailedCredits());
-        dto.setResult(r.getResult());
-        
-        if (r.getResult() != null && r.getResult() == 1) {
-            // ĐẠT
-            dto.setStt(passStt++);
-            dto.setResultText("Đạt");
-            dto.setClassificationText(
-                GraduationResultExportDTO
-                    .classificationToText(r.getClassification()));
-            passedList.add(dto);
-        } else {
-            // CHƯA ĐẠT - xác định lý do
-            dto.setStt(failStt++);
-            dto.setResultText("Chưa đạt");
-            dto.setFailureReasons(
-                buildFailureReasons(r, condition));
-            failedList.add(dto);
-        }
-    }
-    
-    Map<String, List<GraduationResultExportDTO>> result = new HashMap<>();
-    result.put("passed", passedList);
-    result.put("failed", failedList);
-    return result;
+#### 6b. Sửa phần khai báo field + constructor (BẮT BUỘC)
+
+> ⚠️ Endpoint `GET /export/word` gọi `wordExportService.generateReport()` và `conditionService.findById()` nhưng cả 2 **chưa được inject** trong Controller hiện tại.
+
+```java
+// =====================================================
+// TRƯỚC (hiện tại chỉ có):
+// =====================================================
+private final GraduationResultService service;
+
+public GraduationResultController(GraduationResultService service) {
+    this.service = service;
 }
 
-/**
- * Xác định lý do cụ thể sinh viên không đạt TN
- */
-private List<String> buildFailureReasons(GraduationResult result,
-                                          GraduationCondition condition) {
-    List<String> reasons = new ArrayList<>();
-    
-    if (condition == null) {
-        if (result.getNote() != null && !result.getNote().isEmpty()) {
-            reasons.add(result.getNote());
-        } else {
-            reasons.add("Chưa đạt yêu cầu tốt nghiệp");
-        }
-        return reasons;
-    }
-    
-    // Kiểm tra tín chỉ
-    if (result.getTotalCredits() != null && 
-        condition.getMinTotalCredits() != null &&
-        result.getTotalCredits() < condition.getMinTotalCredits()) {
-        reasons.add(String.format(
-            "Chưa đủ tín chỉ tích lũy (có: %d, yêu cầu: %d)",
-            result.getTotalCredits(), condition.getMinTotalCredits()));
-    }
-    
-    // Kiểm tra GPA
-    if (result.getGpa() != null && 
-        condition.getMinGpa() != null &&
-        result.getGpa().compareTo(condition.getMinGpa()) < 0) {
-        reasons.add(String.format(
-            "GPA chưa đạt yêu cầu (có: %s, yêu cầu: %s)",
-            result.getGpa(), condition.getMinGpa()));
-    }
-    
-    // Kiểm tra tín chỉ nợ
-    if (result.getFailedCredits() != null && 
-        condition.getMaxFailedCredits() != null &&
-        result.getFailedCredits() > condition.getMaxFailedCredits()) {
-        reasons.add(String.format(
-            "Số tín chỉ nợ vượt mức cho phép (có: %d, tối đa: %d)",
-            result.getFailedCredits(), condition.getMaxFailedCredits()));
-    }
-    
-    // Fallback
-    if (reasons.isEmpty()) {
-        if (result.getNote() != null && !result.getNote().isEmpty()) {
-            reasons.add(result.getNote());
-        } else {
-            reasons.add("Chưa đạt yêu cầu theo đánh giá tổng hợp");
-        }
-    }
-    
-    return reasons;
+// =====================================================
+// SAU (cần sửa thành):
+// =====================================================
+private final GraduationResultService service;
+private final GraduationResultWordExportService wordExportService;  // ← THÊM
+private final GraduationConditionService conditionService;          // ← THÊM
+
+public GraduationResultController(GraduationResultService service,
+                                   GraduationResultWordExportService wordExportService,
+                                   GraduationConditionService conditionService) {
+    this.service = service;
+    this.wordExportService = wordExportService;    // ← THÊM
+    this.conditionService = conditionService;      // ← THÊM
 }
 ```
 
-### Bước 5: Thêm endpoint vào `GraduationResultController.java`
+#### 6c. Thêm endpoint mới
 
 ```java
-// Thêm import
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-
-// Thêm inject
-@Autowired
-private GraduationResultWordExportService wordExportService;
-
-// Thêm endpoint
 @GetMapping("/export/word")
 public ResponseEntity<byte[]> exportToWord(
         @RequestParam(required = false) UUID conditionId) {
@@ -1135,16 +1216,6 @@ public ResponseEntity<byte[]> exportToWord(
 }
 ```
 
-### Bước 6: Thêm query vào `GraduationResultRepository.java`
-
-```java
-// Thêm vào GraduationResultRepository.java
-
-List<GraduationResult> findByConditionIdAndIsActiveTrue(UUID conditionId);
-
-List<GraduationResult> findByIsActiveTrue();
-```
-
 ---
 
 ## 8. Kế hoạch thực hiện
@@ -1155,10 +1226,10 @@ List<GraduationResult> findByIsActiveTrue();
 |------|-----------|-----------|---------|
 | 1 | Thêm dependency POI vào `pom.xml` | 5 phút | Cao |
 | 2 | Tạo `GraduationResultExportDTO.java` | 15 phút | Cao |
-| 3 | Tạo `GraduationResultWordExportService.java` | 60 phút | Cao |
+| 3 | Thêm queries vào Repository | 5 phút | Cao |
 | 4 | Thêm methods export vào `GraduationResultService` | 30 phút | Cao |
-| 5 | Thêm endpoint vào Controller | 15 phút | Cao |
-| 6 | Thêm queries vào Repository | 5 phút | Cao |
+| 5 | Tạo `GraduationResultWordExportService.java` | 60 phút | Cao |
+| 6 | Thêm endpoint vào Controller | 15 phút | Cao |
 | 7 | Test với Swagger/Postman | 30 phút | Cao |
 | 8 | Tối ưu format Word (căn cột, font...) | 30 phút | Trung bình |
 | **Tổng** | | **~3 giờ** | |
@@ -1187,6 +1258,56 @@ List<GraduationResult> findByIsActiveTrue();
 > ⚠️ **Entity GraduationResult dùng `@Formula` cho studentName/studentCode**
 > - Khi load từ DB, Hibernate tự chạy subselect SQL
 > - Khi tạo export, cần đảm bảo data đã được load đầy đủ (không bị lazy)
+
+---
+
+## 9. Hướng dẫn kiểm thử
+
+### 9.1 Test nhanh sau khi code xong
+
+```bash
+# Test export toàn bộ (không lọc condition)
+GET http://localhost:8080/api/graduation-results/export/word
+
+# Test export theo bộ điều kiện K24 (active)
+GET http://localhost:8080/api/graduation-results/export/word?conditionId=276a95ec-a78d-4033-886c-6c3b0cabd8dd
+```
+
+Hoặc test qua Swagger UI: `http://localhost:8080/swagger-ui.html` → tìm endpoint `GET /api/graduation-results/export/word`
+
+### 9.2 Kết quả mong đợi
+
+- File `.docx` tải về tên dạng `BaoCao_XetTotNghiep_01112026.docx`
+- **Phần I:** 667 sinh viên ĐẠT (Xuất sắc: 57, Giỏi: 155, Khá: 349, TB: 106)
+- **Phần II:** 133 sinh viên CHƯA ĐẠT, mỗi SV có 2 lý do:
+  - *"GPA chưa đạt yêu cầu (có: X.XX, yêu cầu: 2.20)"*
+  - *"Chưa đủ tín chỉ tích lũy (có: 115, yêu cầu: 125)"*
+- Phần thống kê tổng hợp cuối báo cáo
+- Phần chữ ký (Người lập + Trưởng Khoa)
+
+### 9.3 Troubleshoot — Lỗi thường gặp
+
+| Lỗi | Nguyên nhân | Giải pháp |
+|-----|-------------|-----------|
+| `cannot find symbol findByConditionIdAndIsActiveTrue` | Chưa thêm method vào Repository | Xem Bước 3 |
+| `cannot find symbol conditionRepository` | Chưa inject `GraduationConditionRepository` vào Service | Xem Bước 4b |
+| `cannot find symbol wordExportService` | Chưa inject `GraduationResultWordExportService` vào Controller | Xem Bước 6b |
+| `cannot find symbol conditionService` | Chưa inject `GraduationConditionService` vào Controller | Xem Bước 6b |
+| `NoClassDefFoundError: org/apache/poi/...` | Chưa thêm dependency POI hoặc chưa reload Maven | Xem Bước 1, chạy `mvn clean install` |
+| File Word mở bị lỗi font tiếng Việt | Font `Times New Roman` không có trên server | Cài font hoặc đổi sang font khác có hỗ trợ Unicode |
+| `studentName` / `studentCode` = null | `@Formula` không load khi dùng method query | Thêm `@EntityGraph` hoặc dùng native query với JOIN |
+| File tải về 0 byte | `IOException` khi tạo Word | Kiểm tra log server, xem stack trace chi tiết |
+
+### 9.4 Checklist trước khi commit
+
+- [ ] Build thành công: `mvn clean compile` không lỗi
+- [ ] Swagger UI hiển thị endpoint mới `GET /export/word`
+- [ ] Test export không có conditionId → tải file OK
+- [ ] Test export có conditionId K24 → tải file OK
+- [ ] Mở file Word, kiểm tra tiếng Việt hiển thị đúng
+- [ ] Phần I có 667 SV đạt, phân loại đúng
+- [ ] Phần II có 133 SV không đạt, mỗi SV có lý do cụ thể
+- [ ] Thống kê tổng hợp khớp với dữ liệu DB
 
 ---
 
@@ -1257,170 +1378,5 @@ List<GraduationResult> findByIsActiveTrue();
 
 ---
 
-## Phụ lục B: Bổ sung thiếu sót — Checklist kỹ thuật trước khi code
-
-> ⚠️ **Đây là 3 điểm BẮT BUỘC phải sửa. Nếu bỏ qua, dự án sẽ lỗi compile.**
-
----
-
-### B.1 — Repository: Thêm 2 method còn thiếu
-
-**File:** [`GraduationResultRepository.java`](../src/main/java/com/example/quanlydaotao/n11/repository/GraduationResultRepository.java)
-
-**Vấn đề:** `GraduationResultService.getResultsForExport()` gọi `findByConditionIdAndIsActiveTrue()` và `findByIsActiveTrue()` nhưng 2 method này **chưa có** trong interface.
-
-**Cần thêm vào cuối interface:**
-
-```java
-// =====================================================
-// Thêm vào cuối GraduationResultRepository — dùng cho export Word
-// =====================================================
-
-/**
- * Lấy tất cả kết quả active theo bộ điều kiện (dùng khi export theo conditionId)
- */
-List<GraduationResult> findByConditionIdAndIsActiveTrue(UUID conditionId);
-
-/**
- * Lấy tất cả kết quả active (dùng khi export không lọc conditionId)
- */
-List<GraduationResult> findByIsActiveTrue();
-```
-
-**Vị trí chèn** — sau dòng `findActiveStudentIds()`, trước dấu `}` đóng interface.
-
----
-
-### B.2 — Service: Inject thêm `GraduationConditionRepository`
-
-**File:** [`GraduationResultService.java`](../src/main/java/com/example/quanlydaotao/n11/service/GraduationResultService.java)
-
-**Vấn đề:** Method `getResultsForExport()` gọi `conditionRepository.findById()` nhưng field này **chưa được khai báo hay inject**.
-
-**Sửa phần khai báo field + constructor:**
-
-```java
-// =====================================================
-// TRƯỚC (hiện tại chỉ có):
-// =====================================================
-private final GraduationResultRepository repository;
-
-public GraduationResultService(GraduationResultRepository repository) {
-    this.repository = repository;
-}
-
-// =====================================================
-// SAU (cần sửa thành):
-// =====================================================
-import com.example.quanlydaotao.n11.repository.GraduationConditionRepository; // thêm import
-
-private final GraduationResultRepository repository;
-private final GraduationConditionRepository conditionRepository;  // thêm field
-
-public GraduationResultService(GraduationResultRepository repository,
-                                GraduationConditionRepository conditionRepository) {
-    this.repository = repository;
-    this.conditionRepository = conditionRepository;  // thêm dòng này
-}
-```
-
-**Import bổ sung cần thêm vào đầu file Service:**
-
-```java
-import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
-import com.example.quanlydaotao.n11.entity.GraduationCondition;
-import com.example.quanlydaotao.n11.repository.GraduationConditionRepository;
-import java.util.HashMap;
-import java.util.Map;
-```
-
----
-
-### B.3 — Controller: Inject thêm 2 service mới
-
-**File:** [`GraduationResultController.java`](../src/main/java/com/example/quanlydaotao/n11/controller/GraduationResultController.java)
-
-**Vấn đề:** Endpoint `GET /export/word` gọi `conditionService.findById()` và `wordExportService.generateReport()` nhưng cả 2 **chưa được inject**.
-
-**Sửa phần khai báo field + constructor:**
-
-```java
-// =====================================================
-// TRƯỚC (hiện tại chỉ có):
-// =====================================================
-private final GraduationResultService service;
-
-public GraduationResultController(GraduationResultService service) {
-    this.service = service;
-}
-
-// =====================================================
-// SAU (cần sửa thành):
-// =====================================================
-private final GraduationResultService service;
-private final GraduationResultWordExportService wordExportService;  // thêm
-private final GraduationConditionService conditionService;          // thêm
-
-public GraduationResultController(GraduationResultService service,
-                                   GraduationResultWordExportService wordExportService,
-                                   GraduationConditionService conditionService) {
-    this.service = service;
-    this.wordExportService = wordExportService;    // thêm
-    this.conditionService = conditionService;      // thêm
-}
-```
-
-**Import bổ sung cần thêm vào đầu file Controller:**
-
-```java
-import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
-import com.example.quanlydaotao.n11.entity.GraduationCondition;
-import com.example.quanlydaotao.n11.service.GraduationConditionService;
-import com.example.quanlydaotao.n11.service.GraduationResultWordExportService;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-```
-
----
-
-### B.4 — Thứ tự tạo/sửa file khi thực hiện code
-
-| Thứ tự | File | Thao tác | Ghi chú |
-|--------|------|----------|---------|
-| 1 | `pom.xml` | **Sửa** — Thêm dependency POI | Bắt buộc trước tiên |
-| 2 | `dto/GraduationResultExportDTO.java` | **Tạo mới** | Copy từ Bước 2, Mục 7 |
-| 3 | `repository/GraduationResultRepository.java` | **Sửa** — Thêm 2 method | Xem Phụ lục B.1 |
-| 4 | `service/GraduationResultService.java` | **Sửa** — Inject + thêm 2 method | Xem Phụ lục B.2 |
-| 5 | `service/GraduationResultWordExportService.java` | **Tạo mới** | Copy từ Bước 3, Mục 7 |
-| 6 | `controller/GraduationResultController.java` | **Sửa** — Inject + thêm endpoint | Xem Phụ lục B.3 |
-| 7 | Test qua Swagger UI | `http://localhost:8080/swagger-ui.html` | `GET /api/graduation-results/export/word` |
-
----
-
-### B.5 — Test nhanh sau khi code xong
-
-```bash
-# Test export toàn bộ (không lọc condition)
-GET http://localhost:8080/api/graduation-results/export/word
-
-# Test export theo bộ điều kiện K24 (active)
-GET http://localhost:8080/api/graduation-results/export/word?conditionId=276a95ec-a78d-4033-886c-6c3b0cabd8dd
-```
-
-**Kết quả mong đợi:**
-- File `.docx` tải về tên dạng `BaoCao_XetTotNghiep_01112026.docx`
-- Phần I: 667 sinh viên ĐẠT (Xuất sắc: 57, Giỏi: 155, Khá: 349, TB: 106)
-- Phần II: 133 sinh viên CHƯA ĐẠT, mỗi SV có 2 lý do:
-  - *"GPA chưa đạt yêu cầu (có: X.XX, yêu cầu: 2.20)"*
-  - *"Chưa đủ tín chỉ tích lũy (có: 115, yêu cầu: 125)"*
-
----
-
 > **Tài liệu này là kết quả nghiên cứu của Nhóm 11 trên nhánh `nhom11-test`.**
 > **Mọi thay đổi chỉ commit local, KHÔNG push lên GitHub.**
-
