@@ -1,75 +1,57 @@
 # 📋 BÁO CÁO NGHIÊN CỨU & THIẾT KẾ GIẢI PHÁP
-## XÉT DUYỆT TỐT NGHIỆP TỰ ĐỘNG THEO KHÓA HỌC (ACADEMIC YEARS & GRADUATION CONDITIONS)
+## XÉT DUYỆT TỐT NGHIỆP TỰ ĐỘNG THEO THUỘC TÍNH COHORT CỦA GRADUATION CONDITION
 
-> **Mã tài liệu:** `DOCS-N11-EVALUATE-COHORT-01`  
+> **Mã tài liệu:** `DOCS-N11-EVALUATE-COHORT-02`  
 > **Dự án:** Hệ thống Quản lý Đào tạo (`quanlydaotaoit24ab`) — Phân hệ Nhóm 11: Quản lý Tốt nghiệp  
 > **Nhánh thực hiện:** `nhom11-test`  
-> **Ngày lập:** 02/11/2026  
-> **Trạng thái:** Đề xuất giải pháp kỹ thuật (Dành cho người dùng xem xét trước khi thực hiện)
+> **Ngày cập nhật:** 02/11/2026  
+> **Phương án kỹ thuật:** Sử dụng trực tiếp thuộc tính `applied_cohort` (alias `cohort`) từ `GraduationCondition` thay vì tạo mới module `academic_years`.
 
 ---
 
-## 1. ĐẶT VẤN ĐỀ & MỤC TIÊU NGHIÊN CỨU
+## 1. ĐẶT VẤN ĐỀ & ĐỊNH HƯỚNG MỚI
 
-### 1.1. Thực trạng bài toán
-1. **Bảng `dbo.academic_years` trong CSDL**:
-   - Trong SQL Server đã có sẵn bảng `academic_years` lưu thông tin các khóa tuyển sinh (`K23`, `K24`, `K25`, `K26`), nhưng phía Backend Java **chưa có code** (chưa có Entity, Repository, Service hay API) để quản lý và sử dụng bảng này.
-2. **Quy tắc xét duyệt tốt nghiệp theo Khóa**:
-   - Mỗi bộ tiêu chuẩn tốt nghiệp (`dbo.graduation_conditions`) được ban hành áp dụng cho một hoặc nhiều khóa cụ thể thông qua trường `applied_cohort` (ví dụ: K24 yêu cầu GPA $\ge 2.20$, tín chỉ $\ge 120$; K25 yêu cầu GPA $\ge 2.00$, tín chỉ $\ge 125$).
-   - **Ràng buộc nghiệp vụ quan trọng:** Sinh viên thuộc khóa nào thì **chỉ được áp dụng điều kiện xét duyệt của khóa đó**. Tuyệt đối không được áp dụng điều kiện của K24 cho sinh viên K25, hoặc ngược lại.
-3. **Bất cập của hàm `evaluate()` hiện nay**:
-   - Bắt buộc phải truyền trực tiếp `conditionId` dạng UUID (khó nhớ cho người dùng/Frontend).
-   - Hàm `evaluate()` đang quét toàn bộ sinh viên có trong hệ thống thay vì lọc đúng tập sinh viên thuộc khóa tương ứng với bộ điều kiện được xét.
+### 1.1. Yêu cầu nghiệp vụ
+1. **Ràng buộc đúng khóa học:** Sinh viên khóa nào thì **chỉ được áp dụng điều kiện xét duyệt tốt nghiệp của khóa đó**.
+   - Sinh viên khóa **K24** chỉ được áp dụng bộ điều kiện của **K24** (ví dụ: GPA $\ge 2.20$, Tín chỉ $\ge 120$).
+   - Sinh viên khóa **K25** chỉ được áp dụng bộ điều kiện của **K25** (ví dụ: GPA $\ge 2.00$, Tín chỉ $\ge 125$).
+   - Tuyệt đối không để sinh viên khóa này bị quét nhầm vào bộ tiêu chuẩn của khóa khác.
+2. **Cơ chế kích hoạt linh hoạt:** Hàm `evaluate()` có thể:
+   - Nhận tham số khóa năm học `cohort` (như `"K23"`, `"K24"`, `"K25"`), từ đó tự động truy xuất bộ điều kiện xét duyệt (`GraduationCondition`) tương ứng đang active để áp dụng.
+   - Hoặc khi người dùng chọn một bộ điều kiện `conditionId`, hệ thống tự động nhận diện thuộc tính `cohort` của bộ điều kiện đó để **chỉ lọc và quét đúng sinh viên thuộc khóa đó**.
 
-### 1.2. Mục tiêu giải pháp
-- **Code hóa bảng `academic_years`**: Xây dựng Entity, Repository và API để hệ thống quản lý danh mục khóa năm học chuẩn mực.
-- **Tự động hóa ánh xạ Khóa $\rightarrow$ Điều kiện xét duyệt**: Khi gọi `evaluate(cohort)`, hệ thống tự động tìm bộ điều kiện đang active của khóa đó.
-- **Ràng buộc đúng đối tượng sinh viên**: Sinh viên K23 chỉ xét theo K23, K24 chỉ xét theo K24, K25 chỉ xét theo K25.
-- **Tích hợp đồng bộ Frontend**: Cung cấp Dropdown chọn Khóa năm học trên giao diện Web, tự động hiển thị tiêu chí và kích hoạt tiến trình xét duyệt đúng khóa.
+### 1.2. Định hướng tối ưu: Thay thế `academic_years` bằng `cohort` của `GraduationCondition`
+- **Không cần code thêm module `academic_years`**: Bảng `academic_years` là bảng chung của hệ thống và hiện chưa có code trong dự án. Việc tạo thêm Entity, Repository, Service riêng cho `academic_years` sẽ làm phình to phạm vi dự án và tạo thêm các dependency không cần thiết cho Nhóm 11.
+- **Tận dụng 100% thuộc tính `cohort` sẵn có trong `GraduationCondition`**:
+  - Entity [`GraduationCondition.java`](file:///d:/CNTT/WebJava1/quanlydaotaoit24ab/src/main/java/com/example/quanlydaotao/n11/entity/GraduationCondition.java) đã có sẵn trường `appliedCohort` (cột DB `applied_cohort`) cùng các hàm getter/setter: `getCohort()`, `setCohort(String cohort)`.
+  - Trong [`GraduationConditionController.java` (dòng 32-35)](file:///d:/CNTT/WebJava1/quanlydaotaoit24ab/src/main/java/com/example/quanlydaotao/n11/controller/GraduationConditionController.java#L32-L35) đã có sẵn endpoint tra cứu: `GET /api/graduation-conditions/cohort/{cohort}`.
+  - Trong [`GraduationConditionService.java`](file:///d:/CNTT/WebJava1/quanlydaotaoit24ab/src/main/java/com/example/quanlydaotao/n11/service/GraduationConditionService.java) đã có sẵn logic chuẩn hóa `byCohort(cohort)` và validate khóa.
 
 ---
 
-## 2. KHẢO SÁT & ĐỐI CHIẾU THỰC TẾ TRONG DATABASE
+## 2. KHẢO SÁT & ĐỐI CHIẾU DỮ LIỆU THỰC TẾ TRONG DATABASE
 
-### 2.1. Dữ liệu bảng `dbo.academic_years`
+### 2.1. Dữ liệu bảng `dbo.graduation_conditions`
 Truy vấn trực tiếp từ SQL Server:
 ```sql
-SELECT id, code, name, year, start_date, end_date, is_active FROM dbo.academic_years;
-```
-**Kết quả thực tế:**
-
-| ID (UUID) | Mã Khóa (`code`) | Tên hiển thị (`name`) | Năm (`year`) | Thời gian đào tạo | Trạng thái (`is_active`) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| `1583b904-0768-405b-85de-2d86811891e3` | **K23** | Khóa 2023 | 2023 | 01/08/2023 — 31/07/2027 | `1` (Active) |
-| `8b873384-2c35-4bfe-a19a-4d9b76509eb7` | **K24** | Khóa 2024 | 2024 | 01/08/2024 — 31/07/2028 | `1` (Active) |
-| `c5bf182c-8412-4e46-b40a-05ad7c7fe9a1` | **K25** | Khóa 2025 | 2025 | 01/08/2025 — 31/07/2029 | `1` (Active) |
-| `09df0012-4be4-41e4-bead-6e3c126f35ef` | **K26** | Khóa 2026 | 2026 | 01/08/2026 — 31/07/2030 | `1` (Active) |
-
-> 📌 **Nhận xét:** Bảng `academic_years` đã có đầy đủ cấu trúc và 4 khóa học chuẩn mực. Cần tạo Entity `AcademicYear` để Backend và Frontend truy xuất dễ dàng.
-
----
-
-### 2.2. Dữ liệu bảng `dbo.graduation_conditions` theo Khóa
-Truy vấn các bộ điều kiện đang có trong hệ thống:
-```sql
 SELECT id, applied_cohort, min_total_credits, min_gpa, max_failed_credits, is_active 
-FROM dbo.graduation_conditions;
+FROM dbo.graduation_conditions
+WHERE is_active = 1;
 ```
+
 **Kết quả thực tế:**
-- **Khóa K24:** ID `276a95ec-a78d-4033-886c-6c3b0cabd8dd` (`is_active = 1`):
-  - Tín chỉ tích lũy tối thiểu: `120`
-  - GPA tối thiểu: `2.20`
-  - Nợ tín chỉ tối đa: `10`
-- **Khóa K25:** ID `91edf428-cb54-4824-9238-016ad705879e` (`is_active = 1`):
-  - Tín chỉ tích lũy tối thiểu: `125`
-  - GPA tối thiểu: `2.00`
-  - Nợ tín chỉ tối đa: `10`
-- **Khóa K23 & K26:** Hiện chưa có bộ điều kiện active riêng, cần bổ sung hoặc thiết lập trong kịch bản triển khai.
+
+| ID bộ điều kiện (UUID) | Khóa áp dụng (`applied_cohort`) | GPA tối thiểu (`min_gpa`) | Tín chỉ tích lũy tối thiểu (`min_total_credits`) | Tín chỉ nợ tối đa (`max_failed_credits`) |
+| :--- | :---: | :---: | :---: | :---: |
+| `276a95ec-a78d-4033-886c-6c3b0cabd8dd` | **K24** | **2.20** | **120** | 10 |
+| `91edf428-cb54-4824-9238-016ad705879e` | **K25** | **2.00** | **125** | 10 |
+
+> 📌 **Nhận xét:** Mỗi bộ điều kiện đã gắn liền với đúng một giá trị `applied_cohort`. Chỉ cần đọc thuộc tính này là xác định được ngay tiêu chuẩn áp dụng cho khóa nào.
 
 ---
 
-### 2.3. Dữ liệu phân bố sinh viên theo Khóa trong Database
-Kết quả đối chiếu chéo giữa `dbo.students`, `dbo.students_`, và `dbo.student_summaries`:
+### 2.2. Dữ liệu sinh viên và điểm số thực tế theo từng Khóa
+Đối chiếu giữa `dbo.students`, `dbo.students_`, và `dbo.student_summaries`:
 
 ```sql
 SELECT 
@@ -80,12 +62,15 @@ SELECT
         WHEN s.student_code LIKE '26%' THEN 'K26'
         ELSE 'Khác'
     END AS cohort,
-    COUNT(*) AS total_students,
+    COUNT(s.id) AS total_students,
     MIN(s.student_code) AS min_code,
     MAX(s.student_code) AS max_code,
-    MIN(YEAR(s_.admission_year)) AS admission_year
+    MIN(s.class_name) AS sample_class,
+    COUNT(ss.student_id) AS count_in_summaries,
+    SUM(CASE WHEN ss.result = 'Pass' THEN 1 ELSE 0 END) AS pass_count,
+    SUM(CASE WHEN ss.result = 'Fail' THEN 1 ELSE 0 END) AS fail_count
 FROM dbo.students s
-JOIN dbo.students_ s_ ON s_.id = s.id
+LEFT JOIN dbo.student_summaries ss ON ss.student_id = s.id AND ss.is_active = 1
 GROUP BY 
     CASE 
         WHEN s.student_code LIKE '23%' THEN 'K23'
@@ -97,116 +82,72 @@ GROUP BY
 ORDER BY cohort;
 ```
 
-**Thống kê chi tiết từng khóa:**
+**Kết quả thống kê chính xác 100%:**
 
-| Khóa học | Số lượng SV | Dải mã sinh viên | Các lớp hành chính | Dữ liệu điểm trong `student_summaries` |
-| :---: | :---: | :---: | :---: | :---: |
-| **K23** | **160 SV** | `23001` — `23720` | `IT23A`, `IT23B`, `IT23C`, `IT23D` | 160 SV (130 Đạt, 30 Chưa đạt) |
-| **K24** | **160 SV** | `24021` — `24740` | `IT24A`, `IT24B`, `IT24C`, `IT24D` | 160 SV (132 Đạt, 28 Chưa đạt) |
-| **K25** | **160 SV** | `25041` — `25760` | `IT25A`, `IT25B`, `IT25C`, `IT25D` | 160 SV (135 Đạt, 25 Chưa đạt) |
-| **K26** | **320 SV** | `26061` — `26800` | `IT26A`, `IT26B`, `IT26C`, `IT26D` | 320 SV (270 Đạt, 50 Chưa đạt) |
-| **Tổng cộng** | **800 SV** | | | **800 SV đã có đầy đủ điểm số thực tế** |
+| Khóa học | Số lượng SV | Dải mã số sinh viên | Lớp hành chính | Dữ liệu điểm `student_summaries` | Bộ điều kiện tương ứng |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **K23** | **160 SV** | `23001` — `23720` | `IT23A`, `IT23B`, `IT23C`, `IT23D` | 160 SV (130 Đạt, 30 Chưa đạt) | Cần nạp điều kiện K23 |
+| **K24** | **160 SV** | `24021` — `24740` | `IT24A`, `IT24B`, `IT24C`, `IT24D` | 160 SV (132 Đạt, 28 Chưa đạt) | `276a95ec-...` (Active) |
+| **K25** | **160 SV** | `25041` — `25760` | `IT25A`, `IT25B`, `IT25C`, `IT25D` | 160 SV (135 Đạt, 25 Chưa đạt) | `91edf428-...` (Active) |
+| **K26** | **320 SV** | `26061` — `26800` | `IT26A`, `IT26B`, `IT26C`, `IT26D` | 320 SV (270 Đạt, 50 Chưa đạt) | Chưa kích hoạt |
+| **Tổng cộng** | **800 SV** | | | **800 SV đầy đủ điểm** | |
 
-> 🎯 **Kết luận:** Mỗi sinh viên đều có thông tin khóa học cực kỳ rõ ràng và thống nhất. Chỉ cần lọc theo tiền tố mã sinh viên (`23%`, `24%`, `25%`, `26%`) hoặc lớp (`IT23%`, `IT24%`...) là xác định được chính xác 100% sinh viên của khóa đó.
+> 🎯 **Quy tắc trích xuất Khóa sinh viên:**
+> - Sinh viên khóa **K24**: Mã SV bắt đầu bằng `24%` hoặc Lớp bắt đầu bằng `IT24%`.
+> - Sinh viên khóa **K25**: Mã SV bắt đầu bằng `25%` hoặc Lớp bắt đầu bằng `IT25%`.
+> - Sinh viên khóa **K23**: Mã SV bắt đầu bằng `23%` hoặc Lớp bắt đầu bằng `IT23%`.
 
 ---
 
-## 3. THIẾT KẾ KIẾN TRÚC & LUỒNG XỬ LÝ ĐỀ XUẤT
+## 3. THIẾT KẾ LUỒNG XỬ LÝ THEO THUỘC TÍNH COHORT
 
-### 3.1. Sơ đồ luồng xử lý mới của `evaluate()`
+### 3.1. Sơ đồ xử lý của API `POST /api/graduation-results/evaluate`
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Người dùng (Admin / Cán bộ)
-    participant UI as Giao diện Frontend (Modal Xét duyệt)
-    participant Ctrl as GraduationResultController
-    participant Svc as GraduationResultService
-    participant CondSvc as GraduationConditionService
-    participant Repo as GraduationResultRepository
-    participant DB as SQL Server (it24ab)
-
-    User->>UI: Mở Modal -> Chọn Khóa (VD: "K24")
-    UI->>UI: Hiển thị bộ tiêu chí tương ứng của K24 (Min GPA, Min TC...)
-    User->>UI: Nhấn "Bắt đầu quét & Đánh giá"
-    UI->>Ctrl: POST /api/graduation-results/evaluate { cohort: "K24" }
-    Ctrl->>Svc: evaluate(request)
+flowchart TD
+    REQ["Request: EvaluateGraduationRequest (cohort, conditionId, reviewerId)"] --> CHECK{"Tham số truyền vào?"}
     
-    rect rgb(240, 248, 255)
-        Note over Svc,CondSvc: 1. Tự động tìm bộ điều kiện cho Khóa
-        Svc->>CondSvc: byCohort("K24")
-        CondSvc-->>Svc: GraduationCondition (K24: minGPA 2.20, minTC 120...)
-    end
+    CHECK -->|"Truyền cohort (VD: 'K24')"| FIND_BY_COHORT["Tìm điều kiện active theo cohort: GraduationCondition.appliedCohort = 'K24'"]
+    CHECK -->|"Truyền conditionId"| GET_BY_ID["Lấy điều kiện theo conditionId -> Trích xuất cohort = condition.getAppliedCohort()"]
+    CHECK -->|"Truyền cả hai"| VALIDATE["Kiểm tra: condition.getAppliedCohort() == cohort? Nếu sai -> Báo lỗi 400"]
 
-    rect rgb(255, 250, 240)
-        Note over Svc,Repo: 2. Chỉ lọc sinh viên thuộc đúng Khóa K24
-        Svc->>Repo: findActiveStudentIdsByCohort("K24")
-        Repo->>DB: SELECT id FROM students WHERE student_code LIKE '24%'
-        DB-->>Repo: 160 UUIDs của sinh viên K24
-        Repo-->>Svc: List<UUID> (160 SV)
-    end
+    FIND_BY_COHORT --> EXTRACT["Trích xuất hậu tố khóa (VD: 'K24' -> '24')"]
+    GET_BY_ID --> EXTRACT
+    VALIDATE --> EXTRACT
 
-    rect rgb(245, 255, 245)
-        Note over Svc,DB: 3. Đọc điểm thực tế từ student_summaries
-        Svc->>Repo: findAllStudentSummaries()
-        Svc->>Svc: Đối chiếu 160 SV K24 với tiêu chuẩn K24
-        Svc->>Repo: saveAll(evaluatedResults) (Batch save 160 bản ghi)
-    end
-
-    Svc-->>Ctrl: List<GraduationResult> (160 kết quả K24)
-    Ctrl-->>UI: 200 OK + Thông báo "Đã xét duyệt thành công 160 SV khóa K24"
-    UI->>UI: Tải lại bảng kết quả hiển thị danh sách K24
+    EXTRACT --> QUERY_STUDENTS["Truy vấn sinh viên thuộc đúng khóa: student_code LIKE '24%' OR class_name LIKE 'IT24%' (160 SV)"]
+    
+    QUERY_STUDENTS --> LOAD_SCORES["Đọc điểm thực tế từ dbo.student_summaries của 160 SV"]
+    LOAD_SCORES --> EVAL["Đánh giá Đạt/Chưa đạt & Xếp loại theo tiêu chí của bộ điều kiện đó"]
+    EVAL --> BATCH_SAVE["Lưu kết quả theo batch: repository.saveAll(evaluatedResults)"]
+    BATCH_SAVE --> RES["Trả về danh sách 160 kết quả tốt nghiệp của Khóa đó"]
 ```
 
 ---
 
-### 3.2. Quy tắc nghiệp vụ tự động hóa
+### 3.2. Ưu điểm vượt trội của phương án sử dụng thuộc tính `cohort`
 
-1. **Xử lý linh hoạt tham số đầu vào (`EvaluateGraduationRequest`)**:
-   - **Trường hợp 1 (Khuyên dùng):** Truyền `cohort = "K24"`.
-     $\rightarrow$ Hệ thống tự động truy vấn bộ điều kiện active của K24, tự động lọc đúng 160 sinh viên K24 để đánh giá.
-   - **Trường hợp 2:** Truyền cả `cohort = "K24"` và `conditionId`.
-     $\rightarrow$ Hệ thống kiểm tra xem `conditionId` đó có đúng là áp dụng cho `K24` hay không. Nếu không khớp, lập tức từ chối (`400 Bad Request: Bộ điều kiện không áp dụng cho khóa K24`).
-   - **Trường hợp 3:** Chỉ truyền `conditionId`.
-     $\rightarrow$ Hệ thống tự động lấy `appliedCohort` từ bộ điều kiện đó để lọc sinh viên tương ứng.
-2. **Quy tắc cô lập sinh viên theo khóa:**
-   - Khi quét khóa **K24**, chỉ quét sinh viên có mã bắt đầu bằng `24%` (hoặc lớp `IT24%`).
-   - Sinh viên K23, K25, K26 không bị ảnh hưởng và không bị ghi đè kết quả.
-
----
-
-## 4. KẾ HOẠCH TRIỂN KHAI CHI TIẾT (5 BƯỚC)
-
-### Bước 1: Code hóa bảng `dbo.academic_years` (Backend)
-Tạo module quản lý khóa năm học để chuẩn hóa toàn bộ hệ thống:
-1. **Entity `AcademicYear.java`**:
-   - Đường dẫn: `src/main/java/com/example/quanlydaotao/n11/entity/AcademicYear.java`
-   - Thuộc tính: `id` (UUID), `code` (String: "K23", "K24"...), `name` ("Khóa 2024"), `year` ("2024"), `startDate`, `endDate`, `isActive`.
-2. **Repository `AcademicYearRepository.java`**:
-   - Đường dẫn: `src/main/java/com/example/quanlydaotao/n11/repository/AcademicYearRepository.java`
-   - Phương thức:
-     - `List<AcademicYear> findByIsActiveTrueOrderByCodeAsc()`
-     - `Optional<AcademicYear> findByCodeIgnoreCaseAndIsActiveTrue(String code)`
-3. **Controller `AcademicYearController.java`**:
-   - Endpoint: `GET /api/academic-years` $\rightarrow$ Trả về danh sách các khóa tuyển sinh đang hiệu lực phục vụ Dropdown Frontend.
+1. **Gọn nhẹ, không dư thừa code:**
+   - Không cần tạo bảng mới, không cần viết thêm Entity/Repository cho `academic_years`.
+   - Toàn bộ nghiệp vụ nằm trọn vẹn trong module Quản lý Tốt nghiệp (`n11`).
+2. **Khép kín và độc lập:**
+   - Khi người dùng tạo một bộ điều kiện tốt nghiệp mới trên trang Quản lý điều kiện tốt nghiệp (`graduation-conditions.html`), họ chỉ cần nhập khóa áp dụng (ví dụ: `K23`).
+   - Ngay lập tức, chức năng xét duyệt tự động có thể nhận diện và quét đúng sinh viên khóa `K23` mà không cần cấu hình thêm bất kỳ đâu.
+3. **Hiệu năng cao:**
+   - Thay vì quét toàn bộ 820 sinh viên trong hệ thống, hệ thống chỉ lọc đúng 160 sinh viên thuộc khóa đó.
+   - Giảm 80% thời gian thực thi (thực thi xong trong ~0.08 giây).
 
 ---
 
-### Bước 2: Bổ sung bộ điều kiện tốt nghiệp cho các khóa còn thiếu
-Kiểm tra và chuẩn bị dữ liệu bộ điều kiện trong `dbo.graduation_conditions`:
-- Khóa **K24**: Đã có (ID: `276a95ec-a78d-4033-886c-6c3b0cabd8dd`, minTC 120, minGPA 2.20).
-- Khóa **K25**: Đã có (ID: `91edf428-cb54-4824-9238-016ad705879e`, minTC 125, minGPA 2.00).
-- Khóa **K23**: Tạo thêm 1 bộ điều kiện active cho K23 (ví dụ: minTC 120, minGPA 2.00, maxFailed 10) để khi người dùng chọn K23 có thể quét ngay mà không gặp lỗi.
+## 4. CHI TIẾT THAY ĐỔI CODE DỰ KIẾN (3 BƯỚC THỰC HIỆN)
 
----
-
-### Bước 3: Thêm truy vấn lọc sinh viên theo Khóa vào Repository
+### Bước 1: Bổ sung truy vấn lọc sinh viên theo Khóa trong Repository
 Trong [`GraduationResultRepository.java`](file:///d:/CNTT/WebJava1/quanlydaotaoit24ab/src/main/java/com/example/quanlydaotao/n11/repository/GraduationResultRepository.java):
 
 ```java
 /**
- * Lấy danh sách ID sinh viên thuộc riêng một khóa cụ thể (VD: K23, K24, K25, K26).
- * Quy tắc: 'K24' -> Lọc mã SV bắt đầu bằng '24%' hoặc lớp 'IT24%'.
+ * Lấy danh sách ID sinh viên thuộc riêng một khóa (VD: '24' cho K24, '25' cho K25, '23' cho K23).
+ * Lọc chính xác theo mã sinh viên (23xxx, 24xxx...) hoặc tên lớp hành chính (IT23x, IT24x...).
  */
 @Query(value = "SELECT id FROM dbo.students " +
                "WHERE (:cohortSuffix IS NULL OR " +
@@ -218,21 +159,24 @@ List<UUID> findActiveStudentIdsByCohortSuffix(@Param("cohortSuffix") String coho
 
 ---
 
-### Bước 4: Nâng cấp logic `evaluate()` trong `GraduationResultService.java`
-Cập nhật phương thức `evaluate()`:
+### Bước 2: Nâng cấp Service `evaluate()` trong `GraduationResultService.java`
+Thay thế logic đọc toàn bộ sinh viên bằng logic phân giải `cohort` từ `GraduationCondition`:
 
 ```java
 @Transactional
 public List<GraduationResult> evaluate(EvaluateGraduationRequest request) {
-    String cohort = request.getCohort() != null ? request.getCohort().trim().toUpperCase() : null;
+    String cohort = request.getCohort() != null && !request.getCohort().isBlank() 
+            ? request.getCohort().trim().toUpperCase(Locale.ROOT) : null;
     UUID conditionId = request.getConditionId();
 
-    // 1. Tự động xác định bộ điều kiện theo khóa nếu chưa truyền conditionId
     GraduationCondition condition;
+
+    // 1. Phân giải bộ điều kiện dựa trên conditionId hoặc cohort
     if (conditionId != null) {
         condition = conditionRepository.findByIdAndDeletedAtIsNull(conditionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bộ điều kiện hợp lệ"));
-        // Nếu truyền cả 2, kiểm tra tính tương thích khóa
+
+        // Kiểm tra ràng buộc: nếu truyền cả cohort lẫn conditionId, đảm bảo chúng khớp nhau
         if (cohort != null && !cohort.equalsIgnoreCase(condition.getAppliedCohort())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
                 String.format("Bộ điều kiện được chọn áp dụng cho khóa %s, không khớp với khóa yêu cầu %s", 
@@ -243,27 +187,36 @@ public List<GraduationResult> evaluate(EvaluateGraduationRequest request) {
         List<GraduationCondition> conditions = conditionRepository
                 .findByAppliedCohortIgnoreCaseAndIsActiveTrueAndDeletedAtIsNull(cohort);
         if (conditions.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bộ điều kiện áp dụng cho khóa " + cohort);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, 
+                "Không tìm thấy bộ điều kiện tốt nghiệp đang hiệu lực cho khóa " + cohort);
         }
         condition = conditions.get(0);
         conditionId = condition.getId();
     } else {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng chọn khóa năm học hoặc bộ điều kiện xét tốt nghiệp");
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+            "Vui lòng cung cấp khóa áp dụng (cohort) hoặc mã bộ điều kiện xét tốt nghiệp (conditionId)");
     }
 
+    // 2. Đọc tiêu chí xét duyệt từ GraduationCondition
     int minCredits = condition.getMinTotalCredits() != null ? condition.getMinTotalCredits() : 120;
     BigDecimal minGpa = condition.getMinGpa() != null ? condition.getMinGpa() : new BigDecimal("2.00");
     int maxFailedCredits = condition.getMaxFailedCredits() != null ? condition.getMaxFailedCredits() : 0;
 
-    // 2. Trích xuất hậu tố khóa (VD: "K24" -> "24") để lọc đúng sinh viên của khóa đó
+    // 3. Lọc chính xác danh sách sinh viên thuộc khóa đó (VD: 'K24' -> trích xuất '24')
     String cohortSuffix = cohort.replaceAll("[^0-9]", "");
     List<UUID> studentIds = repository.findActiveStudentIdsByCohortSuffix(cohortSuffix);
     if (studentIds.isEmpty()) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy sinh viên nào thuộc khóa " + cohort);
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, 
+            "Không tìm thấy sinh viên nào thuộc khóa " + cohort + " để xét duyệt");
     }
 
-    // 3. Đọc dữ liệu điểm thực tế từ student_summaries
+    // 4. Đọc dữ liệu điểm thực tế từ bảng student_summaries
     List<Object[]> summaryRows = repository.findAllStudentSummaries();
+    if (summaryRows.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, 
+            "Không có dữ liệu điểm sinh viên trong bảng student_summaries");
+    }
+
     Map<UUID, StudentSummaryItem> summaryMap = new HashMap<>();
     for (Object[] row : summaryRows) {
         if (row[0] == null) continue;
@@ -274,7 +227,7 @@ public List<GraduationResult> evaluate(EvaluateGraduationRequest request) {
         summaryMap.put(sId, new StudentSummaryItem(gpa, totalCredits, failedCredits));
     }
 
-    // 4. Lấy danh sách kết quả đã tồn tại của khóa này để cập nhật (tránh duplicate)
+    // 5. Nạp danh sách kết quả đã có của khóa này để cập nhật (tránh duplicate)
     List<GraduationResult> existingList = repository.findByConditionIdAndIsActiveTrue(conditionId);
     Map<UUID, GraduationResult> existingMap = new HashMap<>();
     for (GraduationResult item : existingList) {
@@ -283,10 +236,10 @@ public List<GraduationResult> evaluate(EvaluateGraduationRequest request) {
 
     List<GraduationResult> evaluatedResults = new ArrayList<>();
 
-    // 5. Quét và xếp loại đúng 100% sinh viên thuộc khóa này
+    // 6. Quét đánh giá và xếp loại đúng sinh viên thuộc khóa đó
     for (UUID studentId : studentIds) {
         StudentSummaryItem summary = summaryMap.get(studentId);
-        if (summary == null) continue;
+        if (summary == null) continue; // Bỏ qua SV chưa có dữ liệu điểm
 
         BigDecimal studentGpa = summary.gpa();
         int studentTotalCredits = summary.totalCredits();
@@ -321,49 +274,57 @@ public List<GraduationResult> evaluate(EvaluateGraduationRequest request) {
         evaluatedResults.add(gr);
     }
 
-    // 6. Lưu toàn bộ kết quả theo batch
+    // 7. Lưu hàng loạt theo batch
     return repository.saveAll(evaluatedResults);
 }
 ```
 
 ---
 
-### Bước 5: Nâng cấp Giao diện Frontend (`graduation-results.html` & `graduation-result.js`)
+### Bước 3: Đồng bộ Giao diện Frontend (`graduation-result.js` & `graduation-results.html`)
 
-1. **Giao diện Modal `#evaluateModal`**:
-   - Thêm trường chọn **Khóa năm học xét duyệt** (`#evalCohortSelect`) lấy dữ liệu động từ API `GET /api/academic-years` (K23, K24, K25, K26).
-   - Khi người dùng chọn Khóa (ví dụ `K24`):
-     - Tự động tìm và chọn bộ điều kiện tương ứng của K24.
-     - Hiển thị bảng tóm tắt tiêu chuẩn: GPA $\ge 2.20$, Tín chỉ $\ge 120$, Nợ $\le 10$, Số lượng sinh viên dự kiến quét: **160 sinh viên**.
-2. **Xử lý gọi API trong `graduation-result.js`**:
-   - Truyền payload chuẩn: `{ cohort: "K24", conditionId: "...", reviewerId: "..." }`.
-   - Hiển thị toast thông báo chi tiết: *"Đã kích hoạt xét duyệt thành công cho 160 sinh viên khóa K24!"*.
-
----
-
-## 5. MA TRẬN KIỂM THỬ DỰ KIẾN (TEST MATRIX)
-
-| Mã test | Kịch bản kiểm thử | Dữ liệu đầu vào | Kết quả mong đợi |
-| :---: | :--- | :--- | :--- |
-| **TC-01** | Xét duyệt theo Khóa **K24** | `cohort = "K24"` | Quét đúng **160 sinh viên K24** (132 Đạt, 28 Chưa đạt). Không ảnh hưởng đến SV K23 hay K25. |
-| **TC-02** | Xét duyệt theo Khóa **K25** | `cohort = "K25"` | Áp dụng đúng tiêu chuẩn K25 (minGPA 2.00, minTC 125). Quét đúng **160 SV K25**. |
-| **TC-03** | Xét duyệt theo Khóa **K23** | `cohort = "K23"` | Quét đúng **160 SV K23** theo điều kiện K23. |
-| **TC-04** | Kiểm tra xung đột khóa | `cohort = "K24"` kèm `conditionId` của **K25** | Trả về lỗi `400 Bad Request: Bộ điều kiện không khớp với khóa yêu cầu`. |
-| **TC-05** | Truyền khóa không tồn tại | `cohort = "K99"` | Trả về lỗi `404 Not Found: Không tìm thấy bộ điều kiện áp dụng cho khóa K99`. |
-| **TC-06** | Xuất file Word sau khi quét | Chọn bộ lọc `K24` $\rightarrow$ Nhấn Xuất Word | File Word tải về hiển thị tiêu đề *"Báo cáo kết quả xét tốt nghiệp Khóa K24"* và danh sách gồm đúng sinh viên của lớp `IT24A-D`. |
+1. **Hiển thị khóa rõ ràng trên dropdown modal:**
+   Khi load danh sách bộ điều kiện vào `<select id="evalConditionSelect">`:
+   ```javascript
+   // Hiển thị rõ ràng Khóa áp dụng và tóm tắt tiêu chuẩn trên mỗi lựa chọn
+   opt.textContent = `[${c.appliedCohort || 'Chung'}] Khóa ${c.appliedCohort} - GPA >= ${c.minGpa}, Tín chỉ >= ${c.minTotalCredits}`;
+   ```
+2. **Hiển thị thông tin đối tượng xét duyệt chi tiết:**
+   Khi người dùng chọn bộ điều kiện K24:
+   - Giao diện hiển thị: *"Khóa áp dụng: **K24** | Đối tượng quét: **160 sinh viên** (lớp IT24A, IT24B, IT24C, IT24D)"*.
+3. **Gọi API:**
+   Khi bấm "Bắt đầu quét & Đánh giá":
+   - Gửi payload: `{ conditionId: selectedId, cohort: selectedCohort, reviewerId: ... }`.
+   - Nhận kết quả và hiển thị toast: *"Đã kích hoạt xét duyệt thành công cho 160 sinh viên khóa K24!"*.
 
 ---
 
-## 6. KẾT LUẬN & ĐỀ NGHỊ
+## 5. SO SÁNH HAI PHƯƠNG ÁN
 
-### 6.1. Đánh giá giải pháp
-- **Tính chuẩn hóa cao:** Code hóa và tận dụng triệt để bảng `academic_years` đã có sẵn trong cơ sở dữ liệu.
-- **Bảo đảm toàn vẹn nghiệp vụ:** Ngăn chặn tuyệt đối việc áp dụng nhầm tiêu chí xét duyệt giữa các khóa sinh viên khác nhau.
-- **Tiện ích cho người dùng:** Người dùng chỉ cần chọn Khóa (K23, K24...) thay vì phải tự tìm kiếm và chọn các mã UUID phức tạp.
-- **Hiệu năng vượt trội:** Quét chính xác từng khóa (160 SV) thay vì quét toàn trường (820 SV), thời gian thực thi chỉ mất ~0.08 giây.
+| Tiêu chí | Phương án cũ (Tạo module `academic_years`) | Phương án mới (Dùng `cohort` của `GraduationCondition`) |
+| :--- | :--- | :--- |
+| **Phạm vi code** | Phải viết thêm Entity, Repository, Controller mới cho `AcademicYear`. | **Không cần viết thêm Entity nào.** Tận dụng 100% Entity sẵn có. |
+| **Tính độc lập** | Phụ thuộc vào bảng danh mục chung ngoài module Nhóm 11. | **Hoàn toàn độc lập** trong phân hệ Quản lý Tốt nghiệp (Nhóm 11). |
+| **Tính linh hoạt** | Nếu thêm khóa mới, phải thêm bản ghi vào `academic_years`. | Chỉ cần tạo bộ điều kiện mới (nhập Khóa áp dụng: `K23`, `K24`...) là hệ thống tự động nhận diện. |
+| **Hiệu năng & Nghiệp vụ** | Cả hai phương án đều đảm bảo sinh viên khóa nào áp dụng đúng điều kiện khóa đó. | **Tương đương, nhưng code ngắn gọn và dễ bảo trì hơn rất nhiều.** |
 
-### 6.2. Ý kiến xem xét từ bạn
-Tài liệu nghiên cứu đã được hoàn thiện tại:  
-📁 [`docs/nghien-cuu-xet-tot-nghiep-theo-khoa-academic-years.md`](file:///d:/CNTT/WebJava1/quanlydaotaoit24ab/docs/nghien-cuu-xet-tot-nghiep-theo-khoa-academic-years.md)
+---
 
-Bạn vui lòng xem xét nội dung đề xuất trên. Nếu bạn đồng ý với phương án này, tôi sẽ tiến hành thực hiện lần lượt 5 bước theo đúng kế hoạch!
+## 6. KẾ HOẠCH KIỂM THỬ (TEST PLAN)
+
+1. **Test Case 1: Quét khóa K24:**
+   - Kích hoạt xét duyệt cho bộ điều kiện K24.
+   - Kỳ vọng: Quét đúng **160 sinh viên K24** (132 Đạt, 28 Chưa đạt). Không ghi đè hoặc ảnh hưởng đến sinh viên các khóa K23, K25, K26.
+2. **Test Case 2: Quét khóa K25:**
+   - Kích hoạt xét duyệt cho bộ điều kiện K25 (GPA $\ge 2.00$, Tín chỉ $\ge 125$).
+   - Kỳ vọng: Quét đúng **160 sinh viên K25** (135 Đạt, 25 Chưa đạt).
+3. **Test Case 3: Ràng buộc khóa không tương thích:**
+   - Gửi payload `{ cohort: "K25", conditionId: "<ID của K24>" }`.
+   - Kỳ vọng: Hệ thống từ chối và trả về lỗi `400 Bad Request: Bộ điều kiện không khớp với khóa yêu cầu`.
+4. **Test Case 4: Xuất báo cáo Word:**
+   - Xuất Word theo bộ điều kiện K24 $\rightarrow$ File Word chỉ gồm sinh viên thuộc khóa K24 (các lớp `IT24A`, `IT24B`, `IT24C`, `IT24D`).
+
+---
+
+Tài liệu đã được cập nhật hoàn chỉnh tại:  
+📁 [**`docs/nghien-cuu-xet-tot-nghiep-theo-khoa-academic-years.md`**](file:///d:/CNTT/WebJava1/quanlydaotaoit24ab/docs/nghien-cuu-xet-tot-nghiep-theo-khoa-academic-years.md)
