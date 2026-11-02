@@ -1,6 +1,6 @@
 # 📊 Tiến độ Implement: Chức năng xuất Word Graduation Result
 
-> **Nhánh:** `nhom11-test` | **Bắt đầu:** 02/11/2026
+> **Nhánh:** `nhom11-test` | **Bắt đầu:** 02/11/2026 | **Hoàn thành:** 02/11/2026
 > **Mục tiêu:** Implement 6 bước theo tài liệu nghiên cứu
 
 ---
@@ -9,12 +9,14 @@
 
 | Bước | File | Trạng thái | Commit |
 |------|------|-----------|--------|
-| 1 | `pom.xml` — Thêm dependency POI | ⏳ Chưa làm | — |
-| 2 | `dto/GraduationResultExportDTO.java` — Tạo mới | ⏳ Chưa làm | — |
-| 3 | `repository/GraduationResultRepository.java` — Thêm 2 method | ⏳ Chưa làm | — |
-| 4 | `service/GraduationResultService.java` — Inject + 2 method | ⏳ Chưa làm | — |
-| 5 | `service/GraduationResultWordExportService.java` — Tạo mới | ⏳ Chưa làm | — |
-| 6 | `controller/GraduationResultController.java` — Inject + endpoint | ⏳ Chưa làm | — |
+| 1 | `pom.xml` — Thêm dependency POI | ✅ Xong | `1d37751` |
+| 2 | `dto/GraduationResultExportDTO.java` — Tạo mới | ✅ Xong | `1d37751` |
+| 3 | `repository/GraduationResultRepository.java` — Thêm 2 method | ✅ Xong | `1d37751` |
+| 4 | `service/GraduationResultService.java` — Inject + 2 method | ✅ Xong | `1d37751` |
+| 5 | `service/GraduationResultWordExportService.java` — Tạo mới | ✅ Xong | `1d37751` |
+| 6 | `controller/GraduationResultController.java` — Inject + endpoint | ✅ Xong | `1d37751` |
+
+> ✅ **BUILD SUCCESS** — `mvn compile`: 30 source files, 0 errors
 
 ---
 

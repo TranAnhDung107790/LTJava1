@@ -36,7 +36,7 @@ public class GraduationProfile extends BaseEntity {
     @Column(name = "reviewer_id")
     private UUID reviewerId;
 
-    @Column(name = "note", length = 500)
+    @Column(name = "note", length = 500, columnDefinition = "nvarchar(500)")
     private String note;
 
     public GraduationProfile() {
