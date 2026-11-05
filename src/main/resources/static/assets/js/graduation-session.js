@@ -18,6 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventListeners();
     loadSessions();
+
+    if (window.gsap) {
+        gsap.from('.bento-stat-card', {
+            opacity: 0,
+            y: 16,
+            duration: 0.5,
+            stagger: 0.08,
+            ease: 'power2.out'
+        });
+    }
 });
 
 function initEventListeners() {
@@ -145,12 +155,15 @@ function renderTable(items) {
         totalBadge.textContent = `Tổng số: ${items.length}`;
     }
 
+    // Cập nhật các chỉ số Bento Stat Cards
+    updateBentoStats(sessionsList.length > 0 ? sessionsList : items);
+
     if (items.length === 0) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="10" class="text-center text-muted py-5">
                     <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary"></i>
-                    Chưa có đợt xét tốt nghiệp nào.
+                    Chưa có đợt xét tốt nghiệp nào phù hợp với bộ lọc.
                 </td>
             </tr>
         `;
@@ -160,34 +173,36 @@ function renderTable(items) {
     const today = new Date().toISOString().split('T')[0];
 
     tableBody.innerHTML = items.map((item, index) => {
-        const sessionCodeBadge = `<span class="badge bg-secondary-subtle text-secondary-emphasis font-monospace px-2 py-1">${escapeHtml(item.sessionCode)}</span>`;
+        const sessionCodeBadge = `<span class="session-code-pill">${escapeHtml(item.sessionCode)}</span>`;
 
-        // Tính toán tình trạng hạn nộp
-        let periodStatus = '<span class="badge bg-secondary-subtle text-secondary px-2 py-1">Chưa mở</span>';
+        // Tính toán tình trạng hạn nộp với chuẩn status pill của UI/UX Pro Max
+        let periodStatus = '<span class="badge-status badge-status-expired"><i class="bi bi-dash-circle me-1"></i>Chưa mở</span>';
         if (item.startDate && item.dueDate) {
             if (today >= item.startDate && today <= item.dueDate) {
-                periodStatus = '<span class="badge bg-success px-2 py-1"><i class="bi bi-clock-history me-1"></i>Đang mở nộp</span>';
+                periodStatus = '<span class="badge-status badge-status-active"><span class="status-pulse-dot"></span>Đang mở nộp</span>';
+            } else if (today < item.startDate) {
+                periodStatus = '<span class="badge-status badge-status-upcoming"><i class="bi bi-clock-history me-1"></i>Sắp diễn ra</span>';
             } else if (today > item.dueDate) {
-                periodStatus = '<span class="badge bg-danger-subtle text-danger px-2 py-1">Đã hết hạn</span>';
+                periodStatus = '<span class="badge-status badge-status-expired"><i class="bi bi-check2-circle me-1"></i>Đã đóng</span>';
             }
         }
 
         return `
             <tr>
-                <td class="text-center text-muted small">${index + 1}</td>
+                <td class="text-center text-muted small fw-medium">${index + 1}</td>
                 <td>${sessionCodeBadge}</td>
-                <td class="fw-semibold text-primary-emphasis">${escapeHtml(item.sessionName)}</td>
-                <td class="text-center">${escapeHtml(item.academicYear || '-')}</td>
-                <td class="text-center">HK${item.semester || 1}</td>
-                <td class="small text-muted">${item.startDate || '-'}</td>
-                <td class="small text-muted">${item.dueDate || '-'}</td>
+                <td class="fw-bold text-dark">${escapeHtml(item.sessionName)}</td>
+                <td class="text-center"><span class="badge bg-light text-secondary border">${escapeHtml(item.academicYear || '-')}</span></td>
+                <td class="text-center"><span class="badge bg-primary-subtle text-primary fw-semibold px-2">HK${item.semester || 1}</span></td>
+                <td class="small text-muted font-monospace">${item.startDate || '-'}</td>
+                <td class="small text-muted font-monospace">${item.dueDate || '-'}</td>
                 <td class="text-center">${periodStatus}</td>
-                <td class="small text-muted" style="max-width: 200px;">${item.note ? escapeHtml(item.note) : '-'}</td>
+                <td class="small text-muted" style="max-width: 220px;">${item.note ? escapeHtml(item.note) : '-'}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${item.id}" title="Chỉnh sửa">
+                    <button class="btn btn-sm btn-outline-primary btn-action-icon me-1 btn-edit" data-id="${item.id}" title="Chỉnh sửa đợt xét">
                         <i class="bi bi-pencil-square"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}" title="Xóa">
+                    <button class="btn btn-sm btn-outline-danger btn-action-icon btn-delete" data-id="${item.id}" title="Xóa đợt xét">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -195,12 +210,67 @@ function renderTable(items) {
         `;
     }).join('');
 
+    // GSAP Stagger animation cho các hàng bảng
+    if (window.gsap) {
+        gsap.from('#sessionsTableBody tr', {
+            opacity: 0,
+            y: 8,
+            duration: 0.25,
+            stagger: 0.03,
+            ease: 'power1.out'
+        });
+    }
+
     tableBody.querySelectorAll('.btn-edit').forEach(btn => {
         btn.addEventListener('click', () => openEditModal(btn.getAttribute('data-id')));
     });
 
     tableBody.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', () => handleDeleteSession(btn.getAttribute('data-id')));
+    });
+}
+
+function updateBentoStats(allSessions) {
+    const today = new Date().toISOString().split('T')[0];
+    let activeCount = 0;
+    let upcomingCount = 0;
+    let latestYear = '2026 - 2027';
+
+    allSessions.forEach(item => {
+        if (item.academicYear) latestYear = item.academicYear;
+        if (item.startDate && item.dueDate) {
+            if (today >= item.startDate && today <= item.dueDate) {
+                activeCount++;
+            } else if (today < item.startDate) {
+                upcomingCount++;
+            }
+        }
+    });
+
+    animateCount('statTotalSessions', allSessions.length);
+    animateCount('statActiveSessions', activeCount);
+    animateCount('statUpcomingSessions', upcomingCount);
+
+    const yearEl = document.getElementById('statCurrentYear');
+    if (yearEl) yearEl.textContent = latestYear;
+}
+
+function animateCount(elementId, targetValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!window.gsap) {
+        el.textContent = targetValue;
+        return;
+    }
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    const obj = { val: currentVal };
+    gsap.to(obj, {
+        val: targetValue,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: () => {
+            el.textContent = Math.round(obj.val);
+        }
     });
 }
 
