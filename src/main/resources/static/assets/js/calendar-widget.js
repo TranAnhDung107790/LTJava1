@@ -179,4 +179,145 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('miniCalendar')) {
         renderMiniCalendar();
     }
+    initGlobalModalAnimations();
+    initGlobalPageTransitions();
 });
+
+// ==========================================================================
+// 🍞 PASTEL TOAST NOTIFICATIONS & MODAL GSAP ANIMATIONS (NHÓM 11)
+// Tích hợp trực tiếp vào calendar-widget.js để không tạo thêm file mới,
+// tránh mọi nguy cơ xung đột khi gộp mã nguồn 12 nhóm.
+// ==========================================================================
+
+export function showToast(message, type = 'info', duration = 3200) {
+    let container = document.getElementById('eduToastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'eduToastContainer';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    const typeClass = ['success', 'danger', 'warning', 'info'].includes(type) ? type : 'info';
+    toast.className = `edu-toast edu-toast-${typeClass}`;
+
+    let iconClass = 'bi-info-circle-fill';
+    if (typeClass === 'success') iconClass = 'bi-check-circle-fill';
+    else if (typeClass === 'danger') iconClass = 'bi-exclamation-triangle-fill';
+    else if (typeClass === 'warning') iconClass = 'bi-exclamation-circle-fill';
+
+    toast.innerHTML = `
+        <div class="edu-toast-content">
+            <i class="bi ${iconClass} edu-toast-icon"></i>
+            <span>${escapeHtml(message)}</span>
+        </div>
+        <button type="button" class="edu-toast-close" title="Đóng">&times;</button>
+    `;
+
+    container.appendChild(toast);
+
+    const closeBtn = toast.querySelector('.edu-toast-close');
+    const dismissToast = () => {
+        if (!toast.parentElement) return;
+        if (window.gsap) {
+            gsap.to(toast, {
+                x: 80,
+                opacity: 0,
+                scale: 0.9,
+                duration: 0.22,
+                ease: 'power2.in',
+                onComplete: () => toast.remove()
+            });
+        } else {
+            toast.remove();
+        }
+    };
+
+    if (closeBtn) closeBtn.addEventListener('click', dismissToast);
+
+    if (window.gsap) {
+        gsap.fromTo(toast,
+            { x: 90, opacity: 0, scale: 0.92 },
+            { x: 0, opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(1.2)' }
+        );
+    }
+
+    setTimeout(dismissToast, duration);
+}
+
+function initGlobalModalAnimations() {
+    document.addEventListener('show.bs.modal', (e) => {
+        const dialog = e.target.querySelector('.modal-dialog');
+        if (dialog && window.gsap) {
+            gsap.fromTo(dialog,
+                { scale: 0.86, y: -25, opacity: 0 },
+                { scale: 1, y: 0, opacity: 1, duration: 0.35, ease: 'back.out(1.4)', clearProps: 'transform,opacity' }
+            );
+        }
+    });
+
+    document.addEventListener('hide.bs.modal', (e) => {
+        const dialog = e.target.querySelector('.modal-dialog');
+        if (dialog && window.gsap) {
+            gsap.to(dialog, {
+                scale: 0.92,
+                y: 15,
+                opacity: 0,
+                duration: 0.2,
+                ease: 'power2.in'
+            });
+        }
+    });
+}
+
+function initGlobalPageTransitions() {
+    if (window.gsap) {
+        gsap.fromTo('.app-main',
+            { opacity: 0.7, y: 8 },
+            { opacity: 1, y: 0, duration: 0.28, ease: 'power1.out', clearProps: 'all' }
+        );
+    }
+
+    document.querySelectorAll('.app-sidebar .nav-link').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href !== '#' && !href.startsWith('javascript:')) {
+            link.addEventListener('click', (e) => {
+                const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+                const targetFile = href.split('/').pop();
+                if (currentFile === targetFile) return;
+
+                e.preventDefault();
+                if (window.gsap) {
+                    gsap.to('.app-main', {
+                        opacity: 0,
+                        y: -8,
+                        duration: 0.16,
+                        ease: 'power2.in',
+                        onComplete: () => {
+                            window.location.href = href;
+                        }
+                    });
+                } else {
+                    window.location.href = href;
+                }
+            });
+        }
+    });
+}
+
+// Gắn global và chuyển alert() sang Toast Pastel
+if (typeof window !== 'undefined') {
+    window.showToast = showToast;
+    window.alert = function(msg) {
+        let type = 'info';
+        const lower = String(msg).toLowerCase();
+        if (lower.includes('thành công') || lower.includes('success')) {
+            type = 'success';
+        } else if (lower.includes('lỗi') || lower.includes('thất bại') || lower.includes('không thể') || lower.includes('error')) {
+            type = 'danger';
+        } else if (lower.includes('vui lòng') || lower.includes('chú ý') || lower.includes('cảnh báo')) {
+            type = 'warning';
+        }
+        showToast(msg, type);
+    };
+}
