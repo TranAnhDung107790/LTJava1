@@ -33,7 +33,7 @@
     --text-muted: #6B7280;
     --text-purple: #5B3EA3;
 
-    /* Shadows — colored ambient (not black) */
+    /* Shadows — colored ambient */
     --shadow-card: 0 4px 20px rgba(124, 92, 252, 0.08), 0 2px 8px rgba(124, 92, 252, 0.04);
     --shadow-card-hover: 0 12px 32px rgba(124, 92, 252, 0.15), 0 4px 12px rgba(124, 92, 252, 0.06);
     --shadow-sidebar: 4px 0 24px rgba(102, 126, 234, 0.2);
@@ -165,6 +165,39 @@ nav.app-header,
     font-weight: 600 !important;
 }
 
+/* Notification bell button */
+.notif-bell-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-light);
+    background: var(--surface);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.notif-bell-btn:hover {
+    background: var(--pastel-lavender);
+    color: var(--purple-accent);
+    border-color: var(--pastel-lavender-border);
+}
+
+.notif-bell-btn .notif-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #EF4444;
+    border: 2px solid #FFFFFF;
+}
+
 /* ==========================================================================
    📊 BENTO KPI STAT CARDS — Pastel Gradient
    ========================================================================== */
@@ -258,6 +291,164 @@ nav.app-header,
 }
 
 /* ==========================================================================
+   🎴 PASTEL SESSION CARDS (eCoursie Style - The Core Hero Component!)
+   ========================================================================== */
+
+.edu-session-card {
+    border-radius: var(--radius-xl);
+    padding: 1.5rem 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border: 1.5px solid transparent;
+}
+
+.edu-session-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+}
+
+/* Card Themes */
+.card-pastel-blue {
+    background: linear-gradient(135deg, #EBF5FF 0%, #E3EFFF 100%);
+    border-color: #C3E0FF;
+}
+
+.card-pastel-lavender {
+    background: linear-gradient(135deg, #F5EEFF 0%, #EFE5FF 100%);
+    border-color: #DAC9FF;
+}
+
+.card-pastel-peach {
+    background: linear-gradient(135deg, #FFF0F3 0%, #FFE4E8 100%);
+    border-color: #FFC9D2;
+}
+
+.card-pastel-mint {
+    background: linear-gradient(135deg, #E8FFF5 0%, #DBFBEF 100%);
+    border-color: #B5F3DA;
+}
+
+/* Card Left Illustration Box */
+.card-illustration {
+    width: 86px;
+    height: 86px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(8px);
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(124, 92, 252, 0.08);
+}
+
+.card-pastel-blue .card-illustration { color: #2563EB; }
+.card-pastel-lavender .card-illustration { color: #7C5CFC; }
+.card-pastel-peach .card-illustration { color: #EC4899; }
+.card-pastel-mint .card-illustration { color: #059669; }
+
+/* Card Content Middle */
+.card-session-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-session-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.3;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.01em;
+}
+
+.card-session-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.card-session-note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Card Right Actions */
+.card-session-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Circular Purple CTA button (eCoursie style) */
+.btn-circle-cta {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple-start), var(--purple-accent));
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-purple-btn);
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-circle-cta:hover {
+    transform: scale(1.15);
+    box-shadow: 0 6px 20px rgba(124, 92, 252, 0.45);
+    color: #FFFFFF;
+}
+
+/* Small secondary actions next to CTA */
+.card-action-mini {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.card-action-mini:hover {
+    transform: scale(1.1);
+    background: #FFFFFF;
+    color: var(--purple-accent);
+}
+
+.card-action-mini.btn-del:hover {
+    color: #DC2626;
+    border-color: #FECACA;
+}
+
+/* ==========================================================================
    ✨ STATUS BADGES & PULSE INDICATOR
    ========================================================================== */
 
@@ -327,7 +518,7 @@ nav.app-header,
 }
 
 /* ==========================================================================
-   🃏 GLOBAL CARDS — Large Rounded, Pastel Accent
+   🃏 GLOBAL CARDS & DATA TABLES
    ========================================================================== */
 
 .card {
@@ -353,10 +544,6 @@ nav.app-header,
     background: linear-gradient(135deg, rgba(243, 238, 255, 0.3), rgba(255, 255, 255, 0.8)) !important;
     border-top: 1.5px solid var(--border-light) !important;
 }
-
-/* ==========================================================================
-   📋 DATA TABLES — Modern Pastel Style with Transparent TD
-   ========================================================================== */
 
 .table thead th {
     background: linear-gradient(135deg, var(--pastel-lavender) 0%, var(--pastel-blue) 100%) !important;
@@ -386,7 +573,6 @@ nav.app-header,
     transform: scale(1.002);
 }
 
-/* Crucial: remove opaque Bootstrap background from td so tr hover works */
 .table tbody td {
     padding: 0.95rem 1rem !important;
     vertical-align: middle !important;
@@ -476,7 +662,6 @@ nav.app-header,
     border-color: transparent !important;
 }
 
-/* Circular Action Button (eCoursie style) */
 .btn-action-icon {
     width: 36px;
     height: 36px;
@@ -495,7 +680,7 @@ nav.app-header,
 }
 
 /* ==========================================================================
-   📝 FORM CONTROLS — Rounded & Purple Focus
+   📝 FORM CONTROLS & ACTION BAR
    ========================================================================== */
 
 .form-control, .form-select, .input-group-text {
@@ -516,12 +701,8 @@ nav.app-header,
     color: var(--purple-text) !important;
 }
 
-/* ==========================================================================
-   🏷️ ACTION BAR — Pastel Background
-   ========================================================================== */
-
 .action-bar-card {
-    background: linear-gradient(135deg, rgba(243, 238, 255, 0.6), rgba(232, 244, 253, 0.4)) !important;
+    background: linear-gradient(135deg, rgba(243, 238, 255, 0.7), rgba(232, 244, 253, 0.5)) !important;
     border: 1.5px solid var(--border-light);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
@@ -529,7 +710,7 @@ nav.app-header,
 }
 
 /* ==========================================================================
-   💬 MODAL — Glassmorphism with Purple Header
+   💬 MODAL
    ========================================================================== */
 
 .modal-content {
@@ -604,10 +785,6 @@ nav.app-header,
     color: var(--text-muted) !important;
 }
 
-/* ==========================================================================
-   🦶 FOOTER — Subtle Purple
-   ========================================================================== */
-
 .app-footer {
     background: linear-gradient(135deg, rgba(243, 238, 255, 0.5), rgba(255, 255, 255, 0.8)) !important;
     border-top: 1px solid var(--border-light) !important;
@@ -635,6 +812,15 @@ nav.app-header,
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+}
+
+/* User Profile Widget in Side Panel */
+.user-profile-widget {
+    background: var(--surface);
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 1.15rem 1.25rem;
+    box-shadow: var(--shadow-card);
 }
 
 /* Mini Calendar Widget */
@@ -721,17 +907,35 @@ nav.app-header,
     color: var(--text-main);
     cursor: default;
     margin: 0 auto;
+    position: relative;
+    transition: all 0.2s ease;
 }
 
 .mini-calendar .cal-day.today {
     background: linear-gradient(135deg, var(--purple-start), var(--purple-accent));
-    color: #FFFFFF;
+    color: #FFFFFF !important;
     font-weight: 700;
     box-shadow: 0 2px 6px rgba(124, 92, 252, 0.4);
 }
 
+/* Purple ring highlight for session due date (ASCII wireframe) */
+.mini-calendar .cal-day.has-deadline {
+    border: 2px solid var(--purple-accent) !important;
+    color: var(--purple-accent) !important;
+    font-weight: 800 !important;
+    background: #EDE9FE;
+}
+
 .mini-calendar .cal-day.empty {
     visibility: hidden;
+}
+
+.cal-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--purple-accent);
+    display: inline-block;
 }
 
 /* Team Members Widget */
@@ -854,7 +1058,7 @@ nav.app-header,
 }
 
 /* ==========================================================================
-   📊 PAGINATION — Rounded Purple
+   📊 PAGINATION
    ========================================================================== */
 
 .pagination .page-item .page-link {
@@ -874,7 +1078,7 @@ nav.app-header,
 }
 
 /* ==========================================================================
-   🔙 BACKWARD COMPAT CLASSES (other team pages use these)
+   🔙 BADGE CLASSES
    ========================================================================== */
 
 .badge-pass {
@@ -943,7 +1147,6 @@ nav.app-header,
     align-items: center;
 }
 
-/* Badge for table pages */
 .badge.bg-light {
     background: var(--pastel-lavender) !important;
     color: var(--purple-text) !important;
@@ -960,7 +1163,6 @@ nav.app-header,
     color: var(--purple-text) !important;
 }
 
-/* Table-card (graduation-sessions specific) */
 .table-card-container {
     background: var(--surface);
     border: 1.5px solid var(--border-light);
@@ -976,8 +1178,8 @@ nav.app-header,
 }
 
 /* ==========================================================================
-   📱 RESPONSIVE — Fluid Stacking for Laptops & Mobile
-   ========================================================================= */
+   📱 RESPONSIVE
+   ========================================================================== */
 
 @media (max-width: 1366px) {
     .edu-layout {
@@ -998,6 +1200,14 @@ nav.app-header,
     .bento-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+    .edu-session-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .card-session-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
     .edu-side-panel {
         flex-direction: column;
     }
@@ -1012,10 +1222,7 @@ nav.app-header,
     }
 }
 
-/* ==========================================================================
-   🎓 FORM CARD — Enhanced for Add/Edit pages
-   ========================================================================== */
-
+/* Form Card */
 .form-card {
     max-width: 800px;
 }
@@ -1030,7 +1237,6 @@ nav.app-header,
     font-weight: 700 !important;
 }
 
-/* Info/Warning/Success Button overrides */
 .btn-info {
     background: linear-gradient(135deg, #0EA5E9, #38BDF8) !important;
     border: none !important;
@@ -1071,10 +1277,6 @@ nav.app-header,
     color: var(--purple-text) !important;
 }
 
-/* ==========================================================================
-   🎯 MAIN CONTENT AREA (app-main) — Pastel Background
-   ========================================================================== */
-
 .app-main {
     background: var(--background) !important;
 }
@@ -1083,12 +1285,10 @@ nav.app-header,
     background: transparent !important;
 }
 
-/* Spinner */
 .spinner-border {
     color: var(--purple-accent) !important;
 }
 
-/* Scrollbar custom */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

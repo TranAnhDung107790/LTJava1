@@ -29,10 +29,25 @@
                     </span>
                 </li>
             </ul>
+
+            <!-- Header Quick Actions (Search & Notif Bell - ASCII Wireframe) -->
+            <ul class="navbar-nav ms-auto align-items-center gap-2">
+                <li class="nav-item">
+                    <button class="notif-bell-btn" id="btnHeaderSearchToggle" title="Tìm kiếm nhanh">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <div class="notif-bell-btn" id="btnNotificationBell" title="Thông báo đợt xét">
+                        <i class="bi bi-bell"></i>
+                        <span class="notif-badge"></span>
+                    </div>
+                </li>
+            </ul>
         </div>
     </nav>
 
-    <!-- Sidebar -->
+    <!-- Sidebar (Purple Gradient eCoursie Style) -->
     <aside class="app-sidebar shadow" data-bs-theme="dark">
         <div class="sidebar-brand">
             <a href="index.html" class="brand-link text-decoration-none d-flex align-items-center gap-2 px-3 py-2">
@@ -49,33 +64,33 @@
                     <li class="nav-header">QUẢN LÝ CHUNG</li>
                     <li class="nav-item">
                         <a href="index.html" class="nav-link">
-                            <i class="nav-icon bi bi-people-fill"></i>
-                            <p>Sinh viên</p>
+                            <i class="nav-icon bi bi-grid"></i>
+                            <p>Tổng quan</p>
                         </a>
                     </li>
                     <li class="nav-header">NHÓM 11 - QUẢN LÝ TỐT NGHIỆP</li>
                     <li class="nav-item">
                         <a href="graduation-conditions.html" class="nav-link">
                             <i class="nav-icon bi bi-card-checklist"></i>
-                            <p>Tiêu chuẩn tốt nghiệp</p>
+                            <p>Tiêu chuẩn</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="graduation-sessions.html" class="nav-link active">
                             <i class="nav-icon bi bi-calendar-event"></i>
-                            <p>Đợt xét tốt nghiệp</p>
+                            <p>Đợt xét</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="graduation-profiles.html" class="nav-link">
                             <i class="nav-icon bi bi-folder2-open"></i>
-                            <p>Hồ sơ tốt nghiệp</p>
+                            <p>Hồ sơ</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="graduation-results.html" class="nav-link">
-                            <i class="nav-icon bi bi-award-fill"></i>
-                            <p>Kết quả tốt nghiệp</p>
+                            <i class="nav-icon bi bi-trophy"></i>
+                            <p>Kết quả</p>
                         </a>
                     </li>
                 </ul>
@@ -90,15 +105,15 @@
             <div class="container-fluid">
                 <div class="row align-items-center">
                     <div class="col-sm-6">
-                        <h3 class="mb-0 text-dark fw-bold">
-                            <i class="bi bi-calendar-event text-primary me-2"></i>Đợt xét tốt nghiệp
+                        <h3 class="mb-0 text-dark fw-bold d-flex align-items-center gap-2">
+                            <i class="bi bi-calendar-event text-primary"></i>Đợt xét tốt nghiệp
                         </h3>
                     </div>
                     <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-end mb-0">
                             <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none">Trang chủ</a></li>
                             <li class="breadcrumb-item">Quản lý tốt nghiệp</li>
-                            <li class="breadcrumb-item active" aria-current="page">Đợt xét tốt nghiệp</li>
+                            <li class="breadcrumb-item active" aria-current="page">Đợt xét</li>
                         </ol>
                     </div>
                 </div>
@@ -112,7 +127,9 @@
 
                 <!-- 3-Column Layout: Main + Side Panel -->
                 <div class="edu-layout">
-                    <!-- ===== MAIN CONTENT ===== -->
+                    <!-- ========================================================= -->
+                    <!-- KHU VỰC TRUNG TÂM (Main Canvas)                            -->
+                    <!-- ========================================================= -->
                     <div class="edu-main-content">
 
                         <!-- Bento KPI Stat Cards -->
@@ -170,22 +187,44 @@
                             </div>
                         </div>
 
-                        <!-- Action Bar -->
+                        <!-- Filter Bar (Matches ASCII Wireframe: Học kỳ, Niên khóa, Trạng thái) -->
                         <div class="action-bar-card mb-4 p-3">
                             <div class="row g-2 align-items-center justify-content-between">
-                                <div class="col-12 col-md-auto d-flex flex-wrap gap-2 align-items-center">
-                                    <!-- Filter Active only -->
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <button type="button" id="btnFilterAll" class="btn btn-outline-primary active">Tất cả đợt</button>
-                                        <button type="button" id="btnFilterActiveOnly" class="btn btn-outline-primary">
-                                            <span class="status-pulse-dot me-1"></span>Đang mở nộp
-                                        </button>
+                                <div class="col-12 col-xl-auto d-flex flex-wrap gap-2 align-items-center">
+                                    <!-- Filter Học kỳ -->
+                                    <div class="d-flex align-items-center gap-1">
+                                        <select id="filterSemester" class="form-select form-select-sm" style="width: 130px;">
+                                            <option value="">Tất cả học kỳ</option>
+                                            <option value="1">Học kỳ I</option>
+                                            <option value="2">Học kỳ II</option>
+                                            <option value="3">Học kỳ hè</option>
+                                        </select>
                                     </div>
 
-                                    <!-- Search -->
-                                    <div class="input-group input-group-sm" style="width: 260px;">
+                                    <!-- Filter Niên khóa -->
+                                    <div class="d-flex align-items-center gap-1">
+                                        <select id="filterYear" class="form-select form-select-sm" style="width: 140px;">
+                                            <option value="">Tất cả niên khóa</option>
+                                            <option value="2026-2027">2026 - 2027</option>
+                                            <option value="2025-2026">2025 - 2026</option>
+                                            <option value="2027-2028">2027 - 2028</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Filter Trạng thái -->
+                                    <div class="d-flex align-items-center gap-1">
+                                        <select id="filterStatusSelect" class="form-select form-select-sm" style="width: 140px;">
+                                            <option value="">Tất cả trạng thái</option>
+                                            <option value="active">Đang mở nộp</option>
+                                            <option value="upcoming">Sắp diễn ra</option>
+                                            <option value="expired">Đã đóng</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Search input -->
+                                    <div class="input-group input-group-sm" style="width: 220px;">
                                         <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                                        <input type="text" id="searchKeyword" class="form-control border-start-0" placeholder="Mã hoặc tên đợt xét..." />
+                                        <input type="text" id="searchKeyword" class="form-control border-start-0" placeholder="Mã / tên đợt xét..." />
                                     </div>
                                     <button id="btnSearch" class="btn btn-primary btn-sm px-3 fw-semibold">
                                         <i class="bi bi-funnel me-1"></i>Lọc
@@ -193,11 +232,19 @@
                                     <button id="btnRefresh" class="btn btn-outline-secondary btn-sm" title="Tải lại danh sách">
                                         <i class="bi bi-arrow-clockwise"></i>
                                     </button>
+
+                                    <!-- Hidden backward compatibility buttons for existing listeners -->
+                                    <button type="button" id="btnFilterAll" style="display: none;"></button>
+                                    <button type="button" id="btnFilterActiveOnly" style="display: none;"></button>
                                 </div>
 
-                                <div class="col-12 col-md-auto d-flex flex-wrap gap-2">
+                                <div class="col-12 col-xl-auto d-flex flex-wrap gap-2 align-items-center mt-2 mt-xl-0">
+                                    <!-- View Mode Switcher (Wireframe: [ 🔄 Chuyển sang xem dạng Bảng chi tiết ]) -->
+                                    <button id="btnToggleView" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm px-3">
+                                        <i class="bi bi-table me-1"></i>Xem dạng Bảng chi tiết
+                                    </button>
                                     <button id="btnOpenAutoModal" class="btn btn-outline-success btn-sm fw-semibold shadow-sm px-3">
-                                        <i class="bi bi-lightning-charge me-1"></i>Tự động tạo đợt theo năm học
+                                        <i class="bi bi-lightning-charge me-1"></i>Tự động tạo
                                     </button>
                                     <button id="btnOpenCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm px-3">
                                         <i class="bi bi-plus-circle me-1"></i>Tạo đợt xét mới
@@ -206,14 +253,26 @@
                             </div>
                         </div>
 
-                        <!-- Table Card -->
-                        <div class="table-card-container mb-4">
+                        <!-- ========================================================= -->
+                        <!-- 🎴 VIEW 1: PASTEL CONTENT CARDS (Mặc định eCoursie Hub)   -->
+                        <!-- ========================================================= -->
+                        <div id="sessionsCardContainer" class="d-flex flex-column gap-3 mb-4">
+                            <div class="text-center text-muted py-5 card p-4">
+                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                Đang tải danh sách đợt xét tốt nghiệp...
+                            </div>
+                        </div>
+
+                        <!-- ========================================================= -->
+                        <!-- 📋 VIEW 2: ENTERPRISE DATA TABLE (Chuyển đổi linh hoạt)   -->
+                        <!-- ========================================================= -->
+                        <div id="sessionsTableContainer" class="table-card-container mb-4" style="display: none;">
                             <div class="table-card-header d-flex align-items-center justify-content-between">
                                 <h5 class="mb-0 fw-bold fs-6 text-dark d-flex align-items-center">
-                                    <i class="bi bi-calendar2-check me-2 text-primary"></i>Danh sách các đợt xét tốt nghiệp
+                                    <i class="bi bi-calendar2-check me-2 text-primary"></i>Danh sách chi tiết đợt xét tốt nghiệp
                                 </h5>
-                                <span id="totalBadge" class="badge-status badge-status-expired">
-                                    Tổng số: 0
+                                <span id="totalBadge" class="badge-status badge-status-active">
+                                    <span class="status-pulse-dot"></span>Đang tải dữ liệu...
                                 </span>
                             </div>
 
@@ -249,50 +308,77 @@
 
                     </div>
 
-                    <!-- ===== SIDE PANEL (eCoursie right column) ===== -->
+                    <!-- ========================================================= -->
+                    <!-- WIDGET PANEL (Cột phải)                                    -->
+                    <!-- ========================================================= -->
                     <div class="edu-side-panel">
-                        <!-- Mini Calendar -->
-                        <div class="mini-calendar" id="miniCalendar">
-                            <!-- Generated by JS -->
+                        <!-- 👤 User Profile (Admin / Giảng viên - Wireframe) -->
+                        <div class="user-profile-widget">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="team-avatar av-purple" style="width: 46px; height: 46px; font-size: 1rem;">
+                                    AD
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-bold text-dark fs-6 text-truncate">Trần Anh Dũng</div>
+                                    <div class="text-muted small">Cán bộ Quản lý Tốt nghiệp</div>
+                                    <div class="badge bg-light text-primary border mt-1" style="font-size: 0.7rem;">
+                                        Nhóm 11 · IT24AB
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Team Members (Nhóm 11) -->
+                        <!-- 📅 LỊCH XÉT TỐT NGHIỆP (Mini Calendar với chấm tím hạn nộp) -->
+                        <div class="mini-calendar">
+                            <div class="cal-header mb-2">
+                                <h6 class="fw-bold"><i class="bi bi-calendar3 me-2 text-primary"></i>LỊCH XÉT TỐT NGHIỆP</h6>
+                            </div>
+                            <div id="miniCalendar">
+                                <!-- Generated by JS with interactive month buttons & highlighted deadlines -->
+                            </div>
+                            <div class="text-muted small mt-2 pt-2 border-top d-flex align-items-center gap-2">
+                                <span class="cal-legend-dot"></span>
+                                <span>Chấm tím: Hạn chót nộp hồ sơ</span>
+                            </div>
+                        </div>
+
+                        <!-- 👥 THÀNH VIÊN NHÓM 11 (Wireframe) -->
                         <div class="team-widget">
                             <div class="team-header">
-                                <h6><i class="bi bi-people-fill me-2" style="color: var(--purple-accent);"></i>Nhóm 11</h6>
-                                <a href="#">Xem tất cả</a>
+                                <h6><i class="bi bi-people-fill me-2" style="color: var(--purple-accent);"></i>THÀNH VIÊN NHÓM 11</h6>
+                                <span class="badge bg-light text-primary border">4 thành viên</span>
                             </div>
                             <div class="team-member">
                                 <div class="team-avatar av-purple">TD</div>
                                 <div class="team-info">
                                     <div class="team-name">Trần Anh Dũng</div>
-                                    <div class="team-role">Phần D – Đợt xét TN</div>
+                                    <div class="team-role">Phần D – Đợt xét tốt nghiệp</div>
                                 </div>
-                                <div class="team-status-dot"></div>
+                                <div class="team-status-dot" title="Trưởng phần D"></div>
                             </div>
                             <div class="team-member">
                                 <div class="team-avatar av-blue">TV</div>
                                 <div class="team-info">
                                     <div class="team-name">Trương Văn Hiếu</div>
-                                    <div class="team-role">Phần A – Tiêu chuẩn TN</div>
+                                    <div class="team-role">Phần A – Tiêu chuẩn tốt nghiệp</div>
                                 </div>
-                                <div class="team-status-dot"></div>
+                                <div class="team-status-dot" title="Trực tuyến"></div>
                             </div>
                             <div class="team-member">
                                 <div class="team-avatar av-green">NH</div>
                                 <div class="team-info">
                                     <div class="team-name">Nguyễn Hoàng</div>
-                                    <div class="team-role">Phần B – Kết quả xét</div>
+                                    <div class="team-role">Phần B – Kết quả tốt nghiệp</div>
                                 </div>
-                                <div class="team-status-dot"></div>
+                                <div class="team-status-dot" title="Trực tuyến"></div>
                             </div>
                             <div class="team-member">
                                 <div class="team-avatar av-orange">PT</div>
                                 <div class="team-info">
                                     <div class="team-name">Phan Thành</div>
-                                    <div class="team-role">Phần C – Hồ sơ TN</div>
+                                    <div class="team-role">Phần C – Hồ sơ tốt nghiệp</div>
                                 </div>
-                                <div class="team-status-dot"></div>
+                                <div class="team-status-dot" title="Trực tuyến"></div>
                             </div>
                         </div>
                     </div>
@@ -306,7 +392,7 @@
     <footer class="app-footer text-muted small py-3">
         <div class="container-fluid d-flex justify-content-between align-items-center">
             <div><strong>Hệ thống Quản lý Đào tạo</strong> &copy; 2026 - Nhóm 11</div>
-            <div>Pastel EdTech Hub UI</div>
+            <div>Pastel EdTech Hub UI · Trần Anh Dũng</div>
         </div>
     </footer>
 </div>
@@ -337,13 +423,13 @@
                         <!-- Session Name -->
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Tên đợt xét tốt nghiệp <span class="text-danger">*</span></label>
-                            <input type="text" id="modalSessionName" class="form-control" placeholder="Ví dụ: Đợt xét tốt nghiệp đợt 1 năm 2026" required />
+                            <input type="text" id="modalSessionName" class="form-control" placeholder="Ví dụ: Xét tốt nghiệp Đợt 1 năm học 2026-2027" required />
                         </div>
 
                         <!-- Academic Year -->
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Năm học</label>
-                            <input type="text" id="modalAcademicYear" class="form-control" placeholder="2025-2026" />
+                            <input type="text" id="modalAcademicYear" class="form-control" placeholder="2026-2027" />
                         </div>
 
                         <!-- Semester -->
