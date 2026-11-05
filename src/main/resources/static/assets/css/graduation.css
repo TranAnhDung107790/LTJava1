@@ -9,8 +9,8 @@
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-    /* 🎨 Sidebar width: thu gọn 215px để màn hình 100% zoom không bị chèn ép */
-    --sidebar-width: 215px;
+    /* 🎨 Sidebar width: thu gọn 220px để bố cục cân đối và không bị cắt chữ */
+    --sidebar-width: 220px;
 
     /* 🎨 Pastel EdTech Palette */
     --purple-start: #667eea;
@@ -119,33 +119,43 @@ aside.app-sidebar,
     text-transform: uppercase;
 }
 
-/* Sidebar Nav Links */
+/* Sidebar Nav Links - Tinh chỉnh khoảng cách icon & text gọn gàng chuẩn wireframe */
 .sidebar-wrapper .nav-item .nav-link {
     border-radius: var(--radius-sm) !important;
-    margin: 2px 8px !important;
-    padding: 0.55rem 0.75rem !important;
+    margin: 2px 6px !important;
+    padding: 0.52rem 0.65rem !important;
     font-weight: 500 !important;
     font-size: 0.835rem !important;
     color: rgba(255, 255, 255, 0.85) !important;
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 8px !important; /* Gọn gàng, icon và chữ không bị cách xa nhau */
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .sidebar-wrapper .nav-item .nav-link i,
 .sidebar-wrapper .nav-item .nav-link .nav-icon {
-    color: rgba(255, 255, 255, 0.8) !important;
-    font-size: 1rem !important;
-    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 1.05rem !important;
+    min-width: 20px !important;
+    max-width: 20px !important;
+    width: 20px !important;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0 !important;
+    margin-right: 0 !important;
 }
 
 .sidebar-wrapper .nav-item .nav-link p {
     color: rgba(255, 255, 255, 0.95) !important;
     margin: 0 !important;
+    padding-left: 0 !important; /* Xóa khoảng đệm thừa của AdminLTE */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    letter-spacing: -0.01em !important;
 }
 
 .sidebar-wrapper .nav-item .nav-link.active {
@@ -227,16 +237,29 @@ nav.app-header,
 
 .bento-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    grid-template-columns: repeat(4, 1fr) !important; /* Luôn xếp đúng 4 cột trên 1 dòng ở desktop */
     gap: 1.15rem;
     margin-bottom: 1.5rem;
+    align-items: stretch !important;
+}
+
+@media (max-width: 1199px) and (min-width: 768px) {
+    .bento-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .bento-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 .bento-stat-card {
     background: var(--surface);
     border: 1.5px solid var(--border-light);
     border-radius: var(--radius-lg);
-    padding: 1.25rem 1.4rem;
+    padding: 1.15rem 1.3rem;
     box-shadow: var(--shadow-card);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -244,6 +267,8 @@ nav.app-header,
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    min-height: 135px;
+    height: 100%;
     opacity: 1 !important; /* Đảm bảo không bị mờ */
 }
 
@@ -879,10 +904,15 @@ nav.app-header,
 }
 
 .mini-calendar .cal-mini-dot {
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     display: inline-block;
+    transition: transform 0.15s ease;
+}
+
+.mini-calendar .cal-day.has-event:hover .cal-mini-dot {
+    transform: scale(1.35);
 }
 
 .mini-calendar .cal-day.empty {
@@ -1107,6 +1137,28 @@ nav.app-header,
     .bento-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* ==========================================================================
+   ✨ GSAP & MICRO-INTERACTIONS (gsap-skill)
+   ========================================================================== */
+
+/* Nút bấm đàn hồi (Scale bounce) khi tương tác */
+.btn:active,
+button:active,
+.btn-toggle-view:active,
+.cal-nav button:active {
+    transform: scale(0.95) !important;
+    transition: transform 0.08s ease-in-out !important;
+}
+
+/* Hiệu ứng nổi nhẹ khi di chuột vào thẻ đợt xét */
+.edu-session-card {
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.edu-session-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(124, 92, 252, 0.14) !important;
 }
 
 /* Custom Scrollbars */

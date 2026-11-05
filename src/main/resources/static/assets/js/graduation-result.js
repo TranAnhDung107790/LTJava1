@@ -29,6 +29,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load initial metadata (students and conditions) then load results
     await Promise.all([loadStudents(), loadConditions()]);
     loadResults();
+
+    if (window.gsap) {
+        gsap.from('.action-bar-card, .table-card', {
+            opacity: 0,
+            y: 16,
+            duration: 0.45,
+            stagger: 0.1,
+            ease: 'power2.out',
+            clearProps: 'all'
+        });
+        gsap.from('.edu-side-panel > *', {
+            opacity: 0,
+            x: 25,
+            duration: 0.55,
+            stagger: 0.12,
+            delay: 0.2,
+            ease: 'power2.out',
+            clearProps: 'all'
+        });
+    }
 });
 
 function initEventListeners() {

@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
             y: 16,
             duration: 0.5,
             stagger: 0.08,
-            ease: 'power2.out'
+            ease: 'power2.out',
+            clearProps: 'all'
         });
         gsap.from('.edu-side-panel > *', {
             opacity: 0,
@@ -36,13 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
             duration: 0.6,
             stagger: 0.15,
             delay: 0.25,
-            ease: 'power2.out'
+            ease: 'power2.out',
+            clearProps: 'all'
         });
     }
 });
 
 function initEventListeners() {
-    // Chuyển đổi chế độ xem: Dạng thẻ Pastel (Bản B) vs Dạng bảng chi tiết
+    // Chuyển đổi chế độ xem: Dạng thẻ Pastel (Bản B) vs Dạng bảng chi tiết với hiệu ứng chuyển cảnh mượt mà
     const btnViewCards = document.getElementById('btnViewCards');
     const btnViewTable = document.getElementById('btnViewTable');
     const cardsContainer = document.getElementById('sessionsCardsContainer');
@@ -50,38 +52,74 @@ function initEventListeners() {
 
     if (btnViewCards && btnViewTable) {
         btnViewCards.addEventListener('click', () => {
+            if (currentViewMode === 'cards') return;
             btnViewCards.classList.add('active');
             btnViewTable.classList.remove('active');
             currentViewMode = 'cards';
-            if (cardsContainer) cardsContainer.style.display = '';
-            if (tableContainer) tableContainer.style.display = 'none';
-            if (window.gsap) {
-                gsap.from('#sessionsCardsContainer > *', {
+
+            if (window.gsap && tableContainer) {
+                gsap.to(tableContainer, {
                     opacity: 0,
-                    y: 12,
-                    duration: 0.3,
-                    stagger: 0.05,
-                    ease: 'power1.out',
-                    clearProps: 'all'
+                    y: -6,
+                    duration: 0.15,
+                    onComplete: () => {
+                        tableContainer.style.display = 'none';
+                        if (cardsContainer) {
+                            cardsContainer.style.display = '';
+                            gsap.fromTo(cardsContainer,
+                                { opacity: 0, y: 8 },
+                                { opacity: 1, y: 0, duration: 0.25, ease: 'power1.out', clearProps: 'all' }
+                            );
+                            gsap.from('#sessionsCardsContainer > *', {
+                                opacity: 0,
+                                y: 12,
+                                duration: 0.3,
+                                stagger: 0.04,
+                                ease: 'power1.out',
+                                clearProps: 'all'
+                            });
+                        }
+                    }
                 });
+            } else {
+                if (cardsContainer) cardsContainer.style.display = '';
+                if (tableContainer) tableContainer.style.display = 'none';
             }
         });
 
         btnViewTable.addEventListener('click', () => {
+            if (currentViewMode === 'table') return;
             btnViewTable.classList.add('active');
             btnViewCards.classList.remove('active');
             currentViewMode = 'table';
-            if (cardsContainer) cardsContainer.style.display = 'none';
-            if (tableContainer) tableContainer.style.display = '';
-            if (window.gsap) {
-                gsap.from('#sessionsTableBody tr', {
+
+            if (window.gsap && cardsContainer) {
+                gsap.to(cardsContainer, {
                     opacity: 0,
-                    y: 8,
-                    duration: 0.25,
-                    stagger: 0.02,
-                    ease: 'power1.out',
-                    clearProps: 'all'
+                    y: -6,
+                    duration: 0.15,
+                    onComplete: () => {
+                        cardsContainer.style.display = 'none';
+                        if (tableContainer) {
+                            tableContainer.style.display = '';
+                            gsap.fromTo(tableContainer,
+                                { opacity: 0, y: 8 },
+                                { opacity: 1, y: 0, duration: 0.25, ease: 'power1.out', clearProps: 'all' }
+                            );
+                            gsap.from('#sessionsTableBody tr', {
+                                opacity: 0,
+                                y: 8,
+                                duration: 0.22,
+                                stagger: 0.02,
+                                ease: 'power1.out',
+                                clearProps: 'all'
+                            });
+                        }
+                    }
                 });
+            } else {
+                if (cardsContainer) cardsContainer.style.display = 'none';
+                if (tableContainer) tableContainer.style.display = '';
             }
         });
     }

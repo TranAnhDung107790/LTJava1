@@ -11,6 +11,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventListeners();
     loadConditions();
+
+    if (window.gsap) {
+        gsap.from('.action-bar-card, .table-card', {
+            opacity: 0,
+            y: 16,
+            duration: 0.45,
+            stagger: 0.1,
+            ease: 'power2.out',
+            clearProps: 'all'
+        });
+        gsap.from('.edu-side-panel > *', {
+            opacity: 0,
+            x: 25,
+            duration: 0.55,
+            stagger: 0.12,
+            delay: 0.2,
+            ease: 'power2.out',
+            clearProps: 'all'
+        });
+    }
 });
 
 function initEventListeners() {
@@ -147,6 +167,18 @@ function renderTable(items) {
             </tr>
         `;
     }).join('');
+
+    // GSAP Stagger animation cho các hàng trong bảng tiêu chuẩn (clearProps: 'all' theo chuẩn gsap-skill)
+    if (window.gsap) {
+        gsap.from('#conditionsTableBody tr', {
+            opacity: 0,
+            y: 8,
+            duration: 0.25,
+            stagger: 0.02,
+            ease: 'power1.out',
+            clearProps: 'all'
+        });
+    }
 
     tableBody.querySelectorAll('.btn-toggle').forEach(btn => {
         btn.addEventListener('click', () => handleToggleStatus(btn.getAttribute('data-id')));

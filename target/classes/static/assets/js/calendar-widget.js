@@ -133,25 +133,31 @@ export function renderMiniCalendar(customEvents = []) {
         prevBtn.addEventListener('click', () => {
             currentCalDate.setMonth(currentCalDate.getMonth() - 1);
             renderMiniCalendar(customEvents);
-            animateCalendarTransition();
+            animateCalendarTransition(-1);
         });
     }
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
             currentCalDate.setMonth(currentCalDate.getMonth() + 1);
             renderMiniCalendar(customEvents);
-            animateCalendarTransition();
+            animateCalendarTransition(1);
         });
     }
 }
 
-function animateCalendarTransition() {
+function animateCalendarTransition(direction = 1) {
     if (window.gsap) {
-        gsap.from('#miniCalendar .cal-days span', {
-            opacity: 0,
-            scale: 0.85,
+        gsap.from('#miniCalendar .cal-days', {
+            opacity: 0.4,
+            x: direction * 15,
+            duration: 0.22,
+            ease: 'power2.out',
+            clearProps: 'all'
+        });
+        gsap.from('#miniCalendar .cal-day', {
+            scale: 0.9,
             duration: 0.2,
-            stagger: 0.005,
+            stagger: 0.004,
             ease: 'power1.out',
             clearProps: 'all'
         });

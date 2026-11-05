@@ -25,7 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
             y: 16,
             duration: 0.5,
             stagger: 0.08,
-            ease: 'power2.out'
+            ease: 'power2.out',
+            clearProps: 'all'
         });
         gsap.from('.edu-side-panel > *', {
             opacity: 0,
@@ -33,7 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
             duration: 0.6,
             stagger: 0.15,
             delay: 0.25,
-            ease: 'power2.out'
+            ease: 'power2.out',
+            clearProps: 'all'
         });
     }
 });
