@@ -64,6 +64,21 @@ body, html, .app-wrapper, body.bg-body-tertiary {
     transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
+/* ⚡ HARDWARE GPU ACCELERATION: Đưa toàn bộ thành phần hoạt họa lên GPU layer để đạt 60FPS ngay trên máy yếu */
+aside.app-sidebar,
+.app-sidebar,
+.bento-stat-card,
+.action-bar-card,
+.table-card-container,
+.edu-side-panel > *,
+.modal-dialog,
+.edu-toast,
+.btn-sidebar-toggle {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
 aside.app-sidebar,
 .app-sidebar,
 .app-sidebar.bg-body-secondary {

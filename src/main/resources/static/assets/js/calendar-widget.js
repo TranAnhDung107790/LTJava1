@@ -179,7 +179,11 @@ function initSidebarToggleAnimation() {
     toggleBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             if (window.gsap) {
-                gsap.fromTo(btn, { scale: 0.86 }, { scale: 1, duration: 0.26, ease: 'back.out(2.2)' });
+                gsap.fromTo(btn, { scale: 0.85 }, { scale: 1, duration: 0.32, ease: 'back.out(2)' });
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    gsap.fromTo(icon, { rotation: -45 }, { rotation: 0, duration: 0.35, ease: 'power2.out' });
+                }
             }
         });
     });
@@ -285,8 +289,8 @@ function initGlobalModalAnimations() {
 function initGlobalPageTransitions() {
     if (window.gsap) {
         gsap.fromTo('.app-main',
-            { opacity: 0.7, y: 8 },
-            { opacity: 1, y: 0, duration: 0.28, ease: 'power1.out', clearProps: 'all' }
+            { opacity: 0.5, y: 16 },
+            { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out', clearProps: 'all' }
         );
     }
 
