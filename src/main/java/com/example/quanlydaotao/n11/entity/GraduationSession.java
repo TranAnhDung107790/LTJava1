@@ -16,7 +16,7 @@ public class GraduationSession extends BaseEntity {
     @Column(name = "session_code", nullable = false, unique = true, length = 50)
     private String sessionCode;
 
-    @Column(name = "session_name", nullable = false, length = 255)
+    @Column(name = "session_name", nullable = false, columnDefinition = "nvarchar(255)")
     private String sessionName;
 
     @Column(name = "academic_year", length = 20)

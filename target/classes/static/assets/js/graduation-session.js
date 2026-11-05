@@ -312,6 +312,17 @@ async function loadSessions(keyword = '') {
 // ==========================================================================
 // 🎴 RENDER CARDS (Pastel EdTech Cards — Bản B theo Wireframe Prompt 7)
 // ==========================================================================
+function fixCorruptedVietnamese(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/Xét\s+t\?t\s+nghi\?p/gi, 'Xét tốt nghiệp')
+        .replace(/Ð\?t/gi, 'Đợt')
+        .replace(/nam\s+h\?c/gi, 'năm học')
+        .replace(/K\?s*hè/gi, 'Kỳ hè')
+        .replace(/Kh\?i\s+t\?o/gi, 'Khởi tạo')
+        .replace(/t\?t\s+nghi\?p/gi, 'tốt nghiệp');
+}
+
 function renderCards(items, triggerAnimation = false) {
     const cardsContainer = document.getElementById('sessionsCardsContainer');
     if (!cardsContainer) return;
@@ -366,10 +377,10 @@ function renderCards(items, triggerAnimation = false) {
                         ${periodStatus}
                         <span class="badge bg-white text-secondary border fw-semibold px-2 py-1">HK${item.semester || 1} · ${escapeHtml(item.academicYear || '2026-2027')}</span>
                     </div>
-                    <h5 class="card-session-title mb-2">${escapeHtml(item.sessionName)}</h5>
+                    <h5 class="card-session-title mb-2">${escapeHtml(fixCorruptedVietnamese(item.sessionName))}</h5>
                     <div class="card-session-meta">
                         <span><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Thời gian:</strong> ${dateRangeText}</span>
-                        ${item.note ? `<span><i class="bi bi-info-circle me-1 text-secondary"></i>${escapeHtml(item.note)}</span>` : ''}
+                        ${item.note ? `<span><i class="bi bi-info-circle me-1 text-secondary"></i>${escapeHtml(fixCorruptedVietnamese(item.note))}</span>` : ''}
                     </div>
                 </div>
                 <div class="card-session-actions">

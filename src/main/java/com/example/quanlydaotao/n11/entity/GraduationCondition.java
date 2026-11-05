@@ -28,13 +28,13 @@ public class GraduationCondition extends BaseEntity {
     @Column(name = "max_failed_credits", nullable = false)
     private Integer maxFailedCredits;
 
-    @Column(name = "english_requirement", length = 100)
+    @Column(name = "english_requirement", columnDefinition = "nvarchar(100)")
     private String englishRequirement;
 
-    @Column(name = "it_requirement", length = 100)
+    @Column(name = "it_requirement", columnDefinition = "nvarchar(100)")
     private String itRequirement;
 
-    @Column(name = "conduct_required", length = 50)
+    @Column(name = "conduct_required", columnDefinition = "nvarchar(50)")
     private String conductRequired;
 
     @Column(name = "note", columnDefinition = "nvarchar(max)")

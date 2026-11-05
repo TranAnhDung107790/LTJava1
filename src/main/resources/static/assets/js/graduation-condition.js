@@ -152,6 +152,19 @@ function initEventListeners() {
     }
 }
 
+function fixCorruptedVietnamese(str) {
+    if (!str) return '';
+    let s = String(str);
+    return s.replace(/KHÁ\s+TR\?\s*LÊN/gi, 'Khá trở lên')
+            .replace(/Khá\s+tr\?\s*lên/gi, 'Khá trở lên')
+            .replace(/T\?t\s+tr\?\s*lên/gi, 'Tốt trở lên')
+            .replace(/Xu\?t\s+s\?c/gi, 'Xuất sắc')
+            .replace(/Chu\?n\s+CNTT\s+Co\s+b\?n/gi, 'Chuẩn CNTT Cơ bản')
+            .replace(/CNTT\s+Co\s+b\?n/gi, 'CNTT Cơ bản')
+            .replace(/Chu\?n/gi, 'Chuẩn')
+            .replace(/tr\?\s*lên/gi, 'trở lên');
+}
+
 async function loadConditions(cohort = '') {
     const tableBody = document.getElementById('conditionsTableBody');
     const totalBadge = document.getElementById('totalBadge');
@@ -169,7 +182,19 @@ async function loadConditions(cohort = '') {
             if (list.length > 0) {
                 const map = new Map();
                 SEED_CONDITIONS.forEach(c => map.set(c.appliedCohort || c.cohort, c));
-                list.forEach(c => map.set(c.appliedCohort || c.cohort, c));
+                list.forEach(c => {
+                    const key = c.appliedCohort || c.cohort;
+                    if (key) {
+                        const existing = map.get(key) || {};
+                        const conduct = (c.conductRequired && !c.conductRequired.includes('?'))
+                            ? c.conductRequired
+                            : (existing.conductRequired || fixCorruptedVietnamese(c.conductRequired));
+                        const it = (c.itRequirement && !c.itRequirement.includes('?'))
+                            ? c.itRequirement
+                            : (existing.itRequirement || fixCorruptedVietnamese(c.itRequirement));
+                        map.set(key, { ...existing, ...c, conductRequired: conduct, itRequirement: it });
+                    }
+                });
                 conditionsList = Array.from(map.values());
                 if (totalBadge) {
                     totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${conditionsList.length} tiêu chuẩn`;
@@ -213,6 +238,10 @@ function renderTable(items, triggerAnimation = false) {
             ? `<span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>Hiệu lực</span>`
             : `<span class="badge bg-secondary-subtle text-secondary px-2 py-1"><i class="bi bi-pause-circle me-1"></i>Tạm dừng</span>`;
 
+        const conductText = fixCorruptedVietnamese(item.conductRequired);
+        const itText = fixCorruptedVietnamese(item.itRequirement);
+        const englishText = fixCorruptedVietnamese(item.englishRequirement);
+
         return `
             <tr>
                 <td class="text-center text-muted small">${index + 1}</td>
@@ -220,9 +249,9 @@ function renderTable(items, triggerAnimation = false) {
                 <td class="text-center fw-semibold">${item.minTotalCredits != null ? item.minTotalCredits : '-'}</td>
                 <td class="text-center">${gpaBadge}</td>
                 <td class="text-center ${item.maxFailedCredits > 0 ? 'text-warning-emphasis fw-bold' : 'text-muted'}">${item.maxFailedCredits != null ? item.maxFailedCredits : 0}</td>
-                <td>${item.englishRequirement ? escapeHtml(item.englishRequirement) : '<span class="text-muted">-</span>'}</td>
-                <td>${item.itRequirement ? escapeHtml(item.itRequirement) : '<span class="text-muted">-</span>'}</td>
-                <td>${item.conductRequired ? escapeHtml(item.conductRequired) : '<span class="text-muted">-</span>'}</td>
+                <td>${englishText ? escapeHtml(englishText) : '<span class="text-muted">-</span>'}</td>
+                <td>${itText ? escapeHtml(itText) : '<span class="text-muted">-</span>'}</td>
+                <td>${conductText ? escapeHtml(conductText) : '<span class="text-muted">-</span>'}</td>
                 <td class="text-center">${statusBadge}</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-secondary me-1 btn-toggle" data-id="${item.id}" title="Bật/Tắt hiệu lực">
