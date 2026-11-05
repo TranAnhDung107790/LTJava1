@@ -1,5 +1,7 @@
 import { API_ENDPOINTS } from './config.js';
 
+let currentCalDate = new Date();
+
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const page = params.get('page') || 'list';
@@ -18,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initStudentPage();
     renderMiniCalendar();
 
-    if (window.gsap) {
+    if (window.gsap && page !== 'form') {
         gsap.from('.bento-stat-card', {
             opacity: 0,
             y: 16,
@@ -28,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         gsap.from('.edu-side-panel > *', {
             opacity: 0,
-            x: 30,
+            x: 25,
             duration: 0.6,
             stagger: 0.15,
             delay: 0.25,
@@ -41,6 +43,7 @@ function initStudentPage() {
     const studentTableBody = document.getElementById('studentTableBody');
     const searchForm = document.getElementById('searchForm');
     const studentForm = document.getElementById('studentForm');
+    const btnRefresh = document.getElementById('btnRefreshStudent');
 
     // =========================
     // TRANG DANH SÁCH
@@ -50,6 +53,14 @@ function initStudentPage() {
 
         if (searchForm) {
             searchForm.addEventListener('submit', handleSearch);
+        }
+
+        if (btnRefresh) {
+            btnRefresh.addEventListener('click', () => {
+                const kw = document.getElementById('keyword');
+                if (kw) kw.value = '';
+                loadStudents();
+            });
         }
     }
 
@@ -236,6 +247,11 @@ function updateStudentStats(students) {
     animateCount('statTotalStudents', total);
     animateCount('statActiveStudents', total);
     animateCount('statTotalClasses', classes || 1);
+
+    const badge = document.getElementById('studentTotalBadge');
+    if (badge) {
+        badge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${total} sinh viên`;
+    }
 }
 
 function animateCount(elementId, targetValue) {
@@ -273,7 +289,7 @@ function handleSearch(event) {
 // =========================
 
 window.deleteStudent = async function (id) {
-    const confirmed = window.confirm('Bạn có chắc muốn xóa sinh viên này?');
+    const confirmed = window.confirm('Bạn có chắc chắn muốn xóa sinh viên này?');
     if (!confirmed) return;
 
     try {
@@ -286,13 +302,13 @@ window.deleteStudent = async function (id) {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        alert('Xóa sinh viên thành công');
+        showAlert('success', 'Đã xóa sinh viên thành công!');
         const keywordInput = document.getElementById('keyword');
         const keyword = keywordInput ? keywordInput.value.trim() : '';
         await loadStudents(keyword);
     } catch (error) {
         console.error('Lỗi khi xóa sinh viên:', error);
-        alert('Xóa sinh viên thất bại');
+        showAlert('danger', `Không thể xóa sinh viên: ${error.message}`);
     }
 };
 
@@ -327,6 +343,7 @@ function setupFormMode(mode) {
     const breadcrumbTitle = document.getElementById('breadcrumbTitle');
     const formTitle = document.getElementById('formTitle');
     const submitButton = document.getElementById('submitButton');
+    const studentForm = document.getElementById('studentForm');
 
     const fields = [
         document.getElementById('studentCode'),
@@ -337,6 +354,7 @@ function setupFormMode(mode) {
     ];
 
     if (mode === 'create') {
+        if (studentForm) studentForm.reset();
         if (pageTitle) pageTitle.textContent = 'Thêm sinh viên | School Manager';
         if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-person-plus text-primary me-2"></i>Thêm sinh viên';
         if (breadcrumbTitle) breadcrumbTitle.textContent = 'Thêm';
@@ -345,6 +363,7 @@ function setupFormMode(mode) {
             submitButton.style.display = '';
             submitButton.innerHTML = `<i class="bi bi-plus-circle me-1"></i>Thêm sinh viên`;
         }
+        fields.forEach(field => { if (field) field.readOnly = false; });
         return;
     }
 
@@ -357,6 +376,7 @@ function setupFormMode(mode) {
             submitButton.style.display = '';
             submitButton.innerHTML = `<i class="bi bi-check-circle me-1"></i>Lưu thay đổi`;
         }
+        fields.forEach(field => { if (field) field.readOnly = false; });
         return;
     }
 
@@ -367,9 +387,7 @@ function setupFormMode(mode) {
         if (formTitle) formTitle.innerHTML = '<i class="bi bi-person-badge me-2"></i>Thông tin sinh viên';
         if (submitButton) submitButton.style.display = 'none';
 
-        fields.forEach((field) => {
-            if (field) field.readOnly = true;
-        });
+        fields.forEach(field => { if (field) field.readOnly = true; });
     }
 }
 
@@ -382,7 +400,7 @@ async function loadStudentDetail(id, mode) {
         if (mode === 'view') setFormReadOnly(true);
     } catch (error) {
         console.error('Lỗi khi lấy thông tin sinh viên:', error);
-        alert('Không thể lấy thông tin sinh viên');
+        alert('Không thể lấy thông tin sinh viên: ' + error.message);
         window.location.href = 'index.html?page=list';
     }
 }
@@ -422,11 +440,11 @@ async function saveStudent(mode, id = null) {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        alert(mode === 'edit' ? 'Cập nhật sinh viên thành công' : 'Thêm sinh viên thành công');
+        alert(mode === 'edit' ? 'Cập nhật sinh viên thành công!' : 'Thêm sinh viên thành công!');
         window.location.href = 'index.html?page=list';
     } catch (error) {
         console.error('Lỗi khi lưu sinh viên:', error);
-        alert(mode === 'edit' ? 'Cập nhật sinh viên thất bại' : 'Thêm sinh viên thất bại');
+        alert(mode === 'edit' ? 'Cập nhật sinh viên thất bại: ' + error.message : 'Thêm sinh viên thất bại: ' + error.message);
     }
 }
 
@@ -462,6 +480,27 @@ function setFormReadOnly(readOnly) {
     });
 }
 
+function showAlert(type, message) {
+    const alertBox = document.getElementById('alertBox');
+    if (!alertBox) return;
+
+    alertBox.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+
+    setTimeout(() => {
+        const alertEl = alertBox.querySelector('.alert');
+        if (alertEl && window.bootstrap) {
+            const bsAlert = new bootstrap.Alert(alertEl);
+            bsAlert.close();
+        }
+    }, 4000);
+}
+
 function escapeHtml(value) {
     if (value === null || value === undefined) return '';
     return String(value)
@@ -473,17 +512,16 @@ function escapeHtml(value) {
 }
 
 // ==========================================================================
-// 📅 MINI CALENDAR (eCoursie style side panel)
+// 📅 MINI CALENDAR (Interactive Month Switcher)
 // ==========================================================================
 
 function renderMiniCalendar() {
     const container = document.getElementById('miniCalendar');
     if (!container) return;
 
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const today = now.getDate();
+    const year = currentCalDate.getFullYear();
+    const month = currentCalDate.getMonth();
+    const today = new Date();
 
     const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
                         'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
@@ -498,7 +536,7 @@ function renderMiniCalendar() {
         daysHTML += '<span class="cal-day empty"></span>';
     }
     for (let d = 1; d <= daysInMonth; d++) {
-        const isToday = d === today ? ' today' : '';
+        const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) ? ' today' : '';
         daysHTML += `<span class="cal-day${isToday}">${d}</span>`;
     }
 
@@ -506,8 +544,8 @@ function renderMiniCalendar() {
         <div class="cal-header">
             <h6>${monthNames[month]} ${year}</h6>
             <div class="cal-nav">
-                <button type="button"><i class="bi bi-chevron-left"></i></button>
-                <button type="button"><i class="bi bi-chevron-right"></i></button>
+                <button type="button" id="calPrevBtn" title="Tháng trước"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" id="calNextBtn" title="Tháng sau"><i class="bi bi-chevron-right"></i></button>
             </div>
         </div>
         <div class="cal-weekdays">
@@ -517,4 +555,19 @@ function renderMiniCalendar() {
             ${daysHTML}
         </div>
     `;
+
+    const prevBtn = container.querySelector('#calPrevBtn');
+    const nextBtn = container.querySelector('#calNextBtn');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+            renderMiniCalendar();
+        });
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+            renderMiniCalendar();
+        });
+    }
 }

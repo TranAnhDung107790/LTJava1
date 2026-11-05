@@ -4,10 +4,11 @@
    APPLIES GLOBALLY TO THE ENTIRE SCHOOL MANAGEMENT PORTAL
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@500;600&display=swap');
 
 :root {
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
     /* 🎨 Pastel EdTech Palette */
     --purple-start: #667eea;
@@ -50,9 +51,10 @@
    🌍 GLOBAL BASE
    ========================================================================== */
 
-body, html, .app-wrapper {
+body, html, .app-wrapper, body.bg-body-tertiary {
     font-family: var(--font-sans) !important;
     background: var(--background) !important;
+    background-color: var(--background) !important;
     color: var(--text-main) !important;
     -webkit-font-smoothing: antialiased;
 }
@@ -61,17 +63,20 @@ body, html, .app-wrapper {
    💜 SIDEBAR — Purple Gradient (eCoursie Style)
    ========================================================================== */
 
-.app-sidebar {
+aside.app-sidebar,
+.app-sidebar,
+.app-sidebar.bg-body-secondary {
     background: linear-gradient(180deg, var(--purple-start) 0%, var(--purple-end) 100%) !important;
+    background-color: var(--purple-end) !important;
     border-right: none !important;
     box-shadow: var(--shadow-sidebar) !important;
-    border-radius: 0 var(--radius-xl) var(--radius-xl) 0 !important;
-    overflow: hidden;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
 }
 
 .app-sidebar .sidebar-brand {
-    padding: 1.25rem 0.5rem !important;
-    border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+    padding: 1.1rem 0.75rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 .app-sidebar .sidebar-brand .brand-link {
@@ -83,11 +88,6 @@ body, html, .app-wrapper {
     font-weight: 700 !important;
     font-size: 1.1rem !important;
     letter-spacing: 0.02em;
-}
-
-.app-sidebar .sidebar-brand .brand-image {
-    filter: brightness(10) !important;
-    opacity: 1 !important;
 }
 
 /* Sidebar Nav Links */
@@ -103,18 +103,18 @@ body, html, .app-wrapper {
 
 .sidebar-wrapper .nav-item .nav-link i,
 .sidebar-wrapper .nav-item .nav-link .nav-icon {
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: rgba(255, 255, 255, 0.75) !important;
     font-size: 1.1rem !important;
 }
 
 .sidebar-wrapper .nav-item .nav-link p {
-    color: rgba(255, 255, 255, 0.85) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .sidebar-wrapper .nav-item .nav-link.active {
-    background: rgba(255, 255, 255, 0.2) !important;
+    background: rgba(255, 255, 255, 0.22) !important;
     backdrop-filter: blur(8px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
     color: #FFFFFF !important;
     font-weight: 700 !important;
 }
@@ -126,7 +126,7 @@ body, html, .app-wrapper {
 }
 
 .sidebar-wrapper .nav-item .nav-link:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(255, 255, 255, 0.14) !important;
     color: #FFFFFF !important;
     transform: translateX(4px);
 }
@@ -141,7 +141,7 @@ body, html, .app-wrapper {
     font-size: 0.7rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.1em !important;
-    color: rgba(255, 255, 255, 0.5) !important;
+    color: rgba(255, 255, 255, 0.55) !important;
     padding: 1rem 1.5rem 0.3rem !important;
     text-transform: uppercase;
 }
@@ -150,9 +150,12 @@ body, html, .app-wrapper {
    🔝 HEADER — Glassmorphism with Purple Accent
    ========================================================================== */
 
-.app-header {
+nav.app-header,
+.app-header,
+.app-header.bg-body {
     backdrop-filter: blur(16px) saturate(1.8) !important;
-    background: rgba(255, 255, 255, 0.85) !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    background-color: rgba(255, 255, 255, 0.88) !important;
     border-bottom: 2px solid var(--border-light) !important;
     box-shadow: 0 2px 16px rgba(124, 92, 252, 0.06) !important;
 }
@@ -313,7 +316,7 @@ body, html, .app-wrapper {
 }
 
 .session-code-pill {
-    font-family: 'Fira Code', ui-monospace, monospace;
+    font-family: var(--font-mono);
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--purple-text);
@@ -352,7 +355,7 @@ body, html, .app-wrapper {
 }
 
 /* ==========================================================================
-   📋 DATA TABLES — Modern Pastel Style
+   📋 DATA TABLES — Modern Pastel Style with Transparent TD
    ========================================================================== */
 
 .table thead th {
@@ -378,17 +381,19 @@ body, html, .app-wrapper {
 }
 
 .table tbody tr:hover {
-    background: linear-gradient(90deg, rgba(243, 238, 255, 0.5), rgba(232, 244, 253, 0.4)) !important;
+    background: linear-gradient(90deg, rgba(243, 238, 255, 0.55), rgba(232, 244, 253, 0.45)) !important;
     border-left: 3px solid var(--purple-accent) !important;
     transform: scale(1.002);
 }
 
+/* Crucial: remove opaque Bootstrap background from td so tr hover works */
 .table tbody td {
     padding: 0.95rem 1rem !important;
     vertical-align: middle !important;
     border-bottom: 1px solid rgba(232, 224, 255, 0.5) !important;
     font-size: 0.875rem !important;
     color: var(--text-main);
+    background-color: transparent !important;
 }
 
 .table-responsive {
@@ -616,6 +621,7 @@ body, html, .app-wrapper {
 .edu-layout {
     display: flex;
     gap: 1.5rem;
+    align-items: flex-start;
 }
 
 .edu-main-content {
@@ -624,7 +630,7 @@ body, html, .app-wrapper {
 }
 
 .edu-side-panel {
-    width: 280px;
+    width: 290px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -721,12 +727,7 @@ body, html, .app-wrapper {
     background: linear-gradient(135deg, var(--purple-start), var(--purple-accent));
     color: #FFFFFF;
     font-weight: 700;
-}
-
-.mini-calendar .cal-day.has-event {
-    border: 2px solid var(--purple-accent);
-    font-weight: 700;
-    color: var(--purple-accent);
+    box-shadow: 0 2px 6px rgba(124, 92, 252, 0.4);
 }
 
 .mini-calendar .cal-day.empty {
@@ -767,7 +768,7 @@ body, html, .app-wrapper {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.5rem 0;
+    padding: 0.55rem 0;
     border-bottom: 1px solid rgba(232, 224, 255, 0.4);
 }
 
@@ -876,12 +877,71 @@ body, html, .app-wrapper {
    🔙 BACKWARD COMPAT CLASSES (other team pages use these)
    ========================================================================== */
 
-.badge-pass { background: linear-gradient(135deg, #10B981, #34D399); color: #FFFFFF; font-size: 0.8125rem; padding: 0.35em 0.75em; border-radius: var(--radius-full); font-weight: 600; }
-.badge-fail { background: linear-gradient(135deg, #EF4444, #F87171); color: #FFFFFF; font-size: 0.8125rem; padding: 0.35em 0.75em; border-radius: var(--radius-full); font-weight: 600; }
-.badge-class-1 { background: linear-gradient(135deg, #6366F1, #818CF8); color: #FFFFFF; border-radius: var(--radius-full); }
-.badge-class-2 { background: linear-gradient(135deg, #0EA5E9, #38BDF8); color: #FFFFFF; border-radius: var(--radius-full); }
-.badge-class-3 { background: linear-gradient(135deg, #14B8A6, #5EEAD4); color: #FFFFFF; border-radius: var(--radius-full); }
-.badge-class-4 { background: linear-gradient(135deg, #F59E0B, #FCD34D); color: #FFFFFF; border-radius: var(--radius-full); }
+.badge-pass {
+    background: linear-gradient(135deg, #10B981, #34D399) !important;
+    color: #FFFFFF !important;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-fail {
+    background: linear-gradient(135deg, #EF4444, #F87171) !important;
+    color: #FFFFFF !important;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-class-1 {
+    background: linear-gradient(135deg, #6366F1, #818CF8) !important;
+    color: #FFFFFF !important;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-class-2 {
+    background: linear-gradient(135deg, #0EA5E9, #38BDF8) !important;
+    color: #FFFFFF !important;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-class-3 {
+    background: linear-gradient(135deg, #14B8A6, #5EEAD4) !important;
+    color: #FFFFFF !important;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-class-4 {
+    background: linear-gradient(135deg, #F59E0B, #FCD34D) !important;
+    color: #FFFFFF !important;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
 
 /* Badge for table pages */
 .badge.bg-light {
@@ -916,18 +976,33 @@ body, html, .app-wrapper {
 }
 
 /* ==========================================================================
-   📱 RESPONSIVE — Hide Side Panel on Smaller Screens
-   ========================================================================== */
+   📱 RESPONSIVE — Fluid Stacking for Laptops & Mobile
+   ========================================================================= */
 
-@media (max-width: 1200px) {
+@media (max-width: 1366px) {
+    .edu-layout {
+        flex-direction: column;
+    }
     .edu-side-panel {
-        display: none;
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .edu-side-panel > * {
+        flex: 1;
+        min-width: 280px;
     }
 }
 
 @media (max-width: 768px) {
     .bento-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+    .edu-side-panel {
+        flex-direction: column;
+    }
+    .edu-side-panel > * {
+        width: 100%;
     }
 }
 

@@ -4,6 +4,7 @@ let sessionsList = [];
 let sessionModalInstance = null;
 let autoModalInstance = null;
 let activeOnlyFilter = false;
+let currentCalDate = new Date();
 
 document.addEventListener('DOMContentLoaded', () => {
     const modalEl = document.getElementById('sessionModal');
@@ -30,10 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         gsap.from('.edu-side-panel > *', {
             opacity: 0,
-            x: 30,
+            x: 25,
             duration: 0.6,
             stagger: 0.15,
-            delay: 0.3,
+            delay: 0.25,
             ease: 'power2.out'
         });
     }
@@ -161,7 +162,7 @@ function renderTable(items) {
     const tableBody = document.getElementById('sessionsTableBody');
     const totalBadge = document.getElementById('totalBadge');
     if (totalBadge) {
-        totalBadge.textContent = `Tổng số: ${items.length}`;
+        totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${items.length} đợt xét`;
     }
 
     // Cập nhật các chỉ số Bento Stat Cards
@@ -184,14 +185,18 @@ function renderTable(items) {
     tableBody.innerHTML = items.map((item, index) => {
         const sessionCodeBadge = `<span class="session-code-pill">${escapeHtml(item.sessionCode)}</span>`;
 
-        // Tính toán tình trạng hạn nộp với chuẩn status pill của UI/UX Pro Max
+        // Normalize dates to YYYY-MM-DD
+        const sDate = item.startDate ? String(item.startDate).substring(0, 10) : '';
+        const dDate = item.dueDate ? String(item.dueDate).substring(0, 10) : '';
+
+        // Tình trạng hạn nộp
         let periodStatus = '<span class="badge-status badge-status-expired"><i class="bi bi-dash-circle me-1"></i>Chưa mở</span>';
-        if (item.startDate && item.dueDate) {
-            if (today >= item.startDate && today <= item.dueDate) {
+        if (sDate && dDate) {
+            if (today >= sDate && today <= dDate) {
                 periodStatus = '<span class="badge-status badge-status-active"><span class="status-pulse-dot"></span>Đang mở nộp</span>';
-            } else if (today < item.startDate) {
+            } else if (today < sDate) {
                 periodStatus = '<span class="badge-status badge-status-upcoming"><i class="bi bi-clock-history me-1"></i>Sắp diễn ra</span>';
-            } else if (today > item.dueDate) {
+            } else if (today > dDate) {
                 periodStatus = '<span class="badge-status badge-status-expired"><i class="bi bi-check2-circle me-1"></i>Đã đóng</span>';
             }
         }
@@ -203,8 +208,8 @@ function renderTable(items) {
                 <td class="fw-bold text-dark">${escapeHtml(item.sessionName)}</td>
                 <td class="text-center"><span class="badge bg-light text-secondary border">${escapeHtml(item.academicYear || '-')}</span></td>
                 <td class="text-center"><span class="badge bg-primary-subtle text-primary fw-semibold px-2">HK${item.semester || 1}</span></td>
-                <td class="small text-muted font-monospace">${item.startDate || '-'}</td>
-                <td class="small text-muted font-monospace">${item.dueDate || '-'}</td>
+                <td class="small text-muted font-monospace">${sDate || '-'}</td>
+                <td class="small text-muted font-monospace">${dDate || '-'}</td>
                 <td class="text-center">${periodStatus}</td>
                 <td class="small text-muted" style="max-width: 220px;">${item.note ? escapeHtml(item.note) : '-'}</td>
                 <td class="text-end">
@@ -247,10 +252,12 @@ function updateBentoStats(allSessions) {
 
     allSessions.forEach(item => {
         if (item.academicYear) latestYear = item.academicYear;
-        if (item.startDate && item.dueDate) {
-            if (today >= item.startDate && today <= item.dueDate) {
+        const sDate = item.startDate ? String(item.startDate).substring(0, 10) : '';
+        const dDate = item.dueDate ? String(item.dueDate).substring(0, 10) : '';
+        if (sDate && dDate) {
+            if (today >= sDate && today <= dDate) {
                 activeCount++;
-            } else if (today < item.startDate) {
+            } else if (today < sDate) {
                 upcomingCount++;
             }
         }
@@ -306,8 +313,8 @@ function openEditModal(id) {
     document.getElementById('modalSessionName').value = item.sessionName || '';
     document.getElementById('modalAcademicYear').value = item.academicYear || '';
     document.getElementById('modalSemester').value = item.semester || 2;
-    document.getElementById('modalStartDate').value = item.startDate || '';
-    document.getElementById('modalDueDate').value = item.dueDate || '';
+    document.getElementById('modalStartDate').value = item.startDate ? String(item.startDate).substring(0, 10) : '';
+    document.getElementById('modalDueDate').value = item.dueDate ? String(item.dueDate).substring(0, 10) : '';
     document.getElementById('modalNote').value = item.note || '';
 
     if (sessionModalInstance) {
@@ -453,17 +460,16 @@ function escapeHtml(text) {
 }
 
 // ==========================================================================
-// 📅 MINI CALENDAR (eCoursie style side panel)
+// 📅 MINI CALENDAR (Interactive Month Switcher)
 // ==========================================================================
 
 function renderMiniCalendar() {
     const container = document.getElementById('miniCalendar');
     if (!container) return;
 
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const today = now.getDate();
+    const year = currentCalDate.getFullYear();
+    const month = currentCalDate.getMonth();
+    const today = new Date();
 
     const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
                         'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
@@ -474,13 +480,11 @@ function renderMiniCalendar() {
     const startOffset = (firstDay === 0) ? 6 : firstDay - 1; // Monday start
 
     let daysHTML = '';
-    // Empty cells before first day
     for (let i = 0; i < startOffset; i++) {
         daysHTML += '<span class="cal-day empty"></span>';
     }
-    // Day cells
     for (let d = 1; d <= daysInMonth; d++) {
-        const isToday = d === today ? ' today' : '';
+        const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) ? ' today' : '';
         daysHTML += `<span class="cal-day${isToday}">${d}</span>`;
     }
 
@@ -488,8 +492,8 @@ function renderMiniCalendar() {
         <div class="cal-header">
             <h6>${monthNames[month]} ${year}</h6>
             <div class="cal-nav">
-                <button type="button"><i class="bi bi-chevron-left"></i></button>
-                <button type="button"><i class="bi bi-chevron-right"></i></button>
+                <button type="button" id="calPrevBtn" title="Tháng trước"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" id="calNextBtn" title="Tháng sau"><i class="bi bi-chevron-right"></i></button>
             </div>
         </div>
         <div class="cal-weekdays">
@@ -499,4 +503,19 @@ function renderMiniCalendar() {
             ${daysHTML}
         </div>
     `;
+
+    const prevBtn = container.querySelector('#calPrevBtn');
+    const nextBtn = container.querySelector('#calNextBtn');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+            renderMiniCalendar();
+        });
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+            renderMiniCalendar();
+        });
+    }
 }
