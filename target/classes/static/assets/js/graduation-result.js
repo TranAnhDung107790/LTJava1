@@ -324,6 +324,18 @@ function renderResultsTable(pageData) {
         `;
     }).join('');
 
+    // GSAP Stagger animation cho các hàng trong bảng kết quả (clearProps chống lỗi mờ dòng - gsap-skill)
+    if (window.gsap) {
+        gsap.from('#resultsTableBody tr', {
+            opacity: 0,
+            y: 8,
+            duration: 0.25,
+            stagger: 0.02,
+            ease: 'power1.out',
+            clearProps: 'all'
+        });
+    }
+
     // Attach row action events
     tableBody.querySelectorAll('.btn-edit').forEach(btn => {
         btn.addEventListener('click', () => openEditModal(btn.getAttribute('data-id'), items));

@@ -73,11 +73,17 @@ aside.app-sidebar,
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+:root {
+    --lte-sidebar-width: var(--sidebar-width) !important;
+}
+
+/* Trong AdminLTE 4 (CSS Grid), cột 2 đã tự động bắt đầu sau sidebar.
+   Không được set margin-left để tránh tạo khoảng trắng thừa (bị cách ra 1 đoạn) */
 @media (min-width: 992px) {
     .app-main,
     .app-header,
     .app-footer {
-        margin-left: var(--sidebar-width) !important;
+        margin-left: 0 !important;
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 }
@@ -945,10 +951,93 @@ nav.app-header,
     flex-shrink: 0;
 }
 
-.team-avatar.av-purple { background: linear-gradient(135deg, #667eea, #764ba2); }
-.team-avatar.av-blue { background: linear-gradient(135deg, #0EA5E9, #38BDF8); }
-.team-avatar.av-green { background: linear-gradient(135deg, #10B981, #34D399); }
-.team-avatar.av-orange { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+.av-purple, .user-profile-avatar.av-purple, .team-avatar.av-purple { background: linear-gradient(135deg, #667eea, #764ba2) !important; color: #FFFFFF !important; }
+.av-blue,   .user-profile-avatar.av-blue,   .team-avatar.av-blue   { background: linear-gradient(135deg, #0EA5E9, #2563EB) !important; color: #FFFFFF !important; }
+.av-green,  .user-profile-avatar.av-green,  .team-avatar.av-green  { background: linear-gradient(135deg, #059669, #10B981) !important; color: #FFFFFF !important; }
+.av-orange, .user-profile-avatar.av-orange, .team-avatar.av-orange { background: linear-gradient(135deg, #D97706, #F59E0B) !important; color: #FFFFFF !important; }
+.av-pink,   .user-profile-avatar.av-pink,   .team-avatar.av-pink   { background: linear-gradient(135deg, #DB2777, #F43F5E) !important; color: #FFFFFF !important; }
+
+/* ==========================================================================
+   🏷️ BADGES KẾT QUẢ TỐT NGHIỆP — ĐẬM NÉT, RÕ RÀNG (SỬA LỖI MỜ CHỮ - ẢNH 1)
+   ========================================================================== */
+
+.badge.badge-pass {
+    background: #DCFCE7 !important;
+    color: #15803D !important;
+    border: 1px solid #86EFAC !important;
+    font-weight: 700 !important;
+    font-size: 0.76rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: var(--radius-full) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge.badge-fail {
+    background: #FEE2E2 !important;
+    color: #B91C1C !important;
+    border: 1px solid #FCA5A5 !important;
+    font-weight: 700 !important;
+    font-size: 0.76rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: var(--radius-full) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge.badge-class-1 {
+    background: #FEF3C7 !important;
+    color: #92400E !important;
+    border: 1px solid #FCD34D !important;
+    font-weight: 700 !important;
+    font-size: 0.76rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: var(--radius-full) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge.badge-class-2 {
+    background: #DBEAFE !important;
+    color: #1E40AF !important;
+    border: 1px solid #93C5FD !important;
+    font-weight: 700 !important;
+    font-size: 0.76rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: var(--radius-full) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge.badge-class-3 {
+    background: #EDE9FE !important;
+    color: #5B21B6 !important;
+    border: 1px solid #C4B5FD !important;
+    font-weight: 700 !important;
+    font-size: 0.76rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: var(--radius-full) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge.badge-class-4 {
+    background: #F1F5F9 !important;
+    color: #475569 !important;
+    border: 1px solid #CBD5E1 !important;
+    font-weight: 600 !important;
+    font-size: 0.76rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: var(--radius-full) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
 
 .team-info {
     flex: 1;
