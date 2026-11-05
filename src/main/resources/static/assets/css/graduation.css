@@ -59,15 +59,15 @@ body, html, .app-wrapper, body.bg-body-tertiary {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Thu gọn Sidebar AdminLTE về 215px */
+/* Thu gọn Sidebar AdminLTE về 220px - Tông tím Royal Indigo chuẩn 100% theo ảnh eCoursie */
 aside.app-sidebar,
 .app-sidebar,
 .app-sidebar.bg-body-secondary {
     width: var(--sidebar-width) !important;
-    background: linear-gradient(180deg, var(--purple-start) 0%, var(--purple-end) 100%) !important;
-    background-color: var(--purple-end) !important;
+    background: #4D44B5 !important;
+    background-color: #4D44B5 !important;
     border-right: none !important;
-    box-shadow: var(--shadow-sidebar) !important;
+    box-shadow: 4px 0 24px rgba(77, 68, 181, 0.22) !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -158,24 +158,43 @@ aside.app-sidebar,
     letter-spacing: -0.01em !important;
 }
 
+/* Mục Menu ĐANG CHỌN (Active): Nền trắng tinh khiết, chữ & icon màu tím #4D44B5 chuẩn 100% theo ảnh eCoursie */
 .sidebar-wrapper .nav-item .nav-link.active {
-    background: rgba(255, 255, 255, 0.22) !important;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-    color: #FFFFFF !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+    color: #4D44B5 !important;
     font-weight: 700 !important;
 }
 
 .sidebar-wrapper .nav-item .nav-link.active i,
 .sidebar-wrapper .nav-item .nav-link.active .nav-icon,
 .sidebar-wrapper .nav-item .nav-link.active p {
-    color: #FFFFFF !important;
+    color: #4D44B5 !important;
+    font-weight: 700 !important;
+}
+
+/* Mục Menu CHƯA CHỌN (Inactive) */
+.sidebar-wrapper .nav-item .nav-link:not(.active) {
+    color: rgba(255, 255, 255, 0.78) !important;
+}
+
+.sidebar-wrapper .nav-item .nav-link:not(.active) i,
+.sidebar-wrapper .nav-item .nav-link:not(.active) .nav-icon,
+.sidebar-wrapper .nav-item .nav-link:not(.active) p {
+    color: rgba(255, 255, 255, 0.78) !important;
 }
 
 .sidebar-wrapper .nav-item .nav-link:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.14) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
     color: #FFFFFF !important;
     transform: translateX(3px);
+}
+
+.sidebar-wrapper .nav-item .nav-link:hover:not(.active) i,
+.sidebar-wrapper .nav-item .nav-link:hover:not(.active) .nav-icon,
+.sidebar-wrapper .nav-item .nav-link:hover:not(.active) p {
+    color: #FFFFFF !important;
 }
 
 /* ==========================================================================
