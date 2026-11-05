@@ -112,6 +112,61 @@
             <!-- Content -->
             <div class="app-content">
                 <div class="container-fluid">
+                    <!-- Bento KPI Stat Cards (UI/UX Pro Max) -->
+                    <div class="bento-grid">
+                        <div class="bento-stat-card bento-card-blue">
+                            <div class="bento-header">
+                                <span class="bento-title">Tổng số sinh viên</span>
+                                <div class="bento-icon-wrapper bento-icon-blue">
+                                    <i class="bi bi-people-fill"></i>
+                                </div>
+                            </div>
+                            <div class="bento-value" id="statTotalStudents">0</div>
+                            <div class="bento-subtitle">
+                                <i class="bi bi-person-lines-fill text-primary"></i>Hồ sơ sinh viên toàn trường
+                            </div>
+                        </div>
+
+                        <div class="bento-stat-card bento-card-emerald">
+                            <div class="bento-header">
+                                <span class="bento-title">Đang theo học</span>
+                                <div class="bento-icon-wrapper bento-icon-emerald">
+                                    <i class="bi bi-person-check-fill"></i>
+                                </div>
+                            </div>
+                            <div class="bento-value text-success" id="statActiveStudents">0</div>
+                            <div class="bento-subtitle text-success">
+                                <span class="status-pulse-dot"></span>Trạng thái bình thường
+                            </div>
+                        </div>
+
+                        <div class="bento-stat-card bento-card-amber">
+                            <div class="bento-header">
+                                <span class="bento-title">Số lớp quản lý</span>
+                                <div class="bento-icon-wrapper bento-icon-amber">
+                                    <i class="bi bi-collection-fill"></i>
+                                </div>
+                            </div>
+                            <div class="bento-value text-warning" id="statTotalClasses">0</div>
+                            <div class="bento-subtitle">
+                                <i class="bi bi-mortarboard text-warning"></i>Các lớp khóa hiện hành
+                            </div>
+                        </div>
+
+                        <div class="bento-stat-card bento-card-purple">
+                            <div class="bento-header">
+                                <span class="bento-title">Khóa đào tạo</span>
+                                <div class="bento-icon-wrapper bento-icon-purple">
+                                    <i class="bi bi-award-fill"></i>
+                                </div>
+                            </div>
+                            <div class="bento-value text-purple" id="statStudentBatch" style="font-size: 1.45rem; color: #7C3AED;">C2024 / 2026</div>
+                            <div class="bento-subtitle" style="color: #7C3AED;">
+                                <i class="bi bi-check-circle-fill"></i>Chương trình chuẩn
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card shadow-sm border-0">
                         <!-- Card Header -->
                         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -280,6 +335,7 @@
     </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="/adminlte/js/adminlte.js"></script>
 <script type="module" src="/assets/js/student.js"></script>
 </body>

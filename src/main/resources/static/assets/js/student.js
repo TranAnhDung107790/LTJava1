@@ -33,6 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initStudentPage();
 
+    if (window.gsap) {
+        gsap.from('.bento-stat-card', {
+            opacity: 0,
+            y: 16,
+            duration: 0.5,
+            stagger: 0.08,
+            ease: 'power2.out'
+        });
+    }
+
 });
 
 function initStudentPage() {
@@ -118,11 +128,15 @@ function renderStudents(students) {
         return;
     }
 
+    // Cập nhật các thẻ Bento Stat Cards
+    updateStudentStats(students);
+
     if (!students || students.length === 0) {
         studentTableBody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center text-muted py-4">
-                    Không có dữ liệu sinh viên
+                <td colspan="6" class="text-center text-muted py-5">
+                    <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary"></i>
+                    Không có dữ liệu sinh viên nào phù hợp.
                 </td>
             </tr>
         `;
@@ -134,27 +148,29 @@ function renderStudents(students) {
             return `
                 <tr>
                     <td>
-                        ${escapeHtml(student.studentCode)}
+                        <span class="session-code-pill">${escapeHtml(student.studentCode)}</span>
                     </td>
 
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <span>
+                            <span class="fw-bold text-dark">
                                 ${escapeHtml(student.fullName)}
                             </span>
                         </div>
                     </td>
 
-                    <td>
+                    <td class="text-muted small">
                         ${escapeHtml(student.email)}
                     </td>
 
-                    <td>
+                    <td class="text-muted small font-monospace">
                         ${escapeHtml(student.phone)}
                     </td>
 
                     <td>
-                        ${escapeHtml(student.className)}
+                        <span class="badge bg-light text-primary border fw-semibold px-2 py-1">
+                            ${escapeHtml(student.className)}
+                        </span>
                     </td>
 
                     <td class="text-end">
@@ -164,7 +180,7 @@ function renderStudents(students) {
                             <a
                                 class="btn btn-info btn-sm"
                                 href="index.html?page=form&id=${encodeURIComponent(student.id)}&mode=view"
-                                title="Xem"
+                                title="Xem chi tiết"
                             >
                                 <i class="bi bi-eye"></i>
                             </a>
@@ -173,7 +189,7 @@ function renderStudents(students) {
                             <a
                                 class="btn btn-warning btn-sm"
                                 href="index.html?page=form&id=${encodeURIComponent(student.id)}&mode=edit"
-                                title="Sửa"
+                                title="Chỉnh sửa thông tin"
                             >
                                 <i class="bi bi-pencil-square"></i>
                             </a>
@@ -194,6 +210,46 @@ function renderStudents(students) {
             `;
         })
         .join('');
+
+    // GSAP Stagger animation cho các hàng trong bảng
+    if (window.gsap) {
+        gsap.from('#studentTableBody tr', {
+            opacity: 0,
+            y: 8,
+            duration: 0.25,
+            stagger: 0.02,
+            ease: 'power1.out'
+        });
+    }
+}
+
+function updateStudentStats(students) {
+    if (!students) return;
+    const total = students.length;
+    const classes = new Set(students.map(s => s.className).filter(Boolean)).size;
+
+    animateCount('statTotalStudents', total);
+    animateCount('statActiveStudents', total);
+    animateCount('statTotalClasses', classes || 1);
+}
+
+function animateCount(elementId, targetValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!window.gsap) {
+        el.textContent = targetValue;
+        return;
+    }
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    const obj = { val: currentVal };
+    gsap.to(obj, {
+        val: targetValue,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: () => {
+            el.textContent = Math.round(obj.val);
+        }
+    });
 }
 
 // =========================
