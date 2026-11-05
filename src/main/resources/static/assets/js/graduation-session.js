@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventListeners();
     loadSessions();
+    renderMiniCalendar();
 
     if (window.gsap) {
         gsap.from('.bento-stat-card', {
@@ -25,6 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
             y: 16,
             duration: 0.5,
             stagger: 0.08,
+            ease: 'power2.out'
+        });
+        gsap.from('.edu-side-panel > *', {
+            opacity: 0,
+            x: 30,
+            duration: 0.6,
+            stagger: 0.15,
+            delay: 0.3,
             ease: 'power2.out'
         });
     }
@@ -441,4 +450,53 @@ function escapeHtml(text) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+// ==========================================================================
+// 📅 MINI CALENDAR (eCoursie style side panel)
+// ==========================================================================
+
+function renderMiniCalendar() {
+    const container = document.getElementById('miniCalendar');
+    if (!container) return;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const today = now.getDate();
+
+    const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+                        'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+    const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startOffset = (firstDay === 0) ? 6 : firstDay - 1; // Monday start
+
+    let daysHTML = '';
+    // Empty cells before first day
+    for (let i = 0; i < startOffset; i++) {
+        daysHTML += '<span class="cal-day empty"></span>';
+    }
+    // Day cells
+    for (let d = 1; d <= daysInMonth; d++) {
+        const isToday = d === today ? ' today' : '';
+        daysHTML += `<span class="cal-day${isToday}">${d}</span>`;
+    }
+
+    container.innerHTML = `
+        <div class="cal-header">
+            <h6>${monthNames[month]} ${year}</h6>
+            <div class="cal-nav">
+                <button type="button"><i class="bi bi-chevron-left"></i></button>
+                <button type="button"><i class="bi bi-chevron-right"></i></button>
+            </div>
+        </div>
+        <div class="cal-weekdays">
+            ${dayNames.map(d => `<span>${d}</span>`).join('')}
+        </div>
+        <div class="cal-days">
+            ${daysHTML}
+        </div>
+    `;
 }

@@ -35,9 +35,11 @@
     <!-- Sidebar -->
     <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
         <div class="sidebar-brand">
-            <a href="index.html" class="brand-link text-decoration-none">
-                <img src="/adminlte/assets/img/AdminLTELogo.png" alt="Logo" class="brand-image opacity-75 shadow" />
-                <span class="brand-text fw-light">School Manager</span>
+            <a href="index.html" class="brand-link text-decoration-none d-flex align-items-center gap-2 px-3 py-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-mortarboard-fill text-white fs-5"></i>
+                </div>
+                <span class="brand-text fw-bold text-white fs-5">School Manager</span>
             </a>
         </div>
 
@@ -89,7 +91,7 @@
                 <div class="row align-items-center">
                     <div class="col-sm-6">
                         <h3 class="mb-0 text-dark fw-bold">
-                            <i class="bi bi-calendar-event text-primary me-2"></i>Quản lý đợt xét tốt nghiệp
+                            <i class="bi bi-calendar-event text-primary me-2"></i>Đợt xét tốt nghiệp
                         </h3>
                     </div>
                     <div class="col-sm-6">
@@ -108,137 +110,194 @@
                 <!-- Alert Box -->
                 <div id="alertBox"></div>
 
-                <!-- Bento KPI Stat Cards (UI/UX Pro Max) -->
-                <div class="bento-grid">
-                    <div class="bento-stat-card bento-card-blue">
-                        <div class="bento-header">
-                            <span class="bento-title">Tổng số đợt xét</span>
-                            <div class="bento-icon-wrapper bento-icon-blue">
-                                <i class="bi bi-calendar3"></i>
+                <!-- 3-Column Layout: Main + Side Panel -->
+                <div class="edu-layout">
+                    <!-- ===== MAIN CONTENT ===== -->
+                    <div class="edu-main-content">
+
+                        <!-- Bento KPI Stat Cards -->
+                        <div class="bento-grid">
+                            <div class="bento-stat-card bento-card-blue">
+                                <div class="bento-header">
+                                    <span class="bento-title">Tổng số đợt xét</span>
+                                    <div class="bento-icon-wrapper bento-icon-blue">
+                                        <i class="bi bi-calendar3"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value" id="statTotalSessions">0</div>
+                                <div class="bento-subtitle">
+                                    <i class="bi bi-layers text-primary"></i>Toàn bộ các năm học
+                                </div>
+                            </div>
+
+                            <div class="bento-stat-card bento-card-emerald">
+                                <div class="bento-header">
+                                    <span class="bento-title">Đang mở nộp hồ sơ</span>
+                                    <div class="bento-icon-wrapper bento-icon-emerald">
+                                        <i class="bi bi-broadcast"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value text-success" id="statActiveSessions">0</div>
+                                <div class="bento-subtitle text-success">
+                                    <span class="status-pulse-dot"></span>Đang tiếp nhận sinh viên
+                                </div>
+                            </div>
+
+                            <div class="bento-stat-card bento-card-amber">
+                                <div class="bento-header">
+                                    <span class="bento-title">Sắp diễn ra</span>
+                                    <div class="bento-icon-wrapper bento-icon-amber">
+                                        <i class="bi bi-hourglass-split"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value text-warning" id="statUpcomingSessions">0</div>
+                                <div class="bento-subtitle">
+                                    <i class="bi bi-clock-history"></i>Chờ đến ngày mở
+                                </div>
+                            </div>
+
+                            <div class="bento-stat-card bento-card-purple">
+                                <div class="bento-header">
+                                    <span class="bento-title">Niên khóa hiện hành</span>
+                                    <div class="bento-icon-wrapper bento-icon-purple">
+                                        <i class="bi bi-mortarboard"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value" id="statCurrentYear" style="font-size: 1.45rem; color: #7C5CFC;">2026 - 2027</div>
+                                <div class="bento-subtitle" style="color: #7C5CFC;">
+                                    <i class="bi bi-check-circle-fill"></i>Đang áp dụng đào tạo
+                                </div>
                             </div>
                         </div>
-                        <div class="bento-value" id="statTotalSessions">0</div>
-                        <div class="bento-subtitle">
-                            <i class="bi bi-layers text-primary"></i>Toàn bộ các năm học
+
+                        <!-- Action Bar -->
+                        <div class="action-bar-card mb-4 p-3">
+                            <div class="row g-2 align-items-center justify-content-between">
+                                <div class="col-12 col-md-auto d-flex flex-wrap gap-2 align-items-center">
+                                    <!-- Filter Active only -->
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" id="btnFilterAll" class="btn btn-outline-primary active">Tất cả đợt</button>
+                                        <button type="button" id="btnFilterActiveOnly" class="btn btn-outline-primary">
+                                            <span class="status-pulse-dot me-1"></span>Đang mở nộp
+                                        </button>
+                                    </div>
+
+                                    <!-- Search -->
+                                    <div class="input-group input-group-sm" style="width: 260px;">
+                                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                        <input type="text" id="searchKeyword" class="form-control border-start-0" placeholder="Mã hoặc tên đợt xét..." />
+                                    </div>
+                                    <button id="btnSearch" class="btn btn-primary btn-sm px-3 fw-semibold">
+                                        <i class="bi bi-funnel me-1"></i>Lọc
+                                    </button>
+                                    <button id="btnRefresh" class="btn btn-outline-secondary btn-sm" title="Tải lại danh sách">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+
+                                <div class="col-12 col-md-auto d-flex flex-wrap gap-2">
+                                    <button id="btnOpenAutoModal" class="btn btn-outline-success btn-sm fw-semibold shadow-sm px-3">
+                                        <i class="bi bi-lightning-charge me-1"></i>Tự động tạo đợt theo năm học
+                                    </button>
+                                    <button id="btnOpenCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm px-3">
+                                        <i class="bi bi-plus-circle me-1"></i>Tạo đợt xét mới
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Table Card -->
+                        <div class="table-card-container mb-4">
+                            <div class="table-card-header d-flex align-items-center justify-content-between">
+                                <h5 class="mb-0 fw-bold fs-6 text-dark d-flex align-items-center">
+                                    <i class="bi bi-calendar2-check me-2 text-primary"></i>Danh sách các đợt xét tốt nghiệp
+                                </h5>
+                                <span id="totalBadge" class="badge-status badge-status-expired">
+                                    Tổng số: 0
+                                </span>
+                            </div>
+
+                            <div class="p-0">
+                                <div class="table-responsive">
+                                    <table class="table enterprise-table align-middle mb-0">
+                                        <thead>
+                                        <tr>
+                                            <th style="width: 50px;" class="text-center">#</th>
+                                            <th style="width: 140px;">Mã đợt</th>
+                                            <th>Tên đợt xét tốt nghiệp</th>
+                                            <th class="text-center" style="width: 130px;">Năm học</th>
+                                            <th class="text-center" style="width: 90px;">Học kỳ</th>
+                                            <th style="width: 120px;">Ngày mở nộp</th>
+                                            <th style="width: 120px;">Hạn chót</th>
+                                            <th class="text-center" style="width: 140px;">Tình trạng</th>
+                                            <th>Ghi chú</th>
+                                            <th style="width: 110px;" class="text-end">Hành động</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="sessionsTableBody">
+                                        <tr>
+                                            <td colspan="10" class="text-center text-muted py-5">
+                                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                                Đang tải danh sách đợt xét...
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
-                    <div class="bento-stat-card bento-card-emerald">
-                        <div class="bento-header">
-                            <span class="bento-title">Đang mở nộp hồ sơ</span>
-                            <div class="bento-icon-wrapper bento-icon-emerald">
-                                <i class="bi bi-broadcast"></i>
-                            </div>
+                    <!-- ===== SIDE PANEL (eCoursie right column) ===== -->
+                    <div class="edu-side-panel">
+                        <!-- Mini Calendar -->
+                        <div class="mini-calendar" id="miniCalendar">
+                            <!-- Generated by JS -->
                         </div>
-                        <div class="bento-value text-success" id="statActiveSessions">0</div>
-                        <div class="bento-subtitle text-success">
-                            <span class="status-pulse-dot"></span>Đang tiếp nhận sinh viên
-                        </div>
-                    </div>
 
-                    <div class="bento-stat-card bento-card-amber">
-                        <div class="bento-header">
-                            <span class="bento-title">Sắp diễn ra</span>
-                            <div class="bento-icon-wrapper bento-icon-amber">
-                                <i class="bi bi-hourglass-split"></i>
+                        <!-- Team Members (Nhóm 11) -->
+                        <div class="team-widget">
+                            <div class="team-header">
+                                <h6><i class="bi bi-people-fill me-2" style="color: var(--purple-accent);"></i>Nhóm 11</h6>
+                                <a href="#">Xem tất cả</a>
                             </div>
-                        </div>
-                        <div class="bento-value text-warning" id="statUpcomingSessions">0</div>
-                        <div class="bento-subtitle">
-                            <i class="bi bi-clock-history"></i>Chờ đến ngày mở
-                        </div>
-                    </div>
-
-                    <div class="bento-stat-card bento-card-purple">
-                        <div class="bento-header">
-                            <span class="bento-title">Niên khóa hiện hành</span>
-                            <div class="bento-icon-wrapper bento-icon-purple">
-                                <i class="bi bi-mortarboard"></i>
+                            <div class="team-member">
+                                <div class="team-avatar av-purple">TD</div>
+                                <div class="team-info">
+                                    <div class="team-name">Trần Anh Dũng</div>
+                                    <div class="team-role">Phần D – Đợt xét TN</div>
+                                </div>
+                                <div class="team-status-dot"></div>
                             </div>
-                        </div>
-                        <div class="bento-value" id="statCurrentYear" style="font-size: 1.45rem; color: #7C3AED;">2026 - 2027</div>
-                        <div class="bento-subtitle" style="color: #7C3AED;">
-                            <i class="bi bi-check-circle-fill"></i>Đang áp dụng đào tạo
+                            <div class="team-member">
+                                <div class="team-avatar av-blue">TV</div>
+                                <div class="team-info">
+                                    <div class="team-name">Trương Văn Hiếu</div>
+                                    <div class="team-role">Phần A – Tiêu chuẩn TN</div>
+                                </div>
+                                <div class="team-status-dot"></div>
+                            </div>
+                            <div class="team-member">
+                                <div class="team-avatar av-green">NH</div>
+                                <div class="team-info">
+                                    <div class="team-name">Nguyễn Hoàng</div>
+                                    <div class="team-role">Phần B – Kết quả xét</div>
+                                </div>
+                                <div class="team-status-dot"></div>
+                            </div>
+                            <div class="team-member">
+                                <div class="team-avatar av-orange">PT</div>
+                                <div class="team-info">
+                                    <div class="team-name">Phan Thành</div>
+                                    <div class="team-role">Phần C – Hồ sơ TN</div>
+                                </div>
+                                <div class="team-status-dot"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Action Bar -->
-                <div class="action-bar-card mb-4 p-3">
-                    <div class="row g-2 align-items-center justify-content-between">
-                        <div class="col-12 col-md-auto d-flex flex-wrap gap-2 align-items-center">
-                            <!-- Filter Active only -->
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button type="button" id="btnFilterAll" class="btn btn-outline-primary active">Tất cả đợt</button>
-                                <button type="button" id="btnFilterActiveOnly" class="btn btn-outline-primary">
-                                    <span class="status-pulse-dot me-1"></span>Đang mở nộp
-                                </button>
-                            </div>
-
-                            <!-- Search -->
-                            <div class="input-group input-group-sm" style="width: 260px;">
-                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                                <input type="text" id="searchKeyword" class="form-control border-start-0" placeholder="Mã hoặc tên đợt xét..." />
-                            </div>
-                            <button id="btnSearch" class="btn btn-primary btn-sm px-3 fw-semibold">
-                                <i class="bi bi-funnel me-1"></i>Lọc
-                            </button>
-                            <button id="btnRefresh" class="btn btn-outline-secondary btn-sm" title="Tải lại danh sách">
-                                <i class="bi bi-arrow-clockwise"></i>
-                            </button>
-                        </div>
-
-                        <div class="col-12 col-md-auto d-flex flex-wrap gap-2">
-                            <button id="btnOpenAutoModal" class="btn btn-outline-success btn-sm fw-semibold shadow-sm px-3">
-                                <i class="bi bi-lightning-charge me-1"></i>Tự động tạo đợt theo năm học
-                            </button>
-                            <button id="btnOpenCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm px-3">
-                                <i class="bi bi-plus-circle me-1"></i>Tạo đợt xét mới
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Table Card -->
-                <div class="table-card-container mb-4">
-                    <div class="table-card-header d-flex align-items-center justify-content-between">
-                        <h5 class="mb-0 fw-bold fs-6 text-dark d-flex align-items-center">
-                            <i class="bi bi-calendar2-check me-2 text-primary"></i>Danh sách các đợt xét tốt nghiệp
-                        </h5>
-                        <span id="totalBadge" class="badge-status badge-status-expired">
-                            Tổng số: 0
-                        </span>
-                    </div>
-
-                    <div class="p-0">
-                        <div class="table-responsive">
-                            <table class="table enterprise-table align-middle mb-0">
-                                <thead>
-                                <tr>
-                                    <th style="width: 50px;" class="text-center">#</th>
-                                    <th style="width: 140px;">Mã đợt</th>
-                                    <th>Tên đợt xét tốt nghiệp</th>
-                                    <th class="text-center" style="width: 130px;">Năm học</th>
-                                    <th class="text-center" style="width: 90px;">Học kỳ</th>
-                                    <th style="width: 120px;">Ngày mở nộp</th>
-                                    <th style="width: 120px;">Hạn chót</th>
-                                    <th class="text-center" style="width: 140px;">Tình trạng</th>
-                                    <th>Ghi chú</th>
-                                    <th style="width: 110px;" class="text-end">Hành động</th>
-                                </tr>
-                                </thead>
-                                <tbody id="sessionsTableBody">
-                                <tr>
-                                    <td colspan="10" class="text-center text-muted py-5">
-                                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-                                        Đang tải danh sách đợt xét...
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
@@ -247,7 +306,7 @@
     <footer class="app-footer text-muted small py-3">
         <div class="container-fluid d-flex justify-content-between align-items-center">
             <div><strong>Hệ thống Quản lý Đào tạo</strong> &copy; 2026 - Nhóm 11</div>
-            <div>AdminLTE 4 UI</div>
+            <div>Pastel EdTech Hub UI</div>
         </div>
     </footer>
 </div>
