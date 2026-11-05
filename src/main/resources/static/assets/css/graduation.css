@@ -1033,10 +1033,15 @@ nav.app-header,
     font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-main);
-    cursor: default;
+    cursor: pointer !important;
     margin: 0 auto;
     position: relative;
     transition: all 0.2s ease;
+}
+
+.mini-calendar .cal-day:hover {
+    background: var(--pastel-lavender) !important;
+    border-radius: 50%;
 }
 
 .mini-calendar .cal-day.today {
@@ -1044,6 +1049,17 @@ nav.app-header,
     color: #FFFFFF !important;
     font-weight: 700;
     box-shadow: 0 2px 6px rgba(124, 92, 252, 0.4);
+}
+
+.mini-calendar .cal-day.cal-day-selected {
+    box-shadow: 0 0 0 2px #7C3AED, 0 4px 10px rgba(124, 58, 237, 0.25) !important;
+    background: #EDE9FE !important;
+    color: #4D44B5 !important;
+    font-weight: 700;
+}
+
+.mini-calendar .cal-day.today.cal-day-selected {
+    box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #7C3AED !important;
 }
 
 /* Các chấm sự kiện cho 4 phần trên lịch */
@@ -1086,6 +1102,7 @@ nav.app-header,
 
 .mini-calendar .cal-day.empty {
     visibility: hidden;
+    cursor: default !important;
 }
 
 /* Chú thích màu sắc 4 phần */
@@ -1101,6 +1118,82 @@ nav.app-header,
 .dot-part-b { background: #059669 !important; } /* Green - Kết quả */
 .dot-part-c { background: #D97706 !important; } /* Amber - Hồ sơ */
 .dot-part-d { background: #7C3AED !important; } /* Purple - Đợt xét */
+
+/* Interactive Calendar Event Popover Box */
+.cal-event-box {
+    margin-top: 0.85rem;
+    padding: 0.85rem;
+    background: #F8F7FF;
+    border: 1.5px solid #E4E0FB;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(124, 92, 252, 0.08);
+    transition: all 0.3s ease;
+}
+
+.cal-event-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.45rem;
+    margin-bottom: 0.45rem;
+    border-bottom: 1px dashed #DDD6FE;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #4D44B5;
+}
+
+.cal-event-item {
+    padding: 0.55rem 0.65rem;
+    border-radius: 8px;
+    background: #FFFFFF;
+    border-left: 3.5px solid #7C3AED;
+    margin-bottom: 0.45rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.cal-event-item:last-child {
+    margin-bottom: 0;
+}
+
+.cal-event-item.item-part-a { border-left-color: #2563EB; }
+.cal-event-item.item-part-b { border-left-color: #059669; }
+.cal-event-item.item-part-c { border-left-color: #D97706; }
+.cal-event-item.item-part-d { border-left-color: #7C3AED; }
+
+.cal-event-item-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 0.25rem;
+}
+
+.cal-event-item-badge.badge-part-a { background: #DBEAFE; color: #1D4ED8; }
+.cal-event-item-badge.badge-part-b { background: #D1FAE5; color: #047857; }
+.cal-event-item-badge.badge-part-c { background: #FEF3C7; color: #B45309; }
+.cal-event-item-badge.badge-part-d { background: #EDE9FE; color: #6D28D9; }
+
+.cal-event-item-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1E1B4B;
+    line-height: 1.35;
+    margin-bottom: 0.2rem;
+}
+
+.cal-event-item-desc {
+    font-size: 0.73rem;
+    color: #64748B;
+    line-height: 1.35;
+}
+
+.cal-event-empty-box {
+    font-size: 0.78rem;
+    color: #64748B;
+    text-align: center;
+    padding: 0.4rem 0;
+}
 
 /* Team Members Widget */
 .team-widget {
