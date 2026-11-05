@@ -16,27 +16,29 @@
 <div class="app-wrapper">
     <!-- Navbar Header -->
     <nav class="app-header navbar navbar-expand shadow-sm">
-        <div class="container-fluid">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
-                        <i class="bi bi-list fs-5"></i>
-                    </a>
-                </li>
-                <li class="nav-item d-none d-md-block">
-                    <span class="nav-link fw-semibold text-primary">
-                        Quản lý đào tạo - Nhóm 11 (Quản lý tốt nghiệp)
-                    </span>
-                </li>
-            </ul>
+        <div class="container-fluid px-3">
+            <div class="d-flex align-items-center gap-2">
+                <a class="nav-link btn-sidebar-toggle" data-lte-toggle="sidebar" href="#" role="button" title="Mở/Đóng Menu">
+                    <i class="bi bi-list fs-5"></i>
+                </a>
+                <div class="navbar-brand-badge">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    <span>Quản lý đào tạo · Nhóm 11</span>
+                </div>
+            </div>
+            <div class="d-none d-sm-flex align-items-center gap-2">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill" style="font-size: 0.75rem;">
+                    <i class="bi bi-mortarboard me-1"></i>Hệ thống Đào tạo IT24AB
+                </span>
+            </div>
         </div>
     </nav>
 
     <!-- Sidebar -->
     <aside class="app-sidebar shadow" data-bs-theme="dark">
         <div class="sidebar-brand">
-            <a href="index.html" class="brand-link text-decoration-none d-flex align-items-center gap-2 px-3 py-2">
-                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center;">
+            <a href="index.html" class="brand-link text-decoration-none d-flex align-items-center gap-2 px-2 py-2">
+                <div class="brand-icon-box">
                     <i class="bi bi-mortarboard-fill text-white fs-5"></i>
                 </div>
                 <span class="brand-text fw-bold text-white fs-6">Quản lý tốt nghiệp</span>
@@ -61,9 +63,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="graduation-sessions.html" class="nav-link">
-                            <i class="nav-icon bi bi-calendar-event"></i>
-                            <p>Đợt xét tốt nghiệp</p>
+                        <a href="graduation-results.html" class="nav-link">
+                            <i class="nav-icon bi bi-award-fill"></i>
+                            <p>Kết quả tốt nghiệp</p>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -73,9 +75,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="graduation-results.html" class="nav-link">
-                            <i class="nav-icon bi bi-award-fill"></i>
-                            <p>Kết quả tốt nghiệp</p>
+                        <a href="graduation-sessions.html" class="nav-link">
+                            <i class="nav-icon bi bi-calendar-event"></i>
+                            <p>Đợt xét tốt nghiệp</p>
                         </a>
                     </li>
                 </ul>
@@ -204,14 +206,6 @@
                                 <span class="badge bg-light text-primary border">4 thành viên</span>
                             </div>
                             <div class="team-member">
-                                <div class="team-avatar av-purple">TD</div>
-                                <div class="team-info">
-                                    <div class="team-name">Trần Anh Dũng</div>
-                                    <div class="team-role">Phần D – Đợt xét tốt nghiệp</div>
-                                </div>
-                                <div class="team-status-dot" title="Phần D"></div>
-                            </div>
-                            <div class="team-member">
                                 <div class="team-avatar av-green">BA</div>
                                 <div class="team-info">
                                     <div class="team-name">Huỳnh Trần Bình An</div>
@@ -234,6 +228,14 @@
                                     <div class="team-role">Phần C – Hồ sơ tốt nghiệp</div>
                                 </div>
                                 <div class="team-status-dot" title="Phần C"></div>
+                            </div>
+                            <div class="team-member">
+                                <div class="team-avatar av-purple">TD</div>
+                                <div class="team-info">
+                                    <div class="team-name">Trần Anh Dũng</div>
+                                    <div class="team-role">Phần D – Đợt xét tốt nghiệp</div>
+                                </div>
+                                <div class="team-status-dot" title="Phần D"></div>
                             </div>
                         </div>
                     </div>

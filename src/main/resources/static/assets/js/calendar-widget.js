@@ -174,6 +174,17 @@ function escapeHtml(text) {
         .replace(/'/g, '&#039;');
 }
 
+function initSidebarToggleAnimation() {
+    const toggleBtns = document.querySelectorAll('[data-lte-toggle="sidebar"]');
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (window.gsap) {
+                gsap.fromTo(btn, { scale: 0.86 }, { scale: 1, duration: 0.26, ease: 'back.out(2.2)' });
+            }
+        });
+    });
+}
+
 // Tự động khởi chạy nếu có container #miniCalendar
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('miniCalendar')) {
@@ -181,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     initGlobalModalAnimations();
     initGlobalPageTransitions();
+    initSidebarToggleAnimation();
 });
 
 // ==========================================================================
