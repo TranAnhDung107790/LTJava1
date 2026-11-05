@@ -1,23 +1,11 @@
-body {
-  min-height: 100vh;
-  background: #f4f6f9;
-}
+/* ==========================================================================
+   STUDENT MODULE — Pastel EdTech Hub (Bản B)
+   Imports the global Pastel design system
+   ========================================================================== */
 
-.user-chip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(13, 110, 253, 0.08);
-  border: 1px solid rgba(13, 110, 253, 0.12);
-}
+@import url('./graduation.css');
 
-.user-chip small {
-  display: block;
-  color: #6c757d;
-}
-
+/* Student table action buttons — circular pastel */
 .table-actions {
   display: inline-flex;
   gap: 6px;
@@ -29,47 +17,58 @@ body {
 }
 
 .table-actions .btn {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  background: #ffffff;
-  border: 1px solid #dfe3e8;
-  color: #212529;
-  box-shadow: none;
-  transition: all 0.2s ease;
+  border-radius: 50% !important;
+  background: var(--surface);
+  border: 1.5px solid var(--border-light);
+  color: var(--purple-text);
+  box-shadow: 0 2px 6px rgba(124, 92, 252, 0.08);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.8rem;
 }
 
-.table-actions .btn:hover,
-.table-actions .btn:focus {
-  background: #f8f9fa;
-  border-color: #c9ced6;
-  color: #111827;
+.table-actions .btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(124, 92, 252, 0.2);
 }
 
-.table-actions .btn-info,
-.table-actions .btn-warning,
+.table-actions .btn-info {
+  background: var(--pastel-blue) !important;
+  border-color: var(--pastel-blue-border) !important;
+  color: #0284C7 !important;
+}
+
+.table-actions .btn-info:hover {
+  background: linear-gradient(135deg, #0EA5E9, #38BDF8) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+}
+
+.table-actions .btn-warning {
+  background: #FFF8E1 !important;
+  border-color: #FDE68A !important;
+  color: #D97706 !important;
+}
+
+.table-actions .btn-warning:hover {
+  background: linear-gradient(135deg, #F59E0B, #FBBF24) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+}
+
 .table-actions .btn-danger {
-  background: #ffffff;
-  border-color: #d9dde3;
-  color: #1f2937;
+  background: var(--pastel-peach) !important;
+  border-color: var(--pastel-peach-border) !important;
+  color: #DC2626 !important;
 }
 
-.table-actions .btn-info:hover,
-.table-actions .btn-warning:hover,
-.table-actions .btn-danger:hover,
-.table-actions .btn-info:focus,
-.table-actions .btn-warning:focus,
-.table-actions .btn-danger:focus {
-  background: #f3f4f6;
-  border-color: #cbd5e1;
-  color: #111827;
-}
-
-.form-card {
-  max-width: 820px;
-  margin: 40px auto;
+.table-actions .btn-danger:hover {
+  background: linear-gradient(135deg, #DC2626, #EF4444) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
 }

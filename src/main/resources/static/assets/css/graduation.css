@@ -1,7 +1,6 @@
 /* ==========================================================================
-   🎓 PASTEL EDTECH HUB — BẢN B
-   Inspired by eCoursie UI · Purple Gradient Sidebar · Pastel Cards
-   APPLIES GLOBALLY TO THE ENTIRE SCHOOL MANAGEMENT PORTAL
+   🎓 PASTEL EDTECH HUB — BẢN B (NÂNG CẤP GSAP & GỌN GÀNG)
+   Sidebar 215px · Purple Gradient · High Contrast Bento · Smooth Animations
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@500;600&display=swap');
@@ -10,12 +9,15 @@
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
+    /* 🎨 Sidebar width: thu gọn 215px để màn hình 100% zoom không bị chèn ép */
+    --sidebar-width: 215px;
+
     /* 🎨 Pastel EdTech Palette */
     --purple-start: #667eea;
     --purple-end: #764ba2;
     --purple-accent: #7C5CFC;
     --purple-light: #F3EEFF;
-    --purple-text: #5B3EA3;
+    --purple-text: #4C1D95;
 
     --pastel-blue: #E8F4FD;
     --pastel-blue-border: #B8DEFF;
@@ -27,28 +29,26 @@
     --pastel-mint-border: #A3F0D1;
 
     --surface: #FFFFFF;
-    --background: #F5F3FF;
+    --background: #F8F7FF;
     --border-light: #E8E0FF;
     --text-main: #1E1B4B;
-    --text-muted: #6B7280;
-    --text-purple: #5B3EA3;
+    --text-muted: #475569;
 
-    /* Shadows — colored ambient */
+    /* Shadows */
     --shadow-card: 0 4px 20px rgba(124, 92, 252, 0.08), 0 2px 8px rgba(124, 92, 252, 0.04);
-    --shadow-card-hover: 0 12px 32px rgba(124, 92, 252, 0.15), 0 4px 12px rgba(124, 92, 252, 0.06);
+    --shadow-card-hover: 0 12px 32px rgba(124, 92, 252, 0.16), 0 4px 12px rgba(124, 92, 252, 0.08);
     --shadow-sidebar: 4px 0 24px rgba(102, 126, 234, 0.2);
     --shadow-purple-btn: 0 4px 14px rgba(124, 92, 252, 0.35);
 
-    /* Spacious Radius */
-    --radius-sm: 12px;
-    --radius-md: 16px;
-    --radius-lg: 20px;
-    --radius-xl: 24px;
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 22px;
     --radius-full: 9999px;
 }
 
 /* ==========================================================================
-   🌍 GLOBAL BASE
+   🌍 GLOBAL BASE & LAYOUT SIZING
    ========================================================================== */
 
 body, html, .app-wrapper, body.bg-body-tertiary {
@@ -59,62 +59,93 @@ body, html, .app-wrapper, body.bg-body-tertiary {
     -webkit-font-smoothing: antialiased;
 }
 
-/* ==========================================================================
-   💜 SIDEBAR — Purple Gradient (eCoursie Style)
-   ========================================================================== */
-
+/* Thu gọn Sidebar AdminLTE về 215px */
 aside.app-sidebar,
 .app-sidebar,
 .app-sidebar.bg-body-secondary {
+    width: var(--sidebar-width) !important;
     background: linear-gradient(180deg, var(--purple-start) 0%, var(--purple-end) 100%) !important;
     background-color: var(--purple-end) !important;
     border-right: none !important;
     box-shadow: var(--shadow-sidebar) !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+@media (min-width: 992px) {
+    .app-main,
+    .app-header,
+    .app-footer {
+        margin-left: var(--sidebar-width) !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* Sidebar Brand Header */
 .app-sidebar .sidebar-brand {
-    padding: 1.1rem 0.75rem !important;
+    padding: 0.9rem 0.75rem !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+    height: 58px;
+    display: flex;
+    align-items: center;
 }
 
 .app-sidebar .sidebar-brand .brand-link {
     color: #FFFFFF !important;
+    text-decoration: none;
 }
 
 .app-sidebar .sidebar-brand .brand-text {
     color: #FFFFFF !important;
     font-weight: 700 !important;
-    font-size: 1.1rem !important;
-    letter-spacing: 0.02em;
+    font-size: 0.95rem !important;
+    letter-spacing: normal !important;
+}
+
+/* Sửa triệt để lỗi chữ bị cách ra (letter-spacing) ở tiêu đề menu */
+.nav-header {
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    letter-spacing: normal !important; /* ĐÃ SỬA: chữ tiếng Việt không còn bị dãn cách kỳ quặc */
+    color: rgba(255, 255, 255, 0.65) !important;
+    padding: 0.85rem 1rem 0.25rem !important;
+    text-transform: uppercase;
 }
 
 /* Sidebar Nav Links */
 .sidebar-wrapper .nav-item .nav-link {
     border-radius: var(--radius-sm) !important;
-    margin: 3px 12px !important;
-    padding: 0.65rem 1rem !important;
+    margin: 2px 8px !important;
+    padding: 0.55rem 0.75rem !important;
     font-weight: 500 !important;
-    font-size: 0.9rem !important;
-    color: rgba(255, 255, 255, 0.8) !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    font-size: 0.835rem !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .sidebar-wrapper .nav-item .nav-link i,
 .sidebar-wrapper .nav-item .nav-link .nav-icon {
-    color: rgba(255, 255, 255, 0.75) !important;
-    font-size: 1.1rem !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 1rem !important;
+    flex-shrink: 0;
 }
 
 .sidebar-wrapper .nav-item .nav-link p {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    margin: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar-wrapper .nav-item .nav-link.active {
     background: rgba(255, 255, 255, 0.22) !important;
     backdrop-filter: blur(8px);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     color: #FFFFFF !important;
     font-weight: 700 !important;
 }
@@ -128,47 +159,32 @@ aside.app-sidebar,
 .sidebar-wrapper .nav-item .nav-link:hover:not(.active) {
     background: rgba(255, 255, 255, 0.14) !important;
     color: #FFFFFF !important;
-    transform: translateX(4px);
-}
-
-.sidebar-wrapper .nav-item .nav-link:hover:not(.active) i,
-.sidebar-wrapper .nav-item .nav-link:hover:not(.active) .nav-icon,
-.sidebar-wrapper .nav-item .nav-link:hover:not(.active) p {
-    color: #FFFFFF !important;
-}
-
-.nav-header {
-    font-size: 0.7rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.1em !important;
-    color: rgba(255, 255, 255, 0.55) !important;
-    padding: 1rem 1.5rem 0.3rem !important;
-    text-transform: uppercase;
+    transform: translateX(3px);
 }
 
 /* ==========================================================================
-   🔝 HEADER — Glassmorphism with Purple Accent
+   🔝 HEADER
    ========================================================================== */
 
 nav.app-header,
 .app-header,
 .app-header.bg-body {
     backdrop-filter: blur(16px) saturate(1.8) !important;
-    background: rgba(255, 255, 255, 0.88) !important;
-    background-color: rgba(255, 255, 255, 0.88) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    background-color: rgba(255, 255, 255, 0.9) !important;
     border-bottom: 2px solid var(--border-light) !important;
-    box-shadow: 0 2px 16px rgba(124, 92, 252, 0.06) !important;
+    box-shadow: 0 2px 14px rgba(124, 92, 252, 0.06) !important;
+    height: 58px;
 }
 
 .app-header .nav-link {
-    color: var(--text-purple) !important;
+    color: var(--purple-text) !important;
     font-weight: 600 !important;
 }
 
-/* Notification bell button */
 .notif-bell-btn {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     border: 1.5px solid var(--border-light);
     background: var(--surface);
@@ -185,35 +201,36 @@ nav.app-header,
     background: var(--pastel-lavender);
     color: var(--purple-accent);
     border-color: var(--pastel-lavender-border);
+    transform: scale(1.08);
 }
 
 .notif-bell-btn .notif-badge {
     position: absolute;
     top: -2px;
     right: -2px;
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background-color: #EF4444;
     border: 2px solid #FFFFFF;
 }
 
 /* ==========================================================================
-   📊 BENTO KPI STAT CARDS — Pastel Gradient
+   📊 BENTO KPI STAT CARDS — ĐẬM NÉT, ĐỘ TƯƠNG PHẢN CAO (SỬA LỖI MỜ ẢNH 2)
    ========================================================================== */
 
 .bento-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.25rem;
-    margin-bottom: 1.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1.15rem;
+    margin-bottom: 1.5rem;
 }
 
 .bento-stat-card {
     background: var(--surface);
     border: 1.5px solid var(--border-light);
     border-radius: var(--radius-lg);
-    padding: 1.4rem 1.5rem;
+    padding: 1.25rem 1.4rem;
     box-shadow: var(--shadow-card);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -221,6 +238,7 @@ nav.app-header,
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    opacity: 1 !important; /* Đảm bảo không bị mờ */
 }
 
 .bento-stat-card::before {
@@ -229,13 +247,12 @@ nav.app-header,
     top: 0; left: 0; right: 0;
     height: 4px;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    transition: all 0.3s ease;
 }
 
-.bento-card-blue::before { background: linear-gradient(90deg, #667eea, #88a3f7); }
-.bento-card-emerald::before { background: linear-gradient(90deg, #10B981, #6EE7B7); }
-.bento-card-amber::before { background: linear-gradient(90deg, #F59E0B, #FCD34D); }
-.bento-card-purple::before { background: linear-gradient(90deg, #7C5CFC, #A78BFA); }
+.bento-card-blue::before { background: linear-gradient(90deg, #2563EB, #60A5FA); }
+.bento-card-emerald::before { background: linear-gradient(90deg, #059669, #34D399); }
+.bento-card-amber::before { background: linear-gradient(90deg, #D97706, #FBBF24); }
+.bento-card-purple::before { background: linear-gradient(90deg, #7C3AED, #A78BFA); }
 
 .bento-stat-card:hover {
     transform: translateY(-4px);
@@ -247,20 +264,21 @@ nav.app-header,
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.85rem;
+    margin-bottom: 0.75rem;
 }
 
+/* Sửa lỗi mờ chữ: Dùng màu xám đậm tương phản cao */
 .bento-title {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    color: #475569 !important;
 }
 
 .bento-icon-wrapper {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
@@ -268,52 +286,65 @@ nav.app-header,
     font-size: 1.2rem;
 }
 
-.bento-icon-blue { background: var(--pastel-blue); color: var(--purple-start); }
-.bento-icon-emerald { background: var(--pastel-mint); color: #059669; }
-.bento-icon-amber { background: #FFF8E1; color: #D97706; }
-.bento-icon-purple { background: var(--pastel-lavender); color: var(--purple-accent); }
+.bento-icon-blue { background: #EFF6FF; color: #2563EB; }
+.bento-icon-emerald { background: #ECFDF5; color: #059669; }
+.bento-icon-amber { background: #FFFBEB; color: #D97706; }
+.bento-icon-purple { background: #F5F3FF; color: #7C3AED; }
 
 .bento-value {
-    font-size: 2rem;
+    font-size: 1.95rem;
     font-weight: 800;
     line-height: 1.2;
-    color: var(--text-main);
+    color: #0F172A !important;
     letter-spacing: -0.02em;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.25rem;
 }
 
 .bento-subtitle {
     font-size: 0.775rem;
-    color: var(--text-muted);
+    color: #64748B !important;
+    font-weight: 600;
     display: flex;
     align-items: center;
     gap: 0.4rem;
 }
 
+/* Thẻ tím (Khóa đào tạo - Ảnh 2): Chỉnh màu tím đậm rõ nét */
+.bento-card-purple .bento-title {
+    color: #5B21B6 !important;
+}
+
+.bento-card-purple .bento-value {
+    color: #4C1D95 !important;
+}
+
+.bento-card-purple .bento-subtitle {
+    color: #6D28D9 !important;
+}
+
 /* ==========================================================================
-   🎴 PASTEL SESSION CARDS (eCoursie Style - The Core Hero Component!)
+   🎴 PASTEL CONTENT CARDS (eCoursie Style)
    ========================================================================== */
 
 .edu-session-card {
     border-radius: var(--radius-xl);
-    padding: 1.5rem 1.75rem;
+    padding: 1.4rem 1.6rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
+    gap: 1.25rem;
     box-shadow: var(--shadow-card);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
     border: 1.5px solid transparent;
 }
 
 .edu-session-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-card-hover);
 }
 
-/* Card Themes */
 .card-pastel-blue {
     background: linear-gradient(135deg, #EBF5FF 0%, #E3EFFF 100%);
     border-color: #C3E0FF;
@@ -334,16 +365,15 @@ nav.app-header,
     border-color: #B5F3DA;
 }
 
-/* Card Left Illustration Box */
 .card-illustration {
-    width: 86px;
-    height: 86px;
+    width: 82px;
+    height: 82px;
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.2rem;
-    background: rgba(255, 255, 255, 0.75);
+    font-size: 2rem;
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(8px);
     flex-shrink: 0;
     box-shadow: 0 4px 12px rgba(124, 92, 252, 0.08);
@@ -354,19 +384,17 @@ nav.app-header,
 .card-pastel-peach .card-illustration { color: #EC4899; }
 .card-pastel-mint .card-illustration { color: #059669; }
 
-/* Card Content Middle */
 .card-session-content {
     flex: 1;
     min-width: 0;
 }
 
 .card-session-title {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 800;
     color: var(--text-main);
     line-height: 1.3;
-    margin-bottom: 0.35rem;
-    letter-spacing: -0.01em;
+    margin-bottom: 0.3rem;
 }
 
 .card-session-meta {
@@ -374,14 +402,14 @@ nav.app-header,
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.84rem;
     color: var(--text-muted);
 }
 
 .card-session-note {
     font-size: 0.8rem;
-    color: var(--text-muted);
+    color: #475569;
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -389,25 +417,23 @@ nav.app-header,
     overflow: hidden;
 }
 
-/* Card Right Actions */
 .card-session-actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.65rem;
     flex-shrink: 0;
 }
 
-/* Circular Purple CTA button (eCoursie style) */
 .btn-circle-cta {
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--purple-start), var(--purple-accent));
     color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow-purple-btn);
     cursor: pointer;
@@ -416,17 +442,16 @@ nav.app-header,
 }
 
 .btn-circle-cta:hover {
-    transform: scale(1.15);
+    transform: scale(1.12);
     box-shadow: 0 6px 20px rgba(124, 92, 252, 0.45);
     color: #FFFFFF;
 }
 
-/* Small secondary actions next to CTA */
 .card-action-mini {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.08);
     color: var(--text-muted);
     display: inline-flex;
@@ -449,14 +474,14 @@ nav.app-header,
 }
 
 /* ==========================================================================
-   ✨ STATUS BADGES & PULSE INDICATOR
+   ✨ STATUS BADGES & LIVE PULSE
    ========================================================================== */
 
 .badge-status {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.4rem 0.85rem;
+    padding: 0.35rem 0.8rem;
     font-size: 0.75rem;
     font-weight: 600;
     border-radius: var(--radius-full);
@@ -513,37 +538,13 @@ nav.app-header,
     color: var(--purple-text);
     background: var(--pastel-lavender);
     border: 1px solid var(--pastel-lavender-border);
-    padding: 0.25rem 0.65rem;
+    padding: 0.2rem 0.6rem;
     border-radius: var(--radius-sm);
 }
 
 /* ==========================================================================
-   🃏 GLOBAL CARDS & DATA TABLES
+   📋 DATA TABLES — KHÔNG BỊ MỜ / BIẾN MẤT KHI CUỘN (SỬA LỖI ẢNH 3)
    ========================================================================== */
-
-.card {
-    background: var(--surface) !important;
-    border: 1.5px solid var(--border-light) !important;
-    border-radius: var(--radius-lg) !important;
-    box-shadow: var(--shadow-card) !important;
-    overflow: hidden;
-    transition: box-shadow 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: var(--shadow-card-hover) !important;
-}
-
-.card-header {
-    background: linear-gradient(135deg, rgba(243, 238, 255, 0.5), rgba(232, 244, 253, 0.5)) !important;
-    padding: 1.15rem 1.5rem !important;
-    border-bottom: 1.5px solid var(--border-light) !important;
-}
-
-.card-footer {
-    background: linear-gradient(135deg, rgba(243, 238, 255, 0.3), rgba(255, 255, 255, 0.8)) !important;
-    border-top: 1.5px solid var(--border-light) !important;
-}
 
 .table thead th {
     background: linear-gradient(135deg, var(--pastel-lavender) 0%, var(--pastel-blue) 100%) !important;
@@ -551,43 +552,40 @@ nav.app-header,
     font-size: 0.75rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    padding: 0.9rem 1rem !important;
+    letter-spacing: 0.05em !important;
+    padding: 0.85rem 0.95rem !important;
     border-bottom: 2px solid var(--pastel-lavender-border) !important;
     border-top: none !important;
     white-space: nowrap !important;
 }
 
+/* Đảm bảo toàn bộ dòng bảng luôn hiển thị 100% không bị mờ dần */
 .table tbody tr {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1 !important;
+    transition: background-color 0.15s ease, border-left 0.15s ease;
     border-left: 3px solid transparent;
 }
 
 .table tbody tr:nth-child(odd) {
-    background-color: rgba(243, 238, 255, 0.15) !important;
+    background-color: rgba(243, 238, 255, 0.2) !important;
 }
 
 .table tbody tr:hover {
-    background: linear-gradient(90deg, rgba(243, 238, 255, 0.55), rgba(232, 244, 253, 0.45)) !important;
+    background: linear-gradient(90deg, rgba(243, 238, 255, 0.6), rgba(232, 244, 253, 0.5)) !important;
     border-left: 3px solid var(--purple-accent) !important;
-    transform: scale(1.002);
 }
 
 .table tbody td {
-    padding: 0.95rem 1rem !important;
+    padding: 0.9rem 0.95rem !important;
     vertical-align: middle !important;
-    border-bottom: 1px solid rgba(232, 224, 255, 0.5) !important;
+    border-bottom: 1px solid rgba(232, 224, 255, 0.6) !important;
     font-size: 0.875rem !important;
-    color: var(--text-main);
+    color: var(--text-main) !important;
     background-color: transparent !important;
 }
 
-.table-responsive {
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-}
-
 /* ==========================================================================
-   🔘 BUTTONS — Purple Primary, Circular Actions
+   🔘 BUTTONS & FORM CONTROLS
    ========================================================================== */
 
 .btn-primary {
@@ -597,13 +595,12 @@ nav.app-header,
     border-radius: var(--radius-sm) !important;
     box-shadow: var(--shadow-purple-btn) !important;
     color: #FFFFFF !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(124, 92, 252, 0.45) !important;
-    background: linear-gradient(135deg, #5A6FD6 0%, #6B4FE8 100%) !important;
+    box-shadow: 0 6px 18px rgba(124, 92, 252, 0.4) !important;
 }
 
 .btn-outline-primary {
@@ -622,66 +619,22 @@ nav.app-header,
     box-shadow: var(--shadow-purple-btn) !important;
 }
 
-.btn-outline-secondary {
-    border-color: var(--border-light) !important;
-    color: var(--text-muted) !important;
-    background: var(--surface) !important;
-    border-radius: var(--radius-sm) !important;
-}
-
-.btn-outline-secondary:hover {
-    background: var(--pastel-lavender) !important;
-    color: var(--purple-text) !important;
-    border-color: var(--pastel-lavender-border) !important;
-}
-
-.btn-outline-success {
-    color: #059669 !important;
-    border-color: var(--pastel-mint-border) !important;
-    background: var(--pastel-mint) !important;
-    border-radius: var(--radius-sm) !important;
-    font-weight: 600 !important;
-}
-
-.btn-outline-success:hover {
-    background: linear-gradient(135deg, #059669, #10B981) !important;
-    color: #FFFFFF !important;
-    border-color: transparent !important;
-}
-
-.btn-outline-danger {
-    color: #DC2626 !important;
-    border-color: var(--pastel-peach-border) !important;
-    background: var(--pastel-peach) !important;
-    border-radius: var(--radius-sm) !important;
-}
-
-.btn-outline-danger:hover {
-    background: linear-gradient(135deg, #DC2626, #EF4444) !important;
-    color: #FFFFFF !important;
-    border-color: transparent !important;
-}
-
 .btn-action-icon {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50% !important;
-    transition: all 0.25s ease;
-    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
 }
 
 .btn-action-icon:hover {
-    transform: scale(1.15) !important;
+    transform: scale(1.12) !important;
     box-shadow: 0 4px 12px rgba(124, 92, 252, 0.25);
 }
-
-/* ==========================================================================
-   📝 FORM CONTROLS & ACTION BAR
-   ========================================================================== */
 
 .form-control, .form-select, .input-group-text {
     border-radius: var(--radius-sm) !important;
@@ -710,94 +663,12 @@ nav.app-header,
 }
 
 /* ==========================================================================
-   💬 MODAL
-   ========================================================================== */
-
-.modal-content {
-    border: 1.5px solid var(--border-light) !important;
-    border-radius: var(--radius-xl) !important;
-    box-shadow: 0 24px 48px rgba(124, 92, 252, 0.15), 0 8px 16px rgba(124, 92, 252, 0.08) !important;
-    overflow: hidden;
-}
-
-.modal-header.bg-primary {
-    background: linear-gradient(135deg, var(--purple-start), var(--purple-accent)) !important;
-    border-bottom: none !important;
-}
-
-.modal-header.bg-success {
-    background: linear-gradient(135deg, #059669, #10B981) !important;
-    border-bottom: none !important;
-}
-
-.modal-header.bg-warning {
-    background: linear-gradient(135deg, #F59E0B, #FBBF24) !important;
-    border-bottom: none !important;
-}
-
-.modal-header.bg-info {
-    background: linear-gradient(135deg, #0EA5E9, #38BDF8) !important;
-    color: #FFFFFF !important;
-    border-bottom: none !important;
-}
-
-.modal-footer {
-    background: var(--pastel-lavender) !important;
-    border-top: 1px solid var(--border-light) !important;
-}
-
-.modal-footer .btn-secondary {
-    background: var(--surface) !important;
-    border: 1.5px solid var(--border-light) !important;
-    color: var(--text-muted) !important;
-    border-radius: var(--radius-sm) !important;
-}
-
-.modal-backdrop.show {
-    backdrop-filter: blur(6px);
-    background-color: rgba(30, 27, 75, 0.4);
-}
-
-/* ==========================================================================
-   📄 PAGE HEADER & BREADCRUMB
-   ========================================================================== */
-
-.app-content-header {
-    background: transparent !important;
-}
-
-.app-content-header h3 {
-    color: var(--text-main) !important;
-    font-weight: 800 !important;
-    font-size: 1.4rem !important;
-}
-
-.app-content-header h3 i {
-    color: var(--purple-accent) !important;
-}
-
-.breadcrumb-item a {
-    color: var(--purple-accent) !important;
-    text-decoration: none !important;
-}
-
-.breadcrumb-item.active {
-    color: var(--text-muted) !important;
-}
-
-.app-footer {
-    background: linear-gradient(135deg, rgba(243, 238, 255, 0.5), rgba(255, 255, 255, 0.8)) !important;
-    border-top: 1px solid var(--border-light) !important;
-    color: var(--text-muted) !important;
-}
-
-/* ==========================================================================
-   📱 SIDE PANEL — Calendar & Team (eCoursie right column)
+   📱 SIDE PANEL (CỘT PHẢI)
    ========================================================================== */
 
 .edu-layout {
     display: flex;
-    gap: 1.5rem;
+    gap: 1.25rem;
     align-items: flex-start;
 }
 
@@ -807,28 +678,85 @@ nav.app-header,
 }
 
 .edu-side-panel {
-    width: 290px;
+    width: 285px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.15rem;
 }
 
-/* User Profile Widget in Side Panel */
+/* Card người đảm nhiệm vai trò (Ảnh 4) */
 .user-profile-widget {
     background: var(--surface);
     border: 1.5px solid var(--border-light);
     border-radius: var(--radius-lg);
-    padding: 1.15rem 1.25rem;
+    padding: 1.1rem 1.25rem;
     box-shadow: var(--shadow-card);
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    transition: all 0.25s ease;
 }
 
-/* Mini Calendar Widget */
+.user-profile-widget:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+}
+
+.user-profile-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: #FFFFFF;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(124, 92, 252, 0.25);
+}
+
+.user-profile-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-profile-name {
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: #0F172A;
+    line-height: 1.25;
+    margin-bottom: 2px;
+}
+
+.user-profile-role {
+    font-size: 0.8rem;
+    color: #475569;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-profile-badge {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background: #F3EEFF;
+    color: #6D28D9;
+    border: 1px solid #DDD6FE;
+    line-height: 1.3;
+}
+
+/* Mini Calendar */
 .mini-calendar {
     background: var(--surface);
     border: 1.5px solid var(--border-light);
     border-radius: var(--radius-lg);
-    padding: 1.25rem;
+    padding: 1.2rem;
     box-shadow: var(--shadow-card);
 }
 
@@ -836,19 +764,19 @@ nav.app-header,
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1rem;
+    margin-bottom: 0.85rem;
 }
 
 .mini-calendar .cal-header h6 {
     font-weight: 700;
     color: var(--text-main);
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
 }
 
 .mini-calendar .cal-nav {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .mini-calendar .cal-nav button {
@@ -877,7 +805,7 @@ nav.app-header,
     grid-template-columns: repeat(7, 1fr);
     gap: 2px;
     text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 .mini-calendar .cal-weekdays span {
@@ -885,7 +813,7 @@ nav.app-header,
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
-    padding: 0.25rem 0;
+    padding: 0.2rem 0;
 }
 
 .mini-calendar .cal-days {
@@ -896,13 +824,13 @@ nav.app-header,
 }
 
 .mini-calendar .cal-day {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-main);
     cursor: default;
@@ -918,32 +846,63 @@ nav.app-header,
     box-shadow: 0 2px 6px rgba(124, 92, 252, 0.4);
 }
 
-/* Purple ring highlight for session due date (ASCII wireframe) */
-.mini-calendar .cal-day.has-deadline {
-    border: 2px solid var(--purple-accent) !important;
-    color: var(--purple-accent) !important;
-    font-weight: 800 !important;
-    background: #EDE9FE;
+/* Các chấm sự kiện cho 4 phần trên lịch */
+.mini-calendar .cal-day.has-event {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.mini-calendar .cal-day.has-event:hover {
+    background: var(--pastel-lavender);
+    border-radius: 50%;
+}
+
+.mini-calendar .cal-day .day-num {
+    line-height: 1;
+    z-index: 1;
+}
+
+.mini-calendar .cal-day-dots {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    right: 0;
+}
+
+.mini-calendar .cal-mini-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    display: inline-block;
 }
 
 .mini-calendar .cal-day.empty {
     visibility: hidden;
 }
 
+/* Chú thích màu sắc 4 phần */
 .cal-legend-dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background: var(--purple-accent);
     display: inline-block;
+    flex-shrink: 0;
 }
+
+.dot-part-a { background: #2563EB !important; } /* Blue - Tiêu chuẩn */
+.dot-part-b { background: #059669 !important; } /* Green - Kết quả */
+.dot-part-c { background: #D97706 !important; } /* Amber - Hồ sơ */
+.dot-part-d { background: #7C3AED !important; } /* Purple - Đợt xét */
 
 /* Team Members Widget */
 .team-widget {
     background: var(--surface);
     border: 1.5px solid var(--border-light);
     border-radius: var(--radius-lg);
-    padding: 1.25rem;
+    padding: 1.15rem;
     box-shadow: var(--shadow-card);
 }
 
@@ -951,28 +910,21 @@ nav.app-header,
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1rem;
+    margin-bottom: 0.85rem;
 }
 
 .team-widget .team-header h6 {
     font-weight: 700;
     color: var(--text-main);
     margin: 0;
-    font-size: 0.95rem;
-}
-
-.team-widget .team-header a {
-    font-size: 0.75rem;
-    color: var(--purple-accent);
-    text-decoration: none;
-    font-weight: 600;
+    font-size: 0.88rem;
 }
 
 .team-member {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.55rem 0;
+    gap: 0.65rem;
+    padding: 0.5rem 0;
     border-bottom: 1px solid rgba(232, 224, 255, 0.4);
 }
 
@@ -981,14 +933,14 @@ nav.app-header,
 }
 
 .team-avatar {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #FFFFFF;
     flex-shrink: 0;
 }
@@ -997,7 +949,6 @@ nav.app-header,
 .team-avatar.av-blue { background: linear-gradient(135deg, #0EA5E9, #38BDF8); }
 .team-avatar.av-green { background: linear-gradient(135deg, #10B981, #34D399); }
 .team-avatar.av-orange { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
-.team-avatar.av-pink { background: linear-gradient(135deg, #EC4899, #F472B6); }
 
 .team-info {
     flex: 1;
@@ -1006,179 +957,26 @@ nav.app-header,
 
 .team-info .team-name {
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.825rem;
     color: var(--text-main);
     line-height: 1.3;
 }
 
 .team-info .team-role {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
 }
 
 .team-status-dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: #10B981;
     flex-shrink: 0;
 }
 
 /* ==========================================================================
-   🎨 ALERT STYLES
-   ========================================================================== */
-
-.alert {
-    border-radius: var(--radius-md) !important;
-    border: 1.5px solid var(--border-light) !important;
-}
-
-.alert-success {
-    background: var(--pastel-mint) !important;
-    border-color: var(--pastel-mint-border) !important;
-    color: #065F46 !important;
-}
-
-.alert-info {
-    background: var(--pastel-blue) !important;
-    border-color: var(--pastel-blue-border) !important;
-    color: #1E40AF !important;
-}
-
-.alert-warning {
-    background: #FFF8E1 !important;
-    border-color: #FDE68A !important;
-    color: #92400E !important;
-}
-
-.alert-danger {
-    background: var(--pastel-peach) !important;
-    border-color: var(--pastel-peach-border) !important;
-    color: #991B1B !important;
-}
-
-/* ==========================================================================
-   📊 PAGINATION
-   ========================================================================== */
-
-.pagination .page-item .page-link {
-    border-radius: var(--radius-sm) !important;
-    border: 1px solid var(--border-light) !important;
-    color: var(--purple-text) !important;
-    margin: 0 2px;
-    font-weight: 600;
-    font-size: 0.8rem;
-}
-
-.pagination .page-item.active .page-link {
-    background: linear-gradient(135deg, var(--purple-start), var(--purple-accent)) !important;
-    border-color: transparent !important;
-    color: #FFFFFF !important;
-    box-shadow: var(--shadow-purple-btn);
-}
-
-/* ==========================================================================
-   🔙 BADGE CLASSES
-   ========================================================================== */
-
-.badge-pass {
-    background: linear-gradient(135deg, #10B981, #34D399) !important;
-    color: #FFFFFF !important;
-    font-size: 0.78rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-}
-
-.badge-fail {
-    background: linear-gradient(135deg, #EF4444, #F87171) !important;
-    color: #FFFFFF !important;
-    font-size: 0.78rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-}
-
-.badge-class-1 {
-    background: linear-gradient(135deg, #6366F1, #818CF8) !important;
-    color: #FFFFFF !important;
-    border-radius: var(--radius-full);
-    font-size: 0.78rem;
-    padding: 0.35rem 0.75rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-}
-
-.badge-class-2 {
-    background: linear-gradient(135deg, #0EA5E9, #38BDF8) !important;
-    color: #FFFFFF !important;
-    border-radius: var(--radius-full);
-    font-size: 0.78rem;
-    padding: 0.35rem 0.75rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-}
-
-.badge-class-3 {
-    background: linear-gradient(135deg, #14B8A6, #5EEAD4) !important;
-    color: #FFFFFF !important;
-    border-radius: var(--radius-full);
-    font-size: 0.78rem;
-    padding: 0.35rem 0.75rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-}
-
-.badge-class-4 {
-    background: linear-gradient(135deg, #F59E0B, #FCD34D) !important;
-    color: #FFFFFF !important;
-    border-radius: var(--radius-full);
-    font-size: 0.78rem;
-    padding: 0.35rem 0.75rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-}
-
-.badge.bg-light {
-    background: var(--pastel-lavender) !important;
-    color: var(--purple-text) !important;
-    border: 1px solid var(--pastel-lavender-border) !important;
-}
-
-.badge.bg-primary-subtle {
-    background: var(--pastel-blue) !important;
-    color: var(--purple-start) !important;
-}
-
-.badge.bg-secondary-subtle {
-    background: var(--pastel-lavender) !important;
-    color: var(--purple-text) !important;
-}
-
-.table-card-container {
-    background: var(--surface);
-    border: 1.5px solid var(--border-light);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
-    overflow: hidden;
-}
-
-.table-card-header {
-    background: linear-gradient(135deg, rgba(243, 238, 255, 0.5), rgba(232, 244, 253, 0.5));
-    padding: 1.15rem 1.5rem;
-    border-bottom: 1.5px solid var(--border-light);
-}
-
-/* ==========================================================================
-   📱 RESPONSIVE
+   📱 RESPONSIVE BREAKPOINTS
    ========================================================================== */
 
 @media (max-width: 1366px) {
@@ -1192,7 +990,7 @@ nav.app-header,
     }
     .edu-side-panel > * {
         flex: 1;
-        min-width: 280px;
+        min-width: 270px;
     }
 }
 
@@ -1222,73 +1020,7 @@ nav.app-header,
     }
 }
 
-/* Form Card */
-.form-card {
-    max-width: 800px;
-}
-
-.form-card .card-header {
-    background: linear-gradient(135deg, var(--pastel-lavender), var(--pastel-blue)) !important;
-    border-bottom: 2px solid var(--pastel-lavender-border) !important;
-}
-
-.form-card .card-header .card-title {
-    color: var(--purple-text) !important;
-    font-weight: 700 !important;
-}
-
-.btn-info {
-    background: linear-gradient(135deg, #0EA5E9, #38BDF8) !important;
-    border: none !important;
-    color: #FFFFFF !important;
-    border-radius: var(--radius-sm) !important;
-}
-
-.btn-warning {
-    background: linear-gradient(135deg, #F59E0B, #FBBF24) !important;
-    border: none !important;
-    color: #1E1B4B !important;
-    border-radius: var(--radius-sm) !important;
-}
-
-.btn-danger {
-    background: linear-gradient(135deg, #DC2626, #EF4444) !important;
-    border: none !important;
-    color: #FFFFFF !important;
-    border-radius: var(--radius-sm) !important;
-}
-
-.btn-success {
-    background: linear-gradient(135deg, #059669, #10B981) !important;
-    border: none !important;
-    color: #FFFFFF !important;
-    border-radius: var(--radius-sm) !important;
-}
-
-.btn-secondary {
-    background: var(--surface) !important;
-    border: 1.5px solid var(--border-light) !important;
-    color: var(--text-muted) !important;
-    border-radius: var(--radius-sm) !important;
-}
-
-.btn-secondary:hover {
-    background: var(--pastel-lavender) !important;
-    color: var(--purple-text) !important;
-}
-
-.app-main {
-    background: var(--background) !important;
-}
-
-.app-content {
-    background: transparent !important;
-}
-
-.spinner-border {
-    color: var(--purple-accent) !important;
-}
-
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

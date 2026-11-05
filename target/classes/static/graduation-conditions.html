@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tiêu chuẩn điều kiện tốt nghiệp | School Manager</title>
+    <title>Tiêu chuẩn tốt nghiệp | Quản lý tốt nghiệp</title>
     <meta name="color-scheme" content="light dark" />
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" crossorigin="anonymous" />
@@ -12,10 +12,10 @@
     <link rel="stylesheet" href="/assets/css/graduation.css" />
 </head>
 
-<body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+<body class="layout-fixed sidebar-expand-lg sidebar-open">
 <div class="app-wrapper">
     <!-- Navbar Header -->
-    <nav class="app-header navbar navbar-expand bg-body shadow-sm">
+    <nav class="app-header navbar navbar-expand shadow-sm">
         <div class="container-fluid">
             <ul class="navbar-nav">
                 <li class="nav-item">
@@ -33,11 +33,13 @@
     </nav>
 
     <!-- Sidebar -->
-    <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+    <aside class="app-sidebar shadow" data-bs-theme="dark">
         <div class="sidebar-brand">
-            <a href="index.html" class="brand-link text-decoration-none">
-                <img src="/adminlte/assets/img/AdminLTELogo.png" alt="Logo" class="brand-image opacity-75 shadow" />
-                <span class="brand-text fw-light">School Manager</span>
+            <a href="index.html" class="brand-link text-decoration-none d-flex align-items-center gap-2 px-3 py-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-mortarboard-fill text-white fs-5"></i>
+                </div>
+                <span class="brand-text fw-bold text-white fs-6">Quản lý tốt nghiệp</span>
             </a>
         </div>
 
@@ -108,67 +110,131 @@
                 <!-- Alert Box -->
                 <div id="alertBox"></div>
 
-                <!-- Action Bar -->
-                <div class="card shadow-sm border-0 mb-3">
-                    <div class="card-body py-3">
-                        <div class="row g-2 align-items-center justify-content-between">
-                            <div class="col-12 col-md-auto d-flex flex-wrap gap-2 align-items-center">
-                                <div class="input-group input-group-sm" style="width: 260px;">
-                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                    <input type="text" id="searchCohort" class="form-control" placeholder="Tìm theo khóa (vd: K21, 2026)..." />
+                <!-- 3-Column Layout: Main + Side Panel -->
+                <div class="edu-layout">
+                    <!-- ===== MAIN CONTENT ===== -->
+                    <div class="edu-main-content">
+                        <!-- Action Bar -->
+                        <div class="action-bar-card mb-4 p-3">
+                            <div class="row g-2 align-items-center justify-content-between">
+                                <div class="col-12 col-md-auto d-flex flex-wrap gap-2 align-items-center">
+                                    <div class="input-group input-group-sm" style="width: 260px;">
+                                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                        <input type="text" id="searchCohort" class="form-control border-start-0" placeholder="Tìm theo khóa (vd: K21, 2026)..." />
+                                    </div>
+                                    <button id="btnSearch" class="btn btn-primary btn-sm px-3 fw-semibold">
+                                        <i class="bi bi-funnel me-1"></i>Tìm kiếm
+                                    </button>
+                                    <button id="btnRefresh" class="btn btn-outline-secondary btn-sm" title="Tải lại">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
                                 </div>
-                                <button id="btnSearch" class="btn btn-primary btn-sm">Tìm kiếm</button>
-                                <button id="btnRefresh" class="btn btn-outline-secondary btn-sm" title="Tải lại">
-                                    <i class="bi bi-arrow-clockwise"></i>
-                                </button>
+
+                                <div class="col-12 col-md-auto">
+                                    <button id="btnOpenCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm px-3">
+                                        <i class="bi bi-plus-circle me-1"></i>Thêm bộ tiêu chuẩn mới
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Table Card -->
+                        <div class="table-card-container mb-4">
+                            <div class="table-card-header d-flex align-items-center justify-content-between">
+                                <h5 class="mb-0 fw-bold fs-6 text-dark d-flex align-items-center">
+                                    <i class="bi bi-list-check me-2 text-primary"></i>Danh sách tiêu chuẩn theo khóa & chương trình
+                                </h5>
+                                <span id="totalBadge" class="badge-status badge-status-active">
+                                    <span class="status-pulse-dot"></span>Đang tải dữ liệu...
+                                </span>
                             </div>
 
-                            <div class="col-12 col-md-auto">
-                                <button id="btnOpenCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm">
-                                    <i class="bi bi-plus-circle me-1"></i>Thêm bộ tiêu chuẩn mới
-                                </button>
+                            <div class="p-0">
+                                <div class="table-responsive">
+                                    <table class="table enterprise-table align-middle mb-0">
+                                        <thead>
+                                        <tr>
+                                            <th style="width: 50px;" class="text-center">#</th>
+                                            <th>Khóa áp dụng</th>
+                                            <th class="text-center">Tín chỉ tối thiểu</th>
+                                            <th class="text-center">GPA tối thiểu</th>
+                                            <th class="text-center">Tín chỉ rớt tối đa</th>
+                                            <th>Chuẩn Tiếng Anh</th>
+                                            <th>Chuẩn Tin học</th>
+                                            <th>Điểm rèn luyện</th>
+                                            <th class="text-center">Trạng thái</th>
+                                            <th style="width: 140px;" class="text-end">Hành động</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="conditionsTableBody">
+                                        <tr>
+                                            <td colspan="10" class="text-center text-muted py-5">
+                                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                                Đang tải dữ liệu tiêu chuẩn...
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Table Card -->
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
-                        <h5 class="card-title mb-0 fw-semibold">
-                            <i class="bi bi-list-check me-2 text-primary"></i>Danh sách tiêu chuẩn theo khóa & chương trình
-                        </h5>
-                        <span id="totalBadge" class="badge bg-secondary-subtle text-secondary px-3 py-2">
-                            Tổng số: 0
-                        </span>
-                    </div>
+                    <!-- ===== SIDE PANEL (Cột phải) ===== -->
+                    <div class="edu-side-panel">
+                        <!-- Card người đảm nhiệm vai trò (Ảnh 4) -->
+                        <div class="user-profile-widget">
+                            <div class="user-profile-avatar av-blue">MH</div>
+                            <div class="user-profile-info">
+                                <div class="user-profile-name">Nguyễn Minh Huy</div>
+                                <div class="user-profile-role">Cán bộ Quản lý Tiêu chuẩn</div>
+                                <span class="user-profile-badge" style="background: #EFF6FF; color: #2563EB; border-color: #BFDBFE;">Nhóm 11 · Phần A</span>
+                            </div>
+                        </div>
 
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                <tr>
-                                    <th style="width: 50px;" class="text-center">#</th>
-                                    <th>Khóa áp dụng</th>
-                                    <th class="text-center">Tín chỉ tối thiểu</th>
-                                    <th class="text-center">GPA tối thiểu</th>
-                                    <th class="text-center">Tín chỉ rớt tối đa</th>
-                                    <th>Chuẩn Tiếng Anh</th>
-                                    <th>Chuẩn Tin học</th>
-                                    <th>Điểm rèn luyện</th>
-                                    <th class="text-center">Trạng thái</th>
-                                    <th style="width: 140px;" class="text-end">Hành động</th>
-                                </tr>
-                                </thead>
-                                <tbody id="conditionsTableBody">
-                                <tr>
-                                    <td colspan="10" class="text-center text-muted py-5">
-                                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                                        Đang tải dữ liệu tiêu chuẩn...
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
+                        <!-- Mini Calendar -->
+                        <div class="mini-calendar" id="miniCalendar">
+                            <!-- Generated by calendar-widget.js -->
+                        </div>
+
+                        <!-- Team Members (Nhóm 11) -->
+                        <div class="team-widget">
+                            <div class="team-header">
+                                <h6><i class="bi bi-people-fill me-2" style="color: var(--purple-accent);"></i>Thành viên Nhóm 11</h6>
+                                <span class="badge bg-light text-primary border">4 thành viên</span>
+                            </div>
+                            <div class="team-member">
+                                <div class="team-avatar av-purple">TD</div>
+                                <div class="team-info">
+                                    <div class="team-name">Trần Anh Dũng</div>
+                                    <div class="team-role">Phần D – Đợt xét tốt nghiệp</div>
+                                </div>
+                                <div class="team-status-dot" title="Phần D"></div>
+                            </div>
+                            <div class="team-member">
+                                <div class="team-avatar av-blue">MH</div>
+                                <div class="team-info">
+                                    <div class="team-name">Nguyễn Minh Huy</div>
+                                    <div class="team-role">Phần A – Tiêu chuẩn tốt nghiệp</div>
+                                </div>
+                                <div class="team-status-dot" title="Phần A"></div>
+                            </div>
+                            <div class="team-member">
+                                <div class="team-avatar av-green">BA</div>
+                                <div class="team-info">
+                                    <div class="team-name">Huỳnh Trần Bình An</div>
+                                    <div class="team-role">Phần B – Kết quả tốt nghiệp</div>
+                                </div>
+                                <div class="team-status-dot" title="Phần B"></div>
+                            </div>
+                            <div class="team-member">
+                                <div class="team-avatar av-orange">NH</div>
+                                <div class="team-info">
+                                    <div class="team-name">Nguyễn Nhật Hào</div>
+                                    <div class="team-role">Phần C – Hồ sơ tốt nghiệp</div>
+                                </div>
+                                <div class="team-status-dot" title="Phần C"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -271,7 +337,9 @@
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="/adminlte/js/adminlte.js"></script>
+<script type="module" src="/assets/js/calendar-widget.js"></script>
 <script type="module" src="/assets/js/graduation-condition.js"></script>
 </body>
 </html>

@@ -1,44 +1,48 @@
 import { API_ENDPOINTS } from './config.js';
+import { renderMiniCalendar } from './calendar-widget.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-
     const params = new URLSearchParams(window.location.search);
-
     const page = params.get('page') || 'list';
 
     const pageList = document.getElementById('page-list');
     const pageForm = document.getElementById('page-form');
 
     if (page === 'form') {
-
-        if (pageList) {
-            pageList.style.display = 'none';
-        }
-
-        if (pageForm) {
-            pageForm.style.display = '';
-        }
-
+        if (pageList) pageList.style.display = 'none';
+        if (pageForm) pageForm.style.display = '';
     } else {
-
-        if (pageList) {
-            pageList.style.display = '';
-        }
-
-        if (pageForm) {
-            pageForm.style.display = 'none';
-        }
-
+        if (pageList) pageList.style.display = '';
+        if (pageForm) pageForm.style.display = 'none';
     }
 
     initStudentPage();
+    renderMiniCalendar();
 
+    if (window.gsap && page !== 'form') {
+        gsap.from('.bento-stat-card', {
+            opacity: 0,
+            y: 16,
+            duration: 0.5,
+            stagger: 0.08,
+            ease: 'power2.out'
+        });
+        gsap.from('.edu-side-panel > *', {
+            opacity: 0,
+            x: 25,
+            duration: 0.6,
+            stagger: 0.15,
+            delay: 0.25,
+            ease: 'power2.out'
+        });
+    }
 });
 
 function initStudentPage() {
     const studentTableBody = document.getElementById('studentTableBody');
     const searchForm = document.getElementById('searchForm');
     const studentForm = document.getElementById('studentForm');
+    const btnRefresh = document.getElementById('btnRefreshStudent');
 
     // =========================
     // TRANG DANH SÁCH
@@ -48,6 +52,14 @@ function initStudentPage() {
 
         if (searchForm) {
             searchForm.addEventListener('submit', handleSearch);
+        }
+
+        if (btnRefresh) {
+            btnRefresh.addEventListener('click', () => {
+                const kw = document.getElementById('keyword');
+                if (kw) kw.value = '';
+                loadStudents();
+            });
         }
     }
 
@@ -65,42 +77,37 @@ function initStudentPage() {
 
 async function loadStudents(keyword = '') {
     const studentTableBody = document.getElementById('studentTableBody');
-
-    if (!studentTableBody) {
-        return;
-    }
+    if (!studentTableBody) return;
 
     try {
         studentTableBody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center text-muted py-4">
-                    Đang tải dữ liệu...
+                <td colspan="8" class="text-center text-muted py-5">
+                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                    Đang tải dữ liệu sinh viên...
                 </td>
             </tr>
         `;
 
         const trimmedKeyword = keyword.trim();
-
         const url = trimmedKeyword
             ? `${API_ENDPOINTS.STUDENTS}?keyword=${encodeURIComponent(trimmedKeyword)}`
             : API_ENDPOINTS.STUDENTS;
 
         const response = await fetch(url);
-
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
 
         const students = await response.json();
-
         renderStudents(students);
     } catch (error) {
         console.error('Lỗi khi tải danh sách sinh viên:', error);
-
         studentTableBody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center text-danger py-4">
-                    Không thể tải danh sách sinh viên
+                <td colspan="8" class="text-center text-danger py-4">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Không thể tải danh sách sinh viên: ${error.message}
                 </td>
             </tr>
         `;
@@ -108,21 +115,38 @@ async function loadStudents(keyword = '') {
 }
 
 // =========================
-// RENDER STUDENTS
+// RENDER STUDENTS (Pastel EdTech Hub UI)
 // =========================
+
+function getAvatarColorClass(str) {
+    const classes = ['av-purple', 'av-blue', 'av-green', 'av-orange', 'av-pink'];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return classes[Math.abs(hash) % classes.length];
+}
+
+function getInitials(name) {
+    if (!name) return 'SV';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 function renderStudents(students) {
     const studentTableBody = document.getElementById('studentTableBody');
+    if (!studentTableBody) return;
 
-    if (!studentTableBody) {
-        return;
-    }
+    // Cập nhật các thẻ Bento Stat Cards
+    updateStudentStats(students);
 
     if (!students || students.length === 0) {
         studentTableBody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center text-muted py-4">
-                    Không có dữ liệu sinh viên
+                <td colspan="8" class="text-center text-muted py-5">
+                    <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary"></i>
+                    Không có dữ liệu sinh viên nào phù hợp.
                 </td>
             </tr>
         `;
@@ -130,41 +154,49 @@ function renderStudents(students) {
     }
 
     studentTableBody.innerHTML = students
-        .map((student) => {
+        .map((student, index) => {
+            const avatarColor = getAvatarColorClass(student.fullName || student.studentCode || 'SV');
+            const initials = getInitials(student.fullName);
+
             return `
                 <tr>
+                    <td class="text-center text-muted small fw-medium">${index + 1}</td>
                     <td>
-                        ${escapeHtml(student.studentCode)}
+                        <span class="session-code-pill">${escapeHtml(student.studentCode)}</span>
                     </td>
-
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <span>
-                                ${escapeHtml(student.fullName)}
-                            </span>
+                            <div class="team-avatar ${avatarColor}" style="width: 34px; height: 34px; font-size: 0.75rem;">
+                                ${initials}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">${escapeHtml(student.fullName)}</div>
+                            </div>
                         </div>
                     </td>
-
-                    <td>
+                    <td class="text-muted small">
                         ${escapeHtml(student.email)}
                     </td>
-
-                    <td>
+                    <td class="text-muted small font-monospace">
                         ${escapeHtml(student.phone)}
                     </td>
-
-                    <td>
-                        ${escapeHtml(student.className)}
+                    <td class="text-center">
+                        <span class="badge bg-light text-primary border fw-semibold px-2 py-1">
+                            ${escapeHtml(student.className)}
+                        </span>
                     </td>
-
+                    <td class="text-center">
+                        <span class="badge-status badge-status-active">
+                            <span class="status-pulse-dot"></span>Đang học
+                        </span>
+                    </td>
                     <td class="text-end">
-                        <div class="table-actions d-flex justify-content-end gap-1">
-
+                        <div class="table-actions">
                             <!-- Xem -->
                             <a
                                 class="btn btn-info btn-sm"
                                 href="index.html?page=form&id=${encodeURIComponent(student.id)}&mode=view"
-                                title="Xem"
+                                title="Xem chi tiết"
                             >
                                 <i class="bi bi-eye"></i>
                             </a>
@@ -173,7 +205,7 @@ function renderStudents(students) {
                             <a
                                 class="btn btn-warning btn-sm"
                                 href="index.html?page=form&id=${encodeURIComponent(student.id)}&mode=edit"
-                                title="Sửa"
+                                title="Chỉnh sửa thông tin"
                             >
                                 <i class="bi bi-pencil-square"></i>
                             </a>
@@ -187,13 +219,58 @@ function renderStudents(students) {
                             >
                                 <i class="bi bi-trash"></i>
                             </button>
-
                         </div>
                     </td>
                 </tr>
             `;
         })
         .join('');
+
+    // GSAP Stagger animation cho các hàng trong bảng (clearProps để tránh lỗi mờ mất dòng khi cuộn - Ảnh 3)
+    if (window.gsap) {
+        gsap.from('#studentTableBody tr', {
+            opacity: 0,
+            y: 8,
+            duration: 0.3,
+            stagger: 0.015,
+            ease: 'power1.out',
+            clearProps: 'all'
+        });
+    }
+}
+
+function updateStudentStats(students) {
+    if (!students) return;
+    const total = students.length;
+    const classes = new Set(students.map(s => s.className).filter(Boolean)).size;
+
+    animateCount('statTotalStudents', total);
+    animateCount('statActiveStudents', total);
+    animateCount('statTotalClasses', classes || 1);
+
+    const badge = document.getElementById('studentTotalBadge');
+    if (badge) {
+        badge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${total} sinh viên`;
+    }
+}
+
+function animateCount(elementId, targetValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!window.gsap) {
+        el.textContent = targetValue;
+        return;
+    }
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    const obj = { val: currentVal };
+    gsap.to(obj, {
+        val: targetValue,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: () => {
+            el.textContent = Math.round(obj.val);
+        }
+    });
 }
 
 // =========================
@@ -202,13 +279,8 @@ function renderStudents(students) {
 
 function handleSearch(event) {
     event.preventDefault();
-
     const keywordInput = document.getElementById('keyword');
-
-    const keyword = keywordInput
-        ? keywordInput.value.trim()
-        : '';
-
+    const keyword = keywordInput ? keywordInput.value.trim() : '';
     loadStudents(keyword);
 }
 
@@ -217,39 +289,26 @@ function handleSearch(event) {
 // =========================
 
 window.deleteStudent = async function (id) {
-    const confirmed = window.confirm(
-        'Bạn có chắc muốn xóa sinh viên này?'
-    );
-
-    if (!confirmed) {
-        return;
-    }
+    const confirmed = window.confirm('Bạn có chắc chắn muốn xóa sinh viên này?');
+    if (!confirmed) return;
 
     try {
         const response = await fetch(
             `${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`,
-            {
-                method: 'DELETE'
-            }
+            { method: 'DELETE' }
         );
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        alert('Xóa sinh viên thành công');
-
+        showAlert('success', 'Đã xóa sinh viên thành công!');
         const keywordInput = document.getElementById('keyword');
-
-        const keyword = keywordInput
-            ? keywordInput.value.trim()
-            : '';
-
+        const keyword = keywordInput ? keywordInput.value.trim() : '';
         await loadStudents(keyword);
     } catch (error) {
         console.error('Lỗi khi xóa sinh viên:', error);
-
-        alert('Xóa sinh viên thất bại');
+        showAlert('danger', `Không thể xóa sinh viên: ${error.message}`);
     }
 };
 
@@ -259,38 +318,24 @@ window.deleteStudent = async function (id) {
 
 function initStudentForm() {
     const studentForm = document.getElementById('studentForm');
-
-    if (!studentForm) {
-        return;
-    }
+    if (!studentForm) return;
 
     const urlParams = new URLSearchParams(window.location.search);
-
     const id = urlParams.get('id');
-
     const mode = urlParams.get('mode') || 'create';
 
     setupFormMode(mode);
 
-    // Nếu là xem / sửa thì lấy dữ liệu từ API
     if ((mode === 'view' || mode === 'edit') && id) {
         loadStudentDetail(id, mode);
     }
 
     studentForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-
-        if (mode === 'view') {
-            return;
-        }
-
+        if (mode === 'view') return;
         await saveStudent(mode, id);
     });
 }
-
-// =========================
-// FORM MODE
-// =========================
 
 function setupFormMode(mode) {
     const pageTitle = document.getElementById('pageTitle');
@@ -298,6 +343,7 @@ function setupFormMode(mode) {
     const breadcrumbTitle = document.getElementById('breadcrumbTitle');
     const formTitle = document.getElementById('formTitle');
     const submitButton = document.getElementById('submitButton');
+    const studentForm = document.getElementById('studentForm');
 
     const fields = [
         document.getElementById('studentCode'),
@@ -307,141 +353,57 @@ function setupFormMode(mode) {
         document.getElementById('className')
     ];
 
-    // =========================
-    // CREATE
-    // =========================
-
     if (mode === 'create') {
-        if (pageTitle) {
-            pageTitle.textContent = 'Thêm sinh viên';
-        }
-
-        if (pageHeading) {
-            pageHeading.textContent = 'Thêm sinh viên';
-        }
-
-        if (breadcrumbTitle) {
-            breadcrumbTitle.textContent = 'Thêm';
-        }
-
-        if (formTitle) {
-            formTitle.textContent = 'Thêm sinh viên mới';
-        }
-
+        if (studentForm) studentForm.reset();
+        if (pageTitle) pageTitle.textContent = 'Thêm sinh viên | School Manager';
+        if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-person-plus text-primary me-2"></i>Thêm sinh viên';
+        if (breadcrumbTitle) breadcrumbTitle.textContent = 'Thêm';
+        if (formTitle) formTitle.innerHTML = '<i class="bi bi-person-vcard me-2"></i>Thêm sinh viên mới';
         if (submitButton) {
             submitButton.style.display = '';
-
-            submitButton.innerHTML = `
-                <i class="bi bi-plus-circle me-1"></i>
-                Thêm sinh viên
-            `;
+            submitButton.innerHTML = `<i class="bi bi-plus-circle me-1"></i>Thêm sinh viên`;
         }
-
+        fields.forEach(field => { if (field) field.readOnly = false; });
         return;
     }
-
-    // =========================
-    // EDIT
-    // =========================
 
     if (mode === 'edit') {
-        if (pageTitle) {
-            pageTitle.textContent = 'Sửa sinh viên';
-        }
-
-        if (pageHeading) {
-            pageHeading.textContent = 'Sửa sinh viên';
-        }
-
-        if (breadcrumbTitle) {
-            breadcrumbTitle.textContent = 'Sửa';
-        }
-
-        if (formTitle) {
-            formTitle.textContent = 'Cập nhật sinh viên';
-        }
-
+        if (pageTitle) pageTitle.textContent = 'Sửa sinh viên | School Manager';
+        if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-pencil-square text-primary me-2"></i>Sửa sinh viên';
+        if (breadcrumbTitle) breadcrumbTitle.textContent = 'Sửa';
+        if (formTitle) formTitle.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin sinh viên';
         if (submitButton) {
             submitButton.style.display = '';
-
-            submitButton.innerHTML = `
-                <i class="bi bi-check-circle me-1"></i>
-                Lưu thay đổi
-            `;
+            submitButton.innerHTML = `<i class="bi bi-check-circle me-1"></i>Lưu thay đổi`;
         }
-
+        fields.forEach(field => { if (field) field.readOnly = false; });
         return;
     }
 
-    // =========================
-    // VIEW
-    // =========================
-
     if (mode === 'view') {
-        if (pageTitle) {
-            pageTitle.textContent = 'Chi tiết sinh viên';
-        }
+        if (pageTitle) pageTitle.textContent = 'Chi tiết sinh viên | School Manager';
+        if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-person-badge text-primary me-2"></i>Chi tiết sinh viên';
+        if (breadcrumbTitle) breadcrumbTitle.textContent = 'Xem';
+        if (formTitle) formTitle.innerHTML = '<i class="bi bi-person-badge me-2"></i>Thông tin sinh viên';
+        if (submitButton) submitButton.style.display = 'none';
 
-        if (pageHeading) {
-            pageHeading.textContent = 'Chi tiết sinh viên';
-        }
-
-        if (breadcrumbTitle) {
-            breadcrumbTitle.textContent = 'Xem';
-        }
-
-        if (formTitle) {
-            formTitle.textContent = 'Thông tin sinh viên';
-        }
-
-        if (submitButton) {
-            submitButton.style.display = 'none';
-        }
-
-        fields.forEach((field) => {
-            if (field) {
-                field.readOnly = true;
-            }
-        });
+        fields.forEach(field => { if (field) field.readOnly = true; });
     }
 }
-
-// =========================
-// GET STUDENT DETAIL
-// =========================
 
 async function loadStudentDetail(id, mode) {
     try {
-        const response = await fetch(
-            `${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`
-        );
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
+        const response = await fetch(`${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const student = await response.json();
-
         fillStudentForm(student);
-
-        if (mode === 'view') {
-            setFormReadOnly(true);
-        }
+        if (mode === 'view') setFormReadOnly(true);
     } catch (error) {
-        console.error(
-            'Lỗi khi lấy thông tin sinh viên:',
-            error
-        );
-
-        alert('Không thể lấy thông tin sinh viên');
-
+        console.error('Lỗi khi lấy thông tin sinh viên:', error);
+        alert('Không thể lấy thông tin sinh viên: ' + error.message);
         window.location.href = 'index.html?page=list';
     }
 }
-
-// =========================
-// FILL FORM
-// =========================
 
 function fillStudentForm(student) {
     const studentCode = document.getElementById('studentCode');
@@ -450,43 +412,21 @@ function fillStudentForm(student) {
     const phone = document.getElementById('phone');
     const className = document.getElementById('className');
 
-    if (studentCode) {
-        studentCode.value = student.studentCode || '';
-    }
-
-    if (fullName) {
-        fullName.value = student.fullName || '';
-    }
-
-    if (email) {
-        email.value = student.email || '';
-    }
-
-    if (phone) {
-        phone.value = student.phone || '';
-    }
-
-    if (className) {
-        className.value = student.className || '';
-    }
+    if (studentCode) studentCode.value = student.studentCode || '';
+    if (fullName) fullName.value = student.fullName || '';
+    if (email) email.value = student.email || '';
+    if (phone) phone.value = student.phone || '';
+    if (className) className.value = student.className || '';
 }
-
-// =========================
-// SAVE STUDENT
-// =========================
 
 async function saveStudent(mode, id = null) {
     try {
         const student = getStudentFormData();
-
-        if (!validateStudent(student)) {
-            return;
-        }
+        if (!validateStudent(student)) return;
 
         let url = API_ENDPOINTS.STUDENTS;
         let method = 'POST';
 
-        // Sửa
         if (mode === 'edit' && id) {
             url = `${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`;
             method = 'PUT';
@@ -494,49 +434,19 @@ async function saveStudent(mode, id = null) {
 
         const response = await fetch(url, {
             method: method,
-
-            headers: {
-                'Content-Type': 'application/json'
-            },
-
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(student)
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const savedStudent = await response.json();
-
-        console.log(
-            'Sinh viên đã lưu:',
-            savedStudent
-        );
-
-        alert(
-            mode === 'edit'
-                ? 'Cập nhật sinh viên thành công'
-                : 'Thêm sinh viên thành công'
-        );
-
+        alert(mode === 'edit' ? 'Cập nhật sinh viên thành công!' : 'Thêm sinh viên thành công!');
         window.location.href = 'index.html?page=list';
     } catch (error) {
-        console.error(
-            'Lỗi khi lưu sinh viên:',
-            error
-        );
-
-        alert(
-            mode === 'edit'
-                ? 'Cập nhật sinh viên thất bại'
-                : 'Thêm sinh viên thất bại'
-        );
+        console.error('Lỗi khi lưu sinh viên:', error);
+        alert(mode === 'edit' ? 'Cập nhật sinh viên thất bại: ' + error.message : 'Thêm sinh viên thất bại: ' + error.message);
     }
 }
-
-// =========================
-// GET FORM DATA
-// =========================
 
 function getStudentFormData() {
     return {
@@ -550,76 +460,49 @@ function getStudentFormData() {
 
 function getValue(id) {
     const element = document.getElementById(id);
-
-    return element
-        ? element.value.trim()
-        : '';
+    return element ? element.value.trim() : '';
 }
 
-// =========================
-// VALIDATION
-// =========================
-
 function validateStudent(student) {
-    if (!student.studentCode) {
-        alert('Vui lòng nhập mã sinh viên');
-        return false;
-    }
-
-    if (!student.fullName) {
-        alert('Vui lòng nhập họ và tên');
-        return false;
-    }
-
-    if (!student.email) {
-        alert('Vui lòng nhập email');
-        return false;
-    }
-
-    if (!student.phone) {
-        alert('Vui lòng nhập số điện thoại');
-        return false;
-    }
-
-    if (!student.className) {
-        alert('Vui lòng nhập lớp');
-        return false;
-    }
-
+    if (!student.studentCode) { alert('Vui lòng nhập mã sinh viên'); return false; }
+    if (!student.fullName) { alert('Vui lòng nhập họ và tên'); return false; }
+    if (!student.email) { alert('Vui lòng nhập email'); return false; }
+    if (!student.phone) { alert('Vui lòng nhập số điện thoại'); return false; }
+    if (!student.className) { alert('Vui lòng nhập lớp'); return false; }
     return true;
 }
 
-// =========================
-// READ ONLY
-// =========================
-
 function setFormReadOnly(readOnly) {
-    const fields = [
-        'studentCode',
-        'fullName',
-        'email',
-        'phone',
-        'className'
-    ];
-
+    const fields = ['studentCode', 'fullName', 'email', 'phone', 'className'];
     fields.forEach((id) => {
         const element = document.getElementById(id);
-
-        if (element) {
-            element.readOnly = readOnly;
-        }
+        if (element) element.readOnly = readOnly;
     });
 }
 
-// =========================
-// ESCAPE HTML
-// =========================
+function showAlert(type, message) {
+    const alertBox = document.getElementById('alertBox');
+    if (!alertBox) return;
+
+    alertBox.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+
+    setTimeout(() => {
+        const alertEl = alertBox.querySelector('.alert');
+        if (alertEl && window.bootstrap) {
+            const bsAlert = new bootstrap.Alert(alertEl);
+            bsAlert.close();
+        }
+    }, 4000);
+}
 
 function escapeHtml(value) {
-    if (value === null || value === undefined) {
-        return '';
-    }
-
+    if (value === null || value === undefined) return '';
     return String(value)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')

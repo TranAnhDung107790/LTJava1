@@ -1,9 +1,11 @@
 import { API_ENDPOINTS } from './config.js';
+import { renderMiniCalendar } from './calendar-widget.js';
 
 let sessionsList = [];
 let sessionModalInstance = null;
 let autoModalInstance = null;
 let activeOnlyFilter = false;
+let currentViewMode = 'cards'; // 'cards' | 'table'
 
 document.addEventListener('DOMContentLoaded', () => {
     const modalEl = document.getElementById('sessionModal');
@@ -18,9 +20,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventListeners();
     loadSessions();
+    renderMiniCalendar();
+
+    if (window.gsap) {
+        gsap.from('.bento-stat-card', {
+            opacity: 0,
+            y: 16,
+            duration: 0.5,
+            stagger: 0.08,
+            ease: 'power2.out'
+        });
+        gsap.from('.edu-side-panel > *', {
+            opacity: 0,
+            x: 25,
+            duration: 0.6,
+            stagger: 0.15,
+            delay: 0.25,
+            ease: 'power2.out'
+        });
+    }
 });
 
 function initEventListeners() {
+    // Chuyển đổi chế độ xem: Dạng thẻ Pastel (Bản B) vs Dạng bảng chi tiết
+    const btnViewCards = document.getElementById('btnViewCards');
+    const btnViewTable = document.getElementById('btnViewTable');
+    const cardsContainer = document.getElementById('sessionsCardsContainer');
+    const tableContainer = document.getElementById('sessionsTableContainer');
+
+    if (btnViewCards && btnViewTable) {
+        btnViewCards.addEventListener('click', () => {
+            btnViewCards.classList.add('active');
+            btnViewTable.classList.remove('active');
+            currentViewMode = 'cards';
+            if (cardsContainer) cardsContainer.style.display = '';
+            if (tableContainer) tableContainer.style.display = 'none';
+            if (window.gsap) {
+                gsap.from('#sessionsCardsContainer > *', {
+                    opacity: 0,
+                    y: 12,
+                    duration: 0.3,
+                    stagger: 0.05,
+                    ease: 'power1.out',
+                    clearProps: 'all'
+                });
+            }
+        });
+
+        btnViewTable.addEventListener('click', () => {
+            btnViewTable.classList.add('active');
+            btnViewCards.classList.remove('active');
+            currentViewMode = 'table';
+            if (cardsContainer) cardsContainer.style.display = 'none';
+            if (tableContainer) tableContainer.style.display = '';
+            if (window.gsap) {
+                gsap.from('#sessionsTableBody tr', {
+                    opacity: 0,
+                    y: 8,
+                    duration: 0.25,
+                    stagger: 0.02,
+                    ease: 'power1.out',
+                    clearProps: 'all'
+                });
+            }
+        });
+    }
+
     // Filter toggles
     const btnFilterAll = document.getElementById('btnFilterAll');
     const btnFilterActiveOnly = document.getElementById('btnFilterActiveOnly');
@@ -100,14 +165,26 @@ function initEventListeners() {
 
 async function loadSessions(keyword = '') {
     const tableBody = document.getElementById('sessionsTableBody');
-    tableBody.innerHTML = `
-        <tr>
-            <td colspan="10" class="text-center text-muted py-5">
-                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+    const cardsContainer = document.getElementById('sessionsCardsContainer');
+
+    if (tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-5">
+                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                    Đang tải danh sách đợt xét tốt nghiệp...
+                </td>
+            </tr>
+        `;
+    }
+    if (cardsContainer) {
+        cardsContainer.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <div class="spinner-border text-primary me-2"></div>
                 Đang tải danh sách đợt xét tốt nghiệp...
-            </td>
-        </tr>
-    `;
+            </div>
+        `;
+    }
 
     try {
         let url = API_ENDPOINTS.GRADUATION_SESSIONS;
@@ -124,33 +201,148 @@ async function loadSessions(keyword = '') {
         }
 
         sessionsList = await response.json();
+        renderCards(sessionsList);
         renderTable(sessionsList);
     } catch (error) {
         console.error('Lỗi khi tải đợt xét:', error);
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="10" class="text-center text-danger py-4">
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="text-center text-danger py-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Không thể tải dữ liệu: ${error.message}
+                    </td>
+                </tr>
+            `;
+        }
+        if (cardsContainer) {
+            cardsContainer.innerHTML = `
+                <div class="alert alert-danger py-4 text-center">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     Không thể tải dữ liệu: ${error.message}
-                </td>
-            </tr>
-        `;
+                </div>
+            `;
+        }
     }
+}
+
+// ==========================================================================
+// 🎴 RENDER CARDS (Pastel EdTech Cards — Bản B theo Wireframe Prompt 7)
+// ==========================================================================
+function renderCards(items) {
+    const cardsContainer = document.getElementById('sessionsCardsContainer');
+    if (!cardsContainer) return;
+
+    if (items.length === 0) {
+        cardsContainer.innerHTML = `
+            <div class="card shadow-sm border-0 py-5 text-center text-muted">
+                <i class="bi bi-inbox fs-2 text-secondary mb-2"></i>
+                <p class="mb-0">Chưa có đợt xét tốt nghiệp nào phù hợp với bộ lọc.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const pastelThemes = [
+        { theme: 'card-pastel-blue', icon: 'bi-mortarboard-fill' },
+        { theme: 'card-pastel-lavender', icon: 'bi-calendar2-check-fill' },
+        { theme: 'card-pastel-mint', icon: 'bi-award-fill' },
+        { theme: 'card-pastel-peach', icon: 'bi-patch-check-fill' }
+    ];
+
+    cardsContainer.innerHTML = items.map((item, index) => {
+        const styleTheme = pastelThemes[index % pastelThemes.length];
+        const sDate = item.startDate ? String(item.startDate).substring(0, 10) : '';
+        const dDate = item.dueDate ? String(item.dueDate).substring(0, 10) : '';
+
+        // Tình trạng hạn nộp
+        let periodStatus = '<span class="badge-status badge-status-expired"><i class="bi bi-dash-circle me-1"></i>Chưa mở</span>';
+        if (sDate && dDate) {
+            if (today >= sDate && today <= dDate) {
+                periodStatus = '<span class="badge-status badge-status-active"><span class="status-pulse-dot"></span>Đang mở nhận hồ sơ</span>';
+            } else if (today < sDate) {
+                periodStatus = '<span class="badge-status badge-status-upcoming"><i class="bi bi-clock-history me-1"></i>Sắp diễn ra</span>';
+            } else if (today > dDate) {
+                periodStatus = '<span class="badge-status badge-status-expired"><i class="bi bi-check2-circle me-1"></i>Đã đóng</span>';
+            }
+        }
+
+        const dateRangeText = (sDate && dDate)
+            ? `${sDate} → ${dDate}`
+            : (sDate ? `Từ ${sDate}` : (dDate ? `Hạn: ${dDate}` : 'Chưa thiết lập ngày'));
+
+        return `
+            <div class="edu-session-card ${styleTheme.theme}">
+                <div class="card-illustration">
+                    <i class="bi ${styleTheme.icon}"></i>
+                </div>
+                <div class="card-session-content">
+                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                        <span class="session-code-pill">${escapeHtml(item.sessionCode)}</span>
+                        ${periodStatus}
+                        <span class="badge bg-white text-secondary border fw-semibold px-2 py-1">HK${item.semester || 1} · ${escapeHtml(item.academicYear || '2026-2027')}</span>
+                    </div>
+                    <h5 class="card-session-title mb-2">${escapeHtml(item.sessionName)}</h5>
+                    <div class="card-session-meta">
+                        <span><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Thời gian:</strong> ${dateRangeText}</span>
+                        ${item.note ? `<span><i class="bi bi-info-circle me-1 text-secondary"></i>${escapeHtml(item.note)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="card-session-actions">
+                    <button class="card-action-mini btn-edit" data-id="${item.id}" title="Chỉnh sửa đợt xét">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="card-action-mini btn-del" data-id="${item.id}" title="Xóa đợt xét">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <button class="btn-circle-cta btn-view-detail" data-id="${item.id}" title="Mở chi tiết đợt xét ( > )">
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // GSAP Stagger animation cho các thẻ Pastel
+    if (window.gsap && currentViewMode === 'cards') {
+        gsap.from('#sessionsCardsContainer > *', {
+            opacity: 0,
+            y: 12,
+            duration: 0.35,
+            stagger: 0.06,
+            ease: 'power1.out',
+            clearProps: 'all'
+        });
+    }
+
+    cardsContainer.querySelectorAll('.btn-edit, .btn-view-detail').forEach(btn => {
+        btn.addEventListener('click', () => openEditModal(btn.getAttribute('data-id')));
+    });
+
+    cardsContainer.querySelectorAll('.btn-del').forEach(btn => {
+        btn.addEventListener('click', () => handleDeleteSession(btn.getAttribute('data-id')));
+    });
 }
 
 function renderTable(items) {
     const tableBody = document.getElementById('sessionsTableBody');
     const totalBadge = document.getElementById('totalBadge');
     if (totalBadge) {
-        totalBadge.textContent = `Tổng số: ${items.length}`;
+        totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${items.length} đợt xét`;
     }
+
+    // Cập nhật các chỉ số Bento Stat Cards
+    updateBentoStats(sessionsList.length > 0 ? sessionsList : items);
+
+    if (!tableBody) return;
 
     if (items.length === 0) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="10" class="text-center text-muted py-5">
                     <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary"></i>
-                    Chưa có đợt xét tốt nghiệp nào.
+                    Chưa có đợt xét tốt nghiệp nào phù hợp với bộ lọc.
                 </td>
             </tr>
         `;
@@ -160,34 +352,40 @@ function renderTable(items) {
     const today = new Date().toISOString().split('T')[0];
 
     tableBody.innerHTML = items.map((item, index) => {
-        const sessionCodeBadge = `<span class="badge bg-secondary-subtle text-secondary-emphasis font-monospace px-2 py-1">${escapeHtml(item.sessionCode)}</span>`;
+        const sessionCodeBadge = `<span class="session-code-pill">${escapeHtml(item.sessionCode)}</span>`;
 
-        // Tính toán tình trạng hạn nộp
-        let periodStatus = '<span class="badge bg-secondary-subtle text-secondary px-2 py-1">Chưa mở</span>';
-        if (item.startDate && item.dueDate) {
-            if (today >= item.startDate && today <= item.dueDate) {
-                periodStatus = '<span class="badge bg-success px-2 py-1"><i class="bi bi-clock-history me-1"></i>Đang mở nộp</span>';
-            } else if (today > item.dueDate) {
-                periodStatus = '<span class="badge bg-danger-subtle text-danger px-2 py-1">Đã hết hạn</span>';
+        // Normalize dates to YYYY-MM-DD
+        const sDate = item.startDate ? String(item.startDate).substring(0, 10) : '';
+        const dDate = item.dueDate ? String(item.dueDate).substring(0, 10) : '';
+
+        // Tình trạng hạn nộp
+        let periodStatus = '<span class="badge-status badge-status-expired"><i class="bi bi-dash-circle me-1"></i>Chưa mở</span>';
+        if (sDate && dDate) {
+            if (today >= sDate && today <= dDate) {
+                periodStatus = '<span class="badge-status badge-status-active"><span class="status-pulse-dot"></span>Đang mở nộp</span>';
+            } else if (today < sDate) {
+                periodStatus = '<span class="badge-status badge-status-upcoming"><i class="bi bi-clock-history me-1"></i>Sắp diễn ra</span>';
+            } else if (today > dDate) {
+                periodStatus = '<span class="badge-status badge-status-expired"><i class="bi bi-check2-circle me-1"></i>Đã đóng</span>';
             }
         }
 
         return `
             <tr>
-                <td class="text-center text-muted small">${index + 1}</td>
+                <td class="text-center text-muted small fw-medium">${index + 1}</td>
                 <td>${sessionCodeBadge}</td>
-                <td class="fw-semibold text-primary-emphasis">${escapeHtml(item.sessionName)}</td>
-                <td class="text-center">${escapeHtml(item.academicYear || '-')}</td>
-                <td class="text-center">HK${item.semester || 1}</td>
-                <td class="small text-muted">${item.startDate || '-'}</td>
-                <td class="small text-muted">${item.dueDate || '-'}</td>
+                <td class="fw-bold text-dark">${escapeHtml(item.sessionName)}</td>
+                <td class="text-center"><span class="badge bg-light text-secondary border">${escapeHtml(item.academicYear || '-')}</span></td>
+                <td class="text-center"><span class="badge bg-primary-subtle text-primary fw-semibold px-2">HK${item.semester || 1}</span></td>
+                <td class="small text-muted font-monospace">${sDate || '-'}</td>
+                <td class="small text-muted font-monospace">${dDate || '-'}</td>
                 <td class="text-center">${periodStatus}</td>
-                <td class="small text-muted" style="max-width: 200px;">${item.note ? escapeHtml(item.note) : '-'}</td>
+                <td class="small text-muted" style="max-width: 220px;">${item.note ? escapeHtml(item.note) : '-'}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${item.id}" title="Chỉnh sửa">
+                    <button class="btn btn-sm btn-outline-primary btn-action-icon me-1 btn-edit" data-id="${item.id}" title="Chỉnh sửa đợt xét">
                         <i class="bi bi-pencil-square"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}" title="Xóa">
+                    <button class="btn btn-sm btn-outline-danger btn-action-icon btn-delete" data-id="${item.id}" title="Xóa đợt xét">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -195,12 +393,70 @@ function renderTable(items) {
         `;
     }).join('');
 
+    // GSAP Stagger animation cho các hàng bảng (clearProps để không bị mờ)
+    if (window.gsap && currentViewMode === 'table') {
+        gsap.from('#sessionsTableBody tr', {
+            opacity: 0,
+            y: 8,
+            duration: 0.25,
+            stagger: 0.02,
+            ease: 'power1.out',
+            clearProps: 'all'
+        });
+    }
+
     tableBody.querySelectorAll('.btn-edit').forEach(btn => {
         btn.addEventListener('click', () => openEditModal(btn.getAttribute('data-id')));
     });
 
     tableBody.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', () => handleDeleteSession(btn.getAttribute('data-id')));
+    });
+}
+
+function updateBentoStats(allSessions) {
+    const today = new Date().toISOString().split('T')[0];
+    let activeCount = 0;
+    let upcomingCount = 0;
+    let latestYear = '2026 - 2027';
+
+    allSessions.forEach(item => {
+        if (item.academicYear) latestYear = item.academicYear;
+        const sDate = item.startDate ? String(item.startDate).substring(0, 10) : '';
+        const dDate = item.dueDate ? String(item.dueDate).substring(0, 10) : '';
+        if (sDate && dDate) {
+            if (today >= sDate && today <= dDate) {
+                activeCount++;
+            } else if (today < sDate) {
+                upcomingCount++;
+            }
+        }
+    });
+
+    animateCount('statTotalSessions', allSessions.length);
+    animateCount('statActiveSessions', activeCount);
+    animateCount('statUpcomingSessions', upcomingCount);
+
+    const yearEl = document.getElementById('statCurrentYear');
+    if (yearEl) yearEl.textContent = latestYear;
+}
+
+function animateCount(elementId, targetValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!window.gsap) {
+        el.textContent = targetValue;
+        return;
+    }
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    const obj = { val: currentVal };
+    gsap.to(obj, {
+        val: targetValue,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: () => {
+            el.textContent = Math.round(obj.val);
+        }
     });
 }
 
@@ -227,8 +483,8 @@ function openEditModal(id) {
     document.getElementById('modalSessionName').value = item.sessionName || '';
     document.getElementById('modalAcademicYear').value = item.academicYear || '';
     document.getElementById('modalSemester').value = item.semester || 2;
-    document.getElementById('modalStartDate').value = item.startDate || '';
-    document.getElementById('modalDueDate').value = item.dueDate || '';
+    document.getElementById('modalStartDate').value = item.startDate ? String(item.startDate).substring(0, 10) : '';
+    document.getElementById('modalDueDate').value = item.dueDate ? String(item.dueDate).substring(0, 10) : '';
     document.getElementById('modalNote').value = item.note || '';
 
     if (sessionModalInstance) {

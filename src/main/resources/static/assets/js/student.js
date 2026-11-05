@@ -1,6 +1,5 @@
 import { API_ENDPOINTS } from './config.js';
-
-let currentCalDate = new Date();
+import { renderMiniCalendar } from './calendar-widget.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
@@ -227,14 +226,15 @@ function renderStudents(students) {
         })
         .join('');
 
-    // GSAP Stagger animation cho các hàng trong bảng
+    // GSAP Stagger animation cho các hàng trong bảng (clearProps để tránh lỗi mờ mất dòng khi cuộn - Ảnh 3)
     if (window.gsap) {
         gsap.from('#studentTableBody tr', {
             opacity: 0,
             y: 8,
-            duration: 0.25,
-            stagger: 0.02,
-            ease: 'power1.out'
+            duration: 0.3,
+            stagger: 0.015,
+            ease: 'power1.out',
+            clearProps: 'all'
         });
     }
 }
@@ -509,65 +509,4 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
-}
-
-// ==========================================================================
-// 📅 MINI CALENDAR (Interactive Month Switcher)
-// ==========================================================================
-
-function renderMiniCalendar() {
-    const container = document.getElementById('miniCalendar');
-    if (!container) return;
-
-    const year = currentCalDate.getFullYear();
-    const month = currentCalDate.getMonth();
-    const today = new Date();
-
-    const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-                        'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-    const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const startOffset = (firstDay === 0) ? 6 : firstDay - 1; // Monday start
-
-    let daysHTML = '';
-    for (let i = 0; i < startOffset; i++) {
-        daysHTML += '<span class="cal-day empty"></span>';
-    }
-    for (let d = 1; d <= daysInMonth; d++) {
-        const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) ? ' today' : '';
-        daysHTML += `<span class="cal-day${isToday}">${d}</span>`;
-    }
-
-    container.innerHTML = `
-        <div class="cal-header">
-            <h6>${monthNames[month]} ${year}</h6>
-            <div class="cal-nav">
-                <button type="button" id="calPrevBtn" title="Tháng trước"><i class="bi bi-chevron-left"></i></button>
-                <button type="button" id="calNextBtn" title="Tháng sau"><i class="bi bi-chevron-right"></i></button>
-            </div>
-        </div>
-        <div class="cal-weekdays">
-            ${dayNames.map(d => `<span>${d}</span>`).join('')}
-        </div>
-        <div class="cal-days">
-            ${daysHTML}
-        </div>
-    `;
-
-    const prevBtn = container.querySelector('#calPrevBtn');
-    const nextBtn = container.querySelector('#calNextBtn');
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            currentCalDate.setMonth(currentCalDate.getMonth() - 1);
-            renderMiniCalendar();
-        });
-    }
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            currentCalDate.setMonth(currentCalDate.getMonth() + 1);
-            renderMiniCalendar();
-        });
-    }
 }
