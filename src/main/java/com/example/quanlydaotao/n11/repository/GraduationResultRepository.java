@@ -34,8 +34,8 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
     @Query(value = "SELECT COUNT(1) FROM dbo.graduation_conditions WHERE id = :conditionId AND is_active = 1", nativeQuery = true)
     int countActiveConditionById(@Param("conditionId") UUID conditionId);
 
-    // Kiểm tra sinh viên (Hàm vừa bổ sung)
-    @Query(value = "SELECT COUNT(1) FROM dbo.students_ WHERE id = :studentId AND is_active = 1", nativeQuery = true)
+    // Kiểm tra sinh viên
+    @Query(value = "SELECT COUNT(1) FROM dbo.students WHERE id = :studentId", nativeQuery = true)
     int countActiveStudentById(@Param("studentId") UUID studentId);
 
     // Lấy tiêu chí từ bộ điều kiện
@@ -45,6 +45,6 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
     List<Object[]> getConditionCriteria(@Param("conditionId") UUID conditionId);
 
     // Lấy danh sách ID sinh viên
-    @Query(value = "SELECT id FROM dbo.students_ WHERE is_active = 1", nativeQuery = true)
+    @Query(value = "SELECT id FROM dbo.students", nativeQuery = true)
     List<UUID> findActiveStudentIds();
 }

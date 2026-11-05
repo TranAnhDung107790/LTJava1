@@ -220,16 +220,78 @@
                             </div>
                             <div class="d-flex align-items-center gap-2">
                                 <span id="totalBadge" class="badge-status badge-status-active">
-                                    <span class="status-pulse-dot"></span>Đang tải dữ liệu...
+                                    <span class="status-pulse-dot"></span>Tổng số: 4 đợt xét
                                 </span>
                             </div>
                         </div>
 
                         <!-- 1. CARDS CONTAINER (Pastel Cards - Bản B) -->
                         <div id="sessionsCardsContainer" class="d-flex flex-column gap-3 mb-4">
-                            <div class="text-center py-5 text-muted">
-                                <div class="spinner-border text-primary me-2"></div>
-                                Đang tải danh sách đợt xét tốt nghiệp...
+                            <div class="edu-session-card card-pastel-blue">
+                                <div class="card-illustration">
+                                    <i class="bi bi-mortarboard-fill"></i>
+                                </div>
+                                <div class="card-session-content">
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <span class="session-code-pill">DX2026_01</span>
+                                        <span class="badge-status badge-status-active"><span class="status-pulse-dot"></span>Đang mở nhận hồ sơ</span>
+                                        <span class="badge bg-white text-secondary border fw-semibold px-2 py-1">HK1 · 2026-2027</span>
+                                    </div>
+                                    <h5 class="card-session-title mb-2">Xét tốt nghiệp Đợt 1 năm học 2026-2027 (Khóa K20, K21, K22)</h5>
+                                    <div class="card-session-meta">
+                                        <span><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Thời gian:</strong> 2026-10-01 → 2026-11-30</span>
+                                        <span><i class="bi bi-info-circle me-1 text-secondary"></i>Đợt xét chính quy học kỳ 1 cho toàn khóa</span>
+                                    </div>
+                                </div>
+                                <div class="card-session-actions">
+                                    <button class="card-action-mini btn-edit" data-id="seed-sess-1" title="Chỉnh sửa đợt xét"><i class="bi bi-pencil-square"></i></button>
+                                    <button class="card-action-mini btn-del" data-id="seed-sess-1" title="Xóa đợt xét"><i class="bi bi-trash"></i></button>
+                                    <button class="btn-circle-cta btn-view-detail" data-id="seed-sess-1" title="Mở chi tiết đợt xét"><i class="bi bi-arrow-right"></i></button>
+                                </div>
+                            </div>
+                            <div class="edu-session-card card-pastel-lavender">
+                                <div class="card-illustration">
+                                    <i class="bi bi-calendar2-check-fill"></i>
+                                </div>
+                                <div class="card-session-content">
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <span class="session-code-pill">DX2026_02</span>
+                                        <span class="badge-status badge-status-upcoming"><i class="bi bi-clock-history me-1"></i>Sắp diễn ra</span>
+                                        <span class="badge bg-white text-secondary border fw-semibold px-2 py-1">HK2 · 2026-2027</span>
+                                    </div>
+                                    <h5 class="card-session-title mb-2">Xét tốt nghiệp Đợt 2 năm học 2026-2027 (Khóa K21, K22, K23)</h5>
+                                    <div class="card-session-meta">
+                                        <span><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Thời gian:</strong> 2027-03-01 → 2027-04-30</span>
+                                        <span><i class="bi bi-info-circle me-1 text-secondary"></i>Đợt xét bổ sung và sinh viên hoàn thành đồ án tốt nghiệp HK2</span>
+                                    </div>
+                                </div>
+                                <div class="card-session-actions">
+                                    <button class="card-action-mini btn-edit" data-id="seed-sess-2" title="Chỉnh sửa đợt xét"><i class="bi bi-pencil-square"></i></button>
+                                    <button class="card-action-mini btn-del" data-id="seed-sess-2" title="Xóa đợt xét"><i class="bi bi-trash"></i></button>
+                                    <button class="btn-circle-cta btn-view-detail" data-id="seed-sess-2" title="Mở chi tiết đợt xét"><i class="bi bi-arrow-right"></i></button>
+                                </div>
+                            </div>
+                            <div class="edu-session-card card-pastel-mint">
+                                <div class="card-illustration">
+                                    <i class="bi bi-award-fill"></i>
+                                </div>
+                                <div class="card-session-content">
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <span class="session-code-pill">DX2025_03</span>
+                                        <span class="badge-status badge-status-expired"><i class="bi bi-check2-circle me-1"></i>Đã đóng</span>
+                                        <span class="badge bg-white text-secondary border fw-semibold px-2 py-1">HK3 · 2025-2026</span>
+                                    </div>
+                                    <h5 class="card-session-title mb-2">Xét tốt nghiệp Đợt bổ sung hè năm học 2025-2026</h5>
+                                    <div class="card-session-meta">
+                                        <span><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Thời gian:</strong> 2026-07-01 → 2026-08-31</span>
+                                        <span><i class="bi bi-info-circle me-1 text-secondary"></i>Đã hoàn tất trao bằng ngày 15/09/2026</span>
+                                    </div>
+                                </div>
+                                <div class="card-session-actions">
+                                    <button class="card-action-mini btn-edit" data-id="seed-sess-3" title="Chỉnh sửa đợt xét"><i class="bi bi-pencil-square"></i></button>
+                                    <button class="card-action-mini btn-del" data-id="seed-sess-3" title="Xóa đợt xét"><i class="bi bi-trash"></i></button>
+                                    <button class="btn-circle-cta btn-view-detail" data-id="seed-sess-3" title="Mở chi tiết đợt xét"><i class="bi bi-arrow-right"></i></button>
+                                </div>
                             </div>
                         </div>
 
