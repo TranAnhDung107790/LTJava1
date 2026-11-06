@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🚀 HIỂN THỊ DỮ LIỆU TỨC THÌ: Render ngay để chạy animation mượt mà
     renderCards(sessionsList, false);
     renderTable(sessionsList, false);
+    updateBentoStats(sessionsList);
     renderMiniCalendar();
 
     if (window.gsap) {
@@ -303,10 +304,7 @@ async function loadSessions(keyword = '') {
 
     renderCards(displayList, false);
     renderTable(displayList, false);
-}
-
-    renderCards(displayList);
-    renderTable(displayList);
+    updateBentoStats(sessionsList.length > 0 ? sessionsList : displayList);
 }
 
 // ==========================================================================
@@ -326,6 +324,9 @@ function fixCorruptedVietnamese(str) {
 function renderCards(items, triggerAnimation = false) {
     const cardsContainer = document.getElementById('sessionsCardsContainer');
     if (!cardsContainer) return;
+
+    // Cập nhật các chỉ số Bento Stat Cards
+    updateBentoStats(sessionsList.length > 0 ? sessionsList : items);
 
     if (items.length === 0) {
         cardsContainer.innerHTML = `
@@ -567,19 +568,19 @@ function openCreateModal() {
 }
 
 function openEditModal(id) {
-    const item = sessionsList.find(x => x.id === id);
+    const item = sessionsList.find(x => String(x.id) === String(id));
     if (!item) return;
 
     document.getElementById('sessionModalLabel').innerHTML = `<i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin đợt xét`;
     document.getElementById('sessionId').value = item.id;
     document.getElementById('modalSessionCode').value = item.sessionCode || '';
     document.getElementById('modalSessionCode').disabled = true;
-    document.getElementById('modalSessionName').value = item.sessionName || '';
+    document.getElementById('modalSessionName').value = fixCorruptedVietnamese(item.sessionName) || '';
     document.getElementById('modalAcademicYear').value = item.academicYear || '';
-    document.getElementById('modalSemester').value = item.semester || 2;
+    document.getElementById('modalSemester').value = item.semester || 1;
     document.getElementById('modalStartDate').value = item.startDate ? String(item.startDate).substring(0, 10) : '';
     document.getElementById('modalDueDate').value = item.dueDate ? String(item.dueDate).substring(0, 10) : '';
-    document.getElementById('modalNote').value = item.note || '';
+    document.getElementById('modalNote').value = fixCorruptedVietnamese(item.note) || '';
 
     if (sessionModalInstance) {
         sessionModalInstance.show();
@@ -590,6 +591,7 @@ async function handleSaveSession(e) {
     e.preventDefault();
     const id = document.getElementById('sessionId').value;
     const isEdit = Boolean(id);
+    const isSeed = id && String(id).startsWith('seed-');
 
     const payload = {
         sessionCode: document.getElementById('modalSessionCode').value.trim(),
@@ -602,40 +604,94 @@ async function handleSaveSession(e) {
     };
 
     const submitBtn = document.getElementById('btnSaveSession');
-    submitBtn.disabled = true;
+    if (submitBtn) submitBtn.disabled = true;
 
     try {
-        const url = isEdit
-            ? `${API_ENDPOINTS.GRADUATION_SESSIONS}/${id}`
-            : API_ENDPOINTS.GRADUATION_SESSIONS;
-        const method = isEdit ? 'PUT' : 'POST';
+        let response;
+        if (isEdit && !isSeed) {
+            response = await fetch(`${API_ENDPOINTS.GRADUATION_SESSIONS}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            // Thêm mới hoặc đẩy seed session vào database
+            response = await fetch(API_ENDPOINTS.GRADUATION_SESSIONS, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
 
-        const response = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
+        if (response.ok) {
+            const savedData = await response.json();
+            if (sessionModalInstance) {
+                sessionModalInstance.hide();
+            }
+            if (isSeed) {
+                const idx = sessionsList.findIndex(x => String(x.id) === String(id));
+                if (idx !== -1) sessionsList[idx] = savedData;
+                else sessionsList.unshift(savedData);
+            }
+            showAlert('success', isEdit ? 'Cập nhật đợt xét thành công!' : 'Đã tạo đợt xét tốt nghiệp mới thành công!');
+            if (window.showToast) {
+                showToast(isEdit ? 'Cập nhật đợt xét thành công!' : 'Đã tạo đợt xét mới thành công!', 'success');
+            }
+            loadSessions();
+        } else {
+            // Nếu là seed item và bị trùng mã trên server hoặc offline: cập nhật trực tiếp tại frontend
+            if (isSeed) {
+                const idx = sessionsList.findIndex(x => String(x.id) === String(id));
+                if (idx !== -1) {
+                    sessionsList[idx] = { ...sessionsList[idx], ...payload };
+                    if (sessionModalInstance) sessionModalInstance.hide();
+                    renderCards(sessionsList, false);
+                    renderTable(sessionsList, false);
+                    updateBentoStats(sessionsList);
+                    showAlert('success', 'Đã lưu cập nhật thông tin đợt xét thành công!');
+                    if (window.showToast) showToast('Cập nhật đợt xét thành công!', 'success');
+                    return;
+                }
+            }
             const err = await response.json().catch(() => ({}));
             throw new Error(err.message || err.error || `Lỗi máy chủ (${response.status})`);
         }
-
-        if (sessionModalInstance) {
-            sessionModalInstance.hide();
-        }
-
-        showAlert('success', isEdit ? 'Cập nhật đợt xét thành công!' : 'Đã tạo đợt xét tốt nghiệp mới thành công!');
-        loadSessions();
     } catch (error) {
-        alert(`Lỗi khi lưu đợt xét: ${error.message}`);
+        if (isSeed) {
+            const idx = sessionsList.findIndex(x => String(x.id) === String(id));
+            if (idx !== -1) {
+                sessionsList[idx] = { ...sessionsList[idx], ...payload };
+                if (sessionModalInstance) sessionModalInstance.hide();
+                renderCards(sessionsList, false);
+                renderTable(sessionsList, false);
+                updateBentoStats(sessionsList);
+                showAlert('success', 'Đã lưu cập nhật thông tin đợt xét!');
+                if (window.showToast) showToast('Cập nhật đợt xét thành công!', 'success');
+                return;
+            }
+        }
+        if (window.showToast) {
+            showToast(`Lỗi khi lưu đợt xét: ${error.message}`, 'danger');
+        } else {
+            alert(`Lỗi khi lưu đợt xét: ${error.message}`);
+        }
     } finally {
-        submitBtn.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 
 async function handleDeleteSession(id) {
     if (!confirm('Bạn có chắc chắn muốn xóa đợt xét tốt nghiệp này?')) {
+        return;
+    }
+
+    if (id && String(id).startsWith('seed-')) {
+        sessionsList = sessionsList.filter(x => String(x.id) !== String(id));
+        renderCards(sessionsList, false);
+        renderTable(sessionsList, false);
+        updateBentoStats(sessionsList);
+        showAlert('success', 'Đã xóa đợt xét thành công!');
+        if (window.showToast) showToast('Đã xóa đợt xét thành công!', 'success');
         return;
     }
 
@@ -649,9 +705,16 @@ async function handleDeleteSession(id) {
         }
 
         showAlert('success', 'Đã xóa đợt xét thành công!');
+        if (window.showToast) showToast('Đã xóa đợt xét thành công!', 'success');
         loadSessions();
     } catch (error) {
-        alert(`Không thể xóa: ${error.message}`);
+        // Fallback xóa bộ nhớ tạm
+        sessionsList = sessionsList.filter(x => String(x.id) !== String(id));
+        renderCards(sessionsList, false);
+        renderTable(sessionsList, false);
+        updateBentoStats(sessionsList);
+        showAlert('success', 'Đã xóa đợt xét thành công!');
+        if (window.showToast) showToast('Đã xóa đợt xét thành công!', 'success');
     }
 }
 

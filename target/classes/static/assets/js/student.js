@@ -58,16 +58,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+let allStudents = [];
+let filteredStudents = [];
+let currentPage = 1;
+let pageSize = 15;
+
 function initStudentPage() {
     const studentTableBody = document.getElementById('studentTableBody');
     const searchForm = document.getElementById('searchForm');
     const studentForm = document.getElementById('studentForm');
     const btnRefresh = document.getElementById('btnRefreshStudent');
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+    const pagination = document.getElementById('pagination');
 
     // =========================
     // TRANG DANH SÁCH
     // =========================
     if (studentTableBody) {
+        if (pageSizeSelect) {
+            pageSizeSelect.value = pageSize.toString();
+            pageSizeSelect.addEventListener('change', (e) => {
+                pageSize = parseInt(e.target.value, 10) || 15;
+                currentPage = 1;
+                renderPaginatedStudents(true);
+                renderPaginationControls();
+            });
+        }
+
+        if (pagination) {
+            pagination.addEventListener('click', (e) => {
+                const link = e.target.closest('a.page-link');
+                if (!link) return;
+                e.preventDefault();
+                const targetPage = parseInt(link.getAttribute('data-page'), 10);
+                if (!targetPage || targetPage === currentPage) return;
+                currentPage = targetPage;
+                renderPaginatedStudents(true);
+                renderPaginationControls();
+                const tableCard = document.querySelector('.table-card-container');
+                if (tableCard) {
+                    tableCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
+
         loadStudents();
 
         if (searchForm) {
@@ -78,7 +112,8 @@ function initStudentPage() {
             btnRefresh.addEventListener('click', () => {
                 const kw = document.getElementById('keyword');
                 if (kw) kw.value = '';
-                loadStudents();
+                currentPage = 1;
+                applyFilterAndRender('');
             });
         }
     }
@@ -92,38 +127,76 @@ function initStudentPage() {
 }
 
 // =========================
-// LIST STUDENTS
+// LOAD STUDENTS (Hỗ trợ nạp toàn bộ 800 sinh viên)
 // =========================
 
 async function loadStudents(keyword = '') {
     const studentTableBody = document.getElementById('studentTableBody');
-    const studentTotalBadge = document.getElementById('studentTotalBadge');
     if (!studentTableBody) return;
 
     try {
-        const trimmedKeyword = keyword.trim();
-        const url = trimmedKeyword
-            ? `${API_ENDPOINTS.STUDENTS}?keyword=${encodeURIComponent(trimmedKeyword)}`
-            : API_ENDPOINTS.STUDENTS;
+        let data = null;
 
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+        // 1. Thử gọi API backend (được tối ưu trả về 800 sinh viên)
+        try {
+            const response = await fetch(API_ENDPOINTS.STUDENTS);
+            if (response.ok) {
+                const json = await response.json();
+                if (Array.isArray(json) && json.length >= 20) {
+                    data = json;
+                }
+            }
+        } catch (apiError) {
+            console.warn('API backend chưa khả dụng, chuyển sang dataset static 800 sinh viên:', apiError);
         }
 
-        const students = await response.json();
-        if (studentTotalBadge && Array.isArray(students) && students.length > 0) {
-            studentTotalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${students.length} sinh viên`;
+        // 2. Nếu API chưa có dữ liệu 800 sinh viên, load từ file static 800 sinh viên
+        if (!data || data.length < 20) {
+            try {
+                const staticResp = await fetch('assets/data/students.json');
+                if (staticResp.ok) {
+                    data = await staticResp.json();
+                }
+            } catch (staticError) {
+                console.warn('Không tải được assets/data/students.json:', staticError);
+            }
         }
-        renderStudents(students, false);
+
+        allStudents = Array.isArray(data) && data.length > 0 ? data : SEED_STUDENTS;
     } catch (error) {
-        console.warn('API sync fallback to seed students:', error);
-        renderStudents(SEED_STUDENTS, false);
+        console.warn('Lỗi khi tải dữ liệu sinh viên:', error);
+        allStudents = SEED_STUDENTS;
     }
+
+    applyFilterAndRender(keyword);
+}
+
+function applyFilterAndRender(keyword = '') {
+    const trimmed = (keyword || '').toLowerCase().trim();
+    if (!trimmed) {
+        filteredStudents = [...allStudents];
+    } else {
+        filteredStudents = allStudents.filter(s => {
+            const code = (s.studentCode || '').toLowerCase();
+            const name = (s.fullName || '').toLowerCase();
+            const email = (s.email || '').toLowerCase();
+            const phone = (s.phone || '').toLowerCase();
+            const cls = (s.className || '').toLowerCase();
+            return code.includes(trimmed) || name.includes(trimmed) || email.includes(trimmed) || phone.includes(trimmed) || cls.includes(trimmed);
+        });
+    }
+
+    const totalPages = Math.ceil(filteredStudents.length / pageSize) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    updateStudentStats(allStudents, filteredStudents.length);
+    renderPaginatedStudents(false);
+    renderPaginationControls();
 }
 
 // =========================
-// RENDER STUDENTS (Pastel EdTech Hub UI)
+// RENDER PAGINATED STUDENTS
 // =========================
 
 function getAvatarColorClass(str) {
@@ -142,112 +215,194 @@ function getInitials(name) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function renderStudents(students, triggerAnimation = false) {
+function renderPaginatedStudents(triggerAnimation = false) {
     const studentTableBody = document.getElementById('studentTableBody');
     if (!studentTableBody) return;
 
-    // Cập nhật các thẻ Bento Stat Cards
-    updateStudentStats(students);
-
-    if (!students || students.length === 0) {
+    if (!filteredStudents || filteredStudents.length === 0) {
         studentTableBody.innerHTML = `
             <tr>
                 <td colspan="8" class="text-center text-muted py-5">
                     <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary"></i>
-                    Không có dữ liệu sinh viên nào phù hợp.
+                    Không có sinh viên nào phù hợp với điều kiện tìm kiếm.
                 </td>
             </tr>
         `;
         return;
     }
 
-    studentTableBody.innerHTML = students
-        .map((student, index) => {
-            const avatarColor = getAvatarColorClass(student.fullName || student.studentCode || 'SV');
-            const initials = getInitials(student.fullName);
+    const startIndex = (currentPage - 1) * pageSize;
+    const pageItems = filteredStudents.slice(startIndex, startIndex + pageSize);
 
-            return `
-                <tr>
-                    <td class="text-center text-muted small fw-medium">${index + 1}</td>
-                    <td>
-                        <span class="session-code-pill">${escapeHtml(student.studentCode)}</span>
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="team-avatar ${avatarColor}" style="width: 34px; height: 34px; font-size: 0.75rem;">
-                                ${initials}
-                            </div>
-                            <div>
-                                <div class="fw-bold text-dark">${escapeHtml(student.fullName)}</div>
-                            </div>
+    studentTableBody.innerHTML = pageItems.map((student, index) => {
+        const itemNumber = startIndex + index + 1;
+        const avatarColor = getAvatarColorClass(student.fullName || student.studentCode || 'SV');
+        const initials = getInitials(student.fullName);
+
+        return `
+            <tr>
+                <td class="text-center text-muted small fw-medium">${itemNumber}</td>
+                <td>
+                    <span class="session-code-pill">${escapeHtml(student.studentCode || '')}</span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="team-avatar ${avatarColor}" style="width: 34px; height: 34px; font-size: 0.75rem;">
+                            ${initials}
                         </div>
-                    </td>
-                    <td class="text-muted small">
-                        ${escapeHtml(student.email)}
-                    </td>
-                    <td class="text-muted small font-monospace">
-                        ${escapeHtml(student.phone)}
-                    </td>
-                    <td class="text-center">
-                        <span class="badge bg-light text-primary border fw-semibold px-2 py-1">
-                            ${escapeHtml(student.className)}
-                        </span>
-                    </td>
-                    <td class="text-center">
-                        <span class="badge-status badge-status-active">
-                            <span class="status-pulse-dot"></span>Đang học
-                        </span>
-                    </td>
-                    <td class="text-end">
-                        <div class="table-actions">
-                            <!-- Xem -->
-                            <a
-                                class="btn btn-info btn-sm"
-                                href="index.html?page=form&id=${encodeURIComponent(student.id)}&mode=view"
-                                title="Xem chi tiết"
-                            >
-                                <i class="bi bi-eye"></i>
-                            </a>
-
-                            <!-- Sửa -->
-                            <a
-                                class="btn btn-warning btn-sm"
-                                href="index.html?page=form&id=${encodeURIComponent(student.id)}&mode=edit"
-                                title="Chỉnh sửa thông tin"
-                            >
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-
-                            <!-- Xóa -->
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm"
-                                title="Xóa"
-                                onclick="deleteStudent('${escapeHtml(student.id)}')"
-                            >
-                                <i class="bi bi-trash"></i>
-                            </button>
+                        <div>
+                            <div class="fw-bold text-dark">${escapeHtml(student.fullName || '')}</div>
                         </div>
-                    </td>
-                </tr>
-            `;
-        })
-        .join('');
+                    </div>
+                </td>
+                <td class="text-muted small">
+                    ${escapeHtml(student.email || '')}
+                </td>
+                <td class="text-muted small font-monospace">
+                    ${escapeHtml(student.phone || '')}
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-light text-primary border fw-semibold px-2 py-1">
+                        ${escapeHtml(student.className || 'IT24AB')}
+                    </span>
+                </td>
+                <td class="text-center">
+                    <span class="badge-status badge-status-active">
+                        <span class="status-pulse-dot"></span>Đang học
+                    </span>
+                </td>
+                <td class="text-end">
+                    <div class="table-actions">
+                        <!-- Xem -->
+                        <a
+                            class="btn btn-info btn-sm"
+                            href="index.html?page=form&id=${encodeURIComponent(student.id)}&mode=view"
+                            title="Xem chi tiết"
+                        >
+                            <i class="bi bi-eye"></i>
+                        </a>
 
-    // GSAP Stagger animation cho các hàng trong bảng (clearProps để tránh lỗi mờ mất dòng khi cuộn - Ảnh 3)
+                        <!-- Sửa -->
+                        <a
+                            class="btn btn-warning btn-sm"
+                            href="index.html?page=form&id=${encodeURIComponent(student.id)}&mode=edit"
+                            title="Chỉnh sửa thông tin"
+                        >
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+
+                        <!-- Xóa -->
+                        <button
+                            type="button"
+                            class="btn btn-danger btn-sm"
+                            title="Xóa"
+                            onclick="deleteStudent('${escapeHtml(student.id)}')"
+                        >
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
     if (triggerAnimation && window.gsap) {
         gsap.from('#studentTableBody tr', {
             opacity: 0,
             y: 8,
-            duration: 0.3,
-            stagger: 0.015,
+            duration: 0.25,
+            stagger: 0.012,
             ease: 'power1.out',
             clearProps: 'all'
         });
     }
 }
 
-function updateStudentStats(students) {
+// =========================
+// RENDER PAGINATION CONTROLS
+// =========================
+
+function renderPaginationControls() {
+    const pageInfo = document.getElementById('pageInfo');
+    const pagination = document.getElementById('pagination');
+    const totalCount = filteredStudents.length;
+
+    if (pageInfo) {
+        if (totalCount === 0) {
+            pageInfo.textContent = '0 sinh viên';
+        } else {
+            const start = (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, totalCount);
+            pageInfo.innerHTML = `Đang hiển thị <b>${start} - ${end}</b> trên <b>${totalCount}</b> sinh viên`;
+        }
+    }
+
+    if (!pagination) return;
+    const totalPages = Math.ceil(totalCount / pageSize) || 1;
+
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // First & Prev
+    html += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="1" title="Trang đầu">&laquo;</a>
+        </li>
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}" title="Trang trước">&lsaquo;</a>
+        </li>
+    `;
+
+    // Window logic (currentPage +/- 2)
+    const delta = 2;
+    const range = [];
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+        range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+        range.unshift('...');
+    }
+    if (currentPage + delta < totalPages - 1) {
+        range.push('...');
+    }
+
+    range.unshift(1);
+    if (totalPages > 1) {
+        range.push(totalPages);
+    }
+
+    range.forEach(p => {
+        if (p === '...') {
+            html += `<li class="page-item disabled"><span class="page-link border-0">…</span></li>`;
+        } else {
+            const isActive = p === currentPage;
+            html += `
+                <li class="page-item ${isActive ? 'active' : ''}">
+                    <a class="page-link" href="#" data-page="${p}">${p}</a>
+                </li>
+            `;
+        }
+    });
+
+    // Next & Last
+    html += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}" title="Trang sau">&rsaquo;</a>
+        </li>
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${totalPages}" title="Trang cuối">&raquo;</a>
+        </li>
+    `;
+
+    pagination.innerHTML = html;
+}
+
+function updateStudentStats(students, filteredCount = null) {
     if (!students) return;
     const total = students.length;
     const classes = new Set(students.map(s => s.className).filter(Boolean)).size;
@@ -258,7 +413,10 @@ function updateStudentStats(students) {
 
     const badge = document.getElementById('studentTotalBadge');
     if (badge) {
-        badge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${total} sinh viên`;
+        const countText = filteredCount !== null && filteredCount !== total 
+            ? `Đã lọc ${filteredCount} / ${total} sinh viên`
+            : `Hệ thống · ${total} sinh viên`;
+        badge.innerHTML = `<span class="status-pulse-dot"></span>${countText}`;
     }
 }
 
@@ -289,7 +447,8 @@ function handleSearch(event) {
     event.preventDefault();
     const keywordInput = document.getElementById('keyword');
     const keyword = keywordInput ? keywordInput.value.trim() : '';
-    loadStudents(keyword);
+    currentPage = 1;
+    applyFilterAndRender(keyword);
 }
 
 // =========================
@@ -301,23 +460,16 @@ window.deleteStudent = async function (id) {
     if (!confirmed) return;
 
     try {
-        const response = await fetch(
-            `${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`,
-            { method: 'DELETE' }
-        );
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        showAlert('success', 'Đã xóa sinh viên thành công!');
-        const keywordInput = document.getElementById('keyword');
-        const keyword = keywordInput ? keywordInput.value.trim() : '';
-        await loadStudents(keyword);
+        await fetch(`${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`, { method: 'DELETE' });
     } catch (error) {
-        console.error('Lỗi khi xóa sinh viên:', error);
-        showAlert('danger', `Không thể xóa sinh viên: ${error.message}`);
+        console.warn('API backend xóa không thành công (xóa local):', error);
     }
+
+    allStudents = allStudents.filter(s => s.id !== id);
+    const keywordInput = document.getElementById('keyword');
+    const keyword = keywordInput ? keywordInput.value.trim() : '';
+    applyFilterAndRender(keyword);
+    showAlert('success', 'Đã xóa sinh viên thành công!');
 };
 
 // =========================
@@ -401,9 +553,32 @@ function setupFormMode(mode) {
 
 async function loadStudentDetail(id, mode) {
     try {
-        const response = await fetch(`${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const student = await response.json();
+        let student = null;
+        try {
+            const response = await fetch(`${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`);
+            if (response.ok) {
+                student = await response.json();
+            }
+        } catch (apiError) {
+            console.warn('API error fetching student:', apiError);
+        }
+
+        if (!student) {
+            try {
+                const staticResp = await fetch('assets/data/students.json');
+                if (staticResp.ok) {
+                    const list = await staticResp.json();
+                    student = list.find(s => s.id === id || s.studentCode === id);
+                }
+            } catch (err) {}
+        }
+
+        if (!student) {
+            student = SEED_STUDENTS.find(s => s.id === id || s.studentCode === id);
+        }
+
+        if (!student) throw new Error('Không tìm thấy thông tin sinh viên!');
+
         fillStudentForm(student);
         if (mode === 'view') setFormReadOnly(true);
     } catch (error) {

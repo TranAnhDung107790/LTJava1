@@ -348,6 +348,74 @@ body.sidebar-collapse .btn-sidebar-toggle i {
 }
 
 /* ==========================================================================
+   🏆 SIDEBAR MESSI CARD (Phần D — Chỉ nằm trọn vẹn trong sidebar)
+   ========================================================================== */
+.sidebar-messi-box {
+    padding: 0.75rem 0.85rem 1.25rem !important;
+    margin-top: 1.25rem !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+.sidebar-messi-card {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    border-radius: 14px !important;
+    padding: 0.35rem !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    backdrop-filter: blur(8px) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-align: center !important;
+    overflow: hidden !important;
+}
+
+.sidebar-messi-card:hover {
+    transform: translateY(-3px) scale(1.02) !important;
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-color: rgba(255, 255, 255, 0.38) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35) !important;
+}
+
+.sidebar-messi-img {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 250px !important;
+    object-fit: cover !important;
+    object-position: top center !important;
+    border-radius: 10px !important;
+    display: block !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.sidebar-messi-badge {
+    margin-top: 0.5rem !important;
+    padding: 0.28rem 0.65rem !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 20px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: #FFFFFF !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    letter-spacing: -0.01em !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Tuyệt đối ẩn khi sidebar collapse hoặc màn hình nhỏ đóng sidebar, không bao giờ lộ ra ngoài phần giữa */
+body.sidebar-collapse .sidebar-messi-box {
+    display: none !important;
+}
+
+@media (max-width: 991.98px) {
+    body:not(.sidebar-open) .sidebar-messi-box {
+        display: none !important;
+    }
+}
+
+/* ==========================================================================
    🔝 HEADER
    ========================================================================== */
 
@@ -1033,10 +1101,15 @@ nav.app-header,
     font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-main);
-    cursor: default;
+    cursor: pointer !important;
     margin: 0 auto;
     position: relative;
     transition: all 0.2s ease;
+}
+
+.mini-calendar .cal-day:hover {
+    background: var(--pastel-lavender) !important;
+    border-radius: 50%;
 }
 
 .mini-calendar .cal-day.today {
@@ -1044,6 +1117,17 @@ nav.app-header,
     color: #FFFFFF !important;
     font-weight: 700;
     box-shadow: 0 2px 6px rgba(124, 92, 252, 0.4);
+}
+
+.mini-calendar .cal-day.cal-day-selected {
+    box-shadow: 0 0 0 2px #7C3AED, 0 4px 10px rgba(124, 58, 237, 0.25) !important;
+    background: #EDE9FE !important;
+    color: #4D44B5 !important;
+    font-weight: 700;
+}
+
+.mini-calendar .cal-day.today.cal-day-selected {
+    box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #7C3AED !important;
 }
 
 /* Các chấm sự kiện cho 4 phần trên lịch */
@@ -1086,6 +1170,7 @@ nav.app-header,
 
 .mini-calendar .cal-day.empty {
     visibility: hidden;
+    cursor: default !important;
 }
 
 /* Chú thích màu sắc 4 phần */
@@ -1101,6 +1186,82 @@ nav.app-header,
 .dot-part-b { background: #059669 !important; } /* Green - Kết quả */
 .dot-part-c { background: #D97706 !important; } /* Amber - Hồ sơ */
 .dot-part-d { background: #7C3AED !important; } /* Purple - Đợt xét */
+
+/* Interactive Calendar Event Popover Box */
+.cal-event-box {
+    margin-top: 0.85rem;
+    padding: 0.85rem;
+    background: #F8F7FF;
+    border: 1.5px solid #E4E0FB;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(124, 92, 252, 0.08);
+    transition: all 0.3s ease;
+}
+
+.cal-event-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.45rem;
+    margin-bottom: 0.45rem;
+    border-bottom: 1px dashed #DDD6FE;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #4D44B5;
+}
+
+.cal-event-item {
+    padding: 0.55rem 0.65rem;
+    border-radius: 8px;
+    background: #FFFFFF;
+    border-left: 3.5px solid #7C3AED;
+    margin-bottom: 0.45rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.cal-event-item:last-child {
+    margin-bottom: 0;
+}
+
+.cal-event-item.item-part-a { border-left-color: #2563EB; }
+.cal-event-item.item-part-b { border-left-color: #059669; }
+.cal-event-item.item-part-c { border-left-color: #D97706; }
+.cal-event-item.item-part-d { border-left-color: #7C3AED; }
+
+.cal-event-item-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 0.25rem;
+}
+
+.cal-event-item-badge.badge-part-a { background: #DBEAFE; color: #1D4ED8; }
+.cal-event-item-badge.badge-part-b { background: #D1FAE5; color: #047857; }
+.cal-event-item-badge.badge-part-c { background: #FEF3C7; color: #B45309; }
+.cal-event-item-badge.badge-part-d { background: #EDE9FE; color: #6D28D9; }
+
+.cal-event-item-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1E1B4B;
+    line-height: 1.35;
+    margin-bottom: 0.2rem;
+}
+
+.cal-event-item-desc {
+    font-size: 0.73rem;
+    color: #64748B;
+    line-height: 1.35;
+}
+
+.cal-event-empty-box {
+    font-size: 0.78rem;
+    color: #64748B;
+    text-align: center;
+    padding: 0.4rem 0;
+}
 
 /* Team Members Widget */
 .team-widget {
@@ -1441,3 +1602,43 @@ button:active,
 .modal.fade .modal-dialog {
     transition: none !important;
 }
+
+/* ==========================================================================
+   📄 PASTEL PAGINATION STYLES
+   ========================================================================== */
+.pagination {
+    gap: 4px;
+    margin-bottom: 0;
+}
+
+.pagination .page-item .page-link {
+    border: 1px solid var(--border-light, #E2E8F0);
+    border-radius: 8px !important;
+    color: var(--text-secondary, #64748B);
+    font-size: 0.825rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    transition: all 0.2s ease;
+    background: #FFFFFF;
+}
+
+.pagination .page-item .page-link:hover {
+    color: var(--primary-color, #5B4BE2);
+    background: #F1F5F9;
+    border-color: #CBD5E1;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #5B4BE2 0%, #7C5CFC 100%) !important;
+    border-color: #5B4BE2 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 10px rgba(91, 75, 226, 0.3);
+}
+
+.pagination .page-item.disabled .page-link {
+    background: #F8FAFC;
+    color: #94A3B8;
+    border-color: #E2E8F0;
+    cursor: not-allowed;
+}
+

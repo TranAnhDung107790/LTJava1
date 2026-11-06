@@ -363,7 +363,7 @@ body.sidebar-collapse .btn-sidebar-toggle i {
     background: rgba(255, 255, 255, 0.12) !important;
     border: 1px solid rgba(255, 255, 255, 0.22) !important;
     border-radius: 14px !important;
-    padding: 0.5rem !important;
+    padding: 0.35rem !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
     backdrop-filter: blur(8px) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -381,7 +381,7 @@ body.sidebar-collapse .btn-sidebar-toggle i {
 .sidebar-messi-img {
     width: 100% !important;
     max-width: 100% !important;
-    height: 230px !important;
+    height: 250px !important;
     object-fit: cover !important;
     object-position: top center !important;
     border-radius: 10px !important;
@@ -1602,3 +1602,43 @@ button:active,
 .modal.fade .modal-dialog {
     transition: none !important;
 }
+
+/* ==========================================================================
+   📄 PASTEL PAGINATION STYLES
+   ========================================================================== */
+.pagination {
+    gap: 4px;
+    margin-bottom: 0;
+}
+
+.pagination .page-item .page-link {
+    border: 1px solid var(--border-light, #E2E8F0);
+    border-radius: 8px !important;
+    color: var(--text-secondary, #64748B);
+    font-size: 0.825rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    transition: all 0.2s ease;
+    background: #FFFFFF;
+}
+
+.pagination .page-item .page-link:hover {
+    color: var(--primary-color, #5B4BE2);
+    background: #F1F5F9;
+    border-color: #CBD5E1;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #5B4BE2 0%, #7C5CFC 100%) !important;
+    border-color: #5B4BE2 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 10px rgba(91, 75, 226, 0.3);
+}
+
+.pagination .page-item.disabled .page-link {
+    background: #F8FAFC;
+    color: #94A3B8;
+    border-color: #E2E8F0;
+    cursor: not-allowed;
+}
+
