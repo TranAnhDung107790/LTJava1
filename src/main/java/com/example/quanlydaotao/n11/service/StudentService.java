@@ -53,8 +53,48 @@ public class StudentService {
         return s;
     }
 
+    public static String cleanStudentName(String name, String code) {
+        if (name == null) return "";
+        String cleaned = name.trim();
+        if (code != null && !code.trim().isEmpty()) {
+            String c = java.util.regex.Pattern.quote(code.trim());
+            cleaned = cleaned.replaceAll("(?i)(\\s*[-–/|,]?\\s*\\(?\\[?" + c + "\\)?\\]?\\s*)$", "");
+        }
+        cleaned = cleaned.replaceAll("\\s*\\([A-Za-z0-9_.-]+\\)\\s*$", "");
+        cleaned = cleaned.replaceAll("\\s*\\[[A-Za-z0-9_.-]+\\]\\s*$", "");
+        cleaned = cleaned.replaceAll("\\s*[-–]\\s*[A-Za-z0-9_.-]+\\s*$", "");
+        cleaned = cleaned.replaceAll("(?i)\\s+(?:SV|sv|it|IT)?[0-9]{3,8}\\s*$", "");
+        cleaned = cleaned.replaceAll("\\s+\\d+\\s*$", "");
+        return cleaned.trim();
+    }
+
+    private String getVietnameseSortKey(String fullName) {
+        if (fullName == null || fullName.trim().isEmpty()) return "";
+        String[] parts = fullName.trim().split("\\s+");
+        if (parts.length <= 1) return fullName.trim();
+        String firstName = parts[parts.length - 1];
+        StringBuilder sb = new StringBuilder(firstName);
+        for (int i = 0; i < parts.length - 1; i++) {
+            sb.append(" ").append(parts[i]);
+        }
+        return sb.toString();
+    }
+
+    private void sortStudentsAlphabetically(List<Student> list) {
+        if (list == null || list.isEmpty()) return;
+        java.text.Collator collator = java.text.Collator.getInstance(new java.util.Locale("vi", "VN"));
+        collator.setStrength(java.text.Collator.PRIMARY);
+        list.sort((s1, s2) -> {
+            String key1 = getVietnameseSortKey(s1.getFullName());
+            String key2 = getVietnameseSortKey(s2.getFullName());
+            return collator.compare(key1, key2);
+        });
+    }
+
     public List<Student> getFallbackStudents() {
-        return new ArrayList<>(fallbackStudents);
+        List<Student> list = new ArrayList<>(fallbackStudents);
+        sortStudentsAlphabetically(list);
+        return list;
     }
 
     public List<Student> getAll() {
@@ -66,7 +106,8 @@ public class StudentService {
                 for (Object[] r : rows) {
                     UUID id = r[0] instanceof UUID ? (UUID) r[0] : UUID.fromString(r[0].toString());
                     String code = r[1] != null ? r[1].toString() : "SV";
-                    String name = r[2] != null ? r[2].toString() : "Sinh viên";
+                    String rawName = r[2] != null ? r[2].toString() : "Sinh viên";
+                    String name = cleanStudentName(rawName, code);
                     String email = r[3] != null ? r[3].toString() : ("sv" + code + "@donga.edu.vn");
                     String phone = r[4] != null ? r[4].toString() : "0901234567";
                     String cls = r[5] != null ? r[5].toString() : "IT24AB";
@@ -74,6 +115,7 @@ public class StudentService {
                     s.setId(id);
                     list.add(s);
                 }
+                sortStudentsAlphabetically(list);
                 return list;
             }
         } catch (Exception ignored) {
@@ -83,6 +125,8 @@ public class StudentService {
         try {
             List<Student> list = studentRepository.findAll();
             if (list != null && list.size() >= 50) {
+                list.forEach(s -> s.setFullName(cleanStudentName(s.getFullName(), s.getStudentCode())));
+                sortStudentsAlphabetically(list);
                 return list;
             }
         } catch (Exception ignored) {
@@ -126,6 +170,9 @@ public class StudentService {
         if (student.getId() == null) {
             student.setId(UUID.randomUUID());
         }
+        if (student.getFullName() != null) {
+            student.setFullName(cleanStudentName(student.getFullName(), student.getStudentCode()));
+        }
         try {
             return studentRepository.save(student);
         } catch (Exception e) {
@@ -139,8 +186,9 @@ public class StudentService {
             if (idx != -1) {
                 fallbackStudents.set(idx, student);
             } else {
-                fallbackStudents.add(0, student);
+                fallbackStudents.add(student);
             }
+            sortStudentsAlphabetically(fallbackStudents);
             return student;
         }
     }

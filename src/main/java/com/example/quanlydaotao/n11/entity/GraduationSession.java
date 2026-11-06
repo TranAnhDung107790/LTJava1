@@ -31,7 +31,7 @@ public class GraduationSession extends BaseEntity {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
-    @Column(name = "note", columnDefinition = "nvarchar(max)")
+    @Column(name = "description", length = 255)
     private String note;
 
     public GraduationSession() {

@@ -126,6 +126,49 @@ function initStudentPage() {
     }
 }
 
+// ==========================================================================
+// TIỆN ÍCH LÀM SẠCH TÊN & SẮP XẾP ALPHABET TIẾNG VIỆT
+// ==========================================================================
+
+// Loại bỏ mã sinh viên nếu vô tình dính ở cuối tên (ví dụ: "Nguyễn Văn An 26001", "Trần Anh Dũng (26002)", "Lê Hoàng C - SV003")
+function cleanStudentName(name, code) {
+    if (!name) return '';
+    let cleaned = String(name).trim();
+    if (code) {
+        const escapedCode = String(code).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        cleaned = cleaned.replace(new RegExp(`(\\s*[-–/|,]?\\s*\\(?\\[?${escapedCode}\\)?\\]?\\s*)$`, 'i'), '');
+    }
+    // Xóa các dạng đuôi mã sinh viên phổ biến
+    cleaned = cleaned.replace(/\s*\([A-Za-z0-9_.-]+\)\s*$/, '');
+    cleaned = cleaned.replace(/\s*\[[A-Za-z0-9_.-]+\]\s*$/, '');
+    cleaned = cleaned.replace(/\s*[-–]\s*[A-Za-z0-9_.-]+\s*$/, '');
+    cleaned = cleaned.replace(/\s+(?:SV|sv|it|IT)?[0-9]{3,8}\s*$/i, '');
+    cleaned = cleaned.replace(/\s+\d+\s*$/, '');
+    return cleaned.trim();
+}
+
+// Lấy key sắp xếp theo chuẩn tiếng Việt: Tên trước, Họ & Đệm sau (ví dụ: "Nguyễn Văn An" -> "An Nguyễn Văn")
+function getVietnameseSortKey(fullName) {
+    if (!fullName) return '';
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length <= 1) return fullName.trim();
+    const firstName = parts[parts.length - 1];
+    const lastNameAndMiddle = parts.slice(0, parts.length - 1).join(' ');
+    return `${firstName} ${lastNameAndMiddle}`;
+}
+
+// Sắp xếp danh sách sinh viên theo thứ tự Alphabet A -> Z chuẩn tiếng Việt (Tên trước, Họ Đệm sau)
+function sortStudentsAlphabetically(students) {
+    if (!Array.isArray(students)) return [];
+    return students.sort((a, b) => {
+        const nameA = cleanStudentName(a.fullName || a.name || '', a.studentCode || a.code);
+        const nameB = cleanStudentName(b.fullName || b.name || '', b.studentCode || b.code);
+        const keyA = getVietnameseSortKey(nameA);
+        const keyB = getVietnameseSortKey(nameB);
+        return keyA.localeCompare(keyB, 'vi', { sensitivity: 'base' });
+    });
+}
+
 // =========================
 // LOAD STUDENTS (Hỗ trợ nạp toàn bộ 800 sinh viên)
 // =========================
@@ -162,10 +205,23 @@ async function loadStudents(keyword = '') {
             }
         }
 
-        allStudents = Array.isArray(data) && data.length > 0 ? data : SEED_STUDENTS;
+        const rawList = Array.isArray(data) && data.length > 0 ? data : SEED_STUDENTS;
+        allStudents = rawList.map(s => {
+            return {
+                ...s,
+                fullName: cleanStudentName(s.fullName || s.name || '', s.studentCode || s.code)
+            };
+        });
+
+        // 🔤 Tự động sắp xếp alphabet A -> Z theo tên chuẩn tiếng Việt
+        sortStudentsAlphabetically(allStudents);
     } catch (error) {
         console.warn('Lỗi khi tải dữ liệu sinh viên:', error);
-        allStudents = SEED_STUDENTS;
+        allStudents = SEED_STUDENTS.map(s => ({
+            ...s,
+            fullName: cleanStudentName(s.fullName, s.studentCode)
+        }));
+        sortStudentsAlphabetically(allStudents);
     }
 
     applyFilterAndRender(keyword);
@@ -236,8 +292,9 @@ function renderPaginatedStudents(triggerAnimation = false) {
 
     studentTableBody.innerHTML = pageItems.map((student, index) => {
         const itemNumber = startIndex + index + 1;
-        const avatarColor = getAvatarColorClass(student.fullName || student.studentCode || 'SV');
-        const initials = getInitials(student.fullName);
+        const cleanName = cleanStudentName(student.fullName || '', student.studentCode || student.code);
+        const avatarColor = getAvatarColorClass(cleanName || student.studentCode || 'SV');
+        const initials = getInitials(cleanName);
 
         return `
             <tr>
@@ -251,7 +308,7 @@ function renderPaginatedStudents(triggerAnimation = false) {
                             ${initials}
                         </div>
                         <div>
-                            <div class="fw-bold text-dark">${escapeHtml(student.fullName || '')}</div>
+                            <div class="fw-bold text-dark">${escapeHtml(cleanName)}</div>
                         </div>
                     </div>
                 </td>
@@ -469,7 +526,7 @@ window.deleteStudent = async function (id) {
     const keywordInput = document.getElementById('keyword');
     const keyword = keywordInput ? keywordInput.value.trim() : '';
     applyFilterAndRender(keyword);
-    showAlert('success', 'Đã xóa sinh viên thành công!');
+    showListAlert('success', '🗑️ Đã xóa sinh viên thành công khỏi danh sách!');
 };
 
 // =========================
@@ -595,8 +652,9 @@ function fillStudentForm(student) {
     const phone = document.getElementById('phone');
     const className = document.getElementById('className');
 
+    const cleanName = cleanStudentName(student.fullName || '', student.studentCode || student.code);
     if (studentCode) studentCode.value = student.studentCode || '';
-    if (fullName) fullName.value = student.fullName || '';
+    if (fullName) fullName.value = cleanName;
     if (email) email.value = student.email || '';
     if (phone) phone.value = student.phone || '';
     if (className) className.value = student.className || '';
@@ -604,8 +662,12 @@ function fillStudentForm(student) {
 
 async function saveStudent(mode, id = null) {
     try {
-        const student = getStudentFormData();
-        if (!validateStudent(student)) return;
+        const rawStudent = getStudentFormData();
+        if (!validateStudent(rawStudent)) return;
+
+        // Làm sạch họ và tên, loại bỏ mã sinh viên nếu vô tình dính vào
+        const cleanName = cleanStudentName(rawStudent.fullName, rawStudent.studentCode);
+        const student = { ...rawStudent, fullName: cleanName };
 
         let url = API_ENDPOINTS.STUDENTS;
         let method = 'POST';
@@ -623,14 +685,64 @@ async function saveStudent(mode, id = null) {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        alert(mode === 'edit' ? 'Cập nhật sinh viên thành công!' : 'Thêm sinh viên thành công!');
-        window.location.href = 'index.html?page=list';
+        const savedData = await response.json().catch(() => student);
+
+        // Optimistic update: thêm vào danh sách và tự động sắp xếp alphabet A -> Z ngay tức thì
+        if (mode === 'create') {
+            const newStudent = { ...student, id: savedData.id || ('local-' + Date.now()) };
+            allStudents.push(newStudent);
+            sortStudentsAlphabetically(allStudents);
+        } else if (mode === 'edit') {
+            const idx = allStudents.findIndex(s => String(s.id) === String(id));
+            if (idx !== -1) {
+                allStudents[idx] = { ...allStudents[idx], ...student };
+                sortStudentsAlphabetically(allStudents);
+            }
+        }
+
+        // Chuyển về trang danh sách và hiện thông báo góc trên cùng bên trái
+        const pageList = document.getElementById('page-list');
+        const pageForm = document.getElementById('page-form');
+        if (pageForm) pageForm.style.display = 'none';
+        if (pageList) pageList.style.display = '';
+
+        // Cập nhật URL không reload trang
+        const newUrl = window.location.pathname + '?page=list';
+        window.history.pushState({}, '', newUrl);
+
+        // Render lại bảng tức thì theo thứ tự alphabet A -> Z
+        applyFilterAndRender('');
+
+        // Hiện thông báo nổi trên cùng bên trái
+        showListAlert('success', mode === 'edit'
+            ? `✅ Cập nhật sinh viên <strong>${escapeHtml(cleanName)}</strong> thành công!`
+            : `✅ Thêm sinh viên <strong>${escapeHtml(cleanName)}</strong> (${escapeHtml(student.studentCode)}) thành công!`
+        );
+
     } catch (error) {
         console.error('Lỗi khi lưu sinh viên:', error);
-        alert(mode === 'edit' ? 'Cập nhật sinh viên thất bại: ' + error.message : 'Thêm sinh viên thất bại: ' + error.message);
+        // Fallback: vẫn thêm vào local list
+        const rawStudent = getStudentFormData();
+        const cleanName = cleanStudentName(rawStudent.fullName, rawStudent.studentCode);
+        const student = { ...rawStudent, fullName: cleanName };
+
+        if (mode === 'create' && student.studentCode) {
+            const newStudent = { ...student, id: 'local-' + Date.now() };
+            allStudents.push(newStudent);
+            sortStudentsAlphabetically(allStudents);
+
+            const pageList = document.getElementById('page-list');
+            const pageForm = document.getElementById('page-form');
+            if (pageForm) pageForm.style.display = 'none';
+            if (pageList) pageList.style.display = '';
+            window.history.pushState({}, '', window.location.pathname + '?page=list');
+            applyFilterAndRender('');
+            showListAlert('warning', `⚠️ Đã thêm sinh viên <strong>${escapeHtml(cleanName)}</strong> vào danh sách tạm (chưa đồng bộ server: ${error.message})`);
+        } else {
+            showAlert('danger', mode === 'edit' ? 'Cập nhật sinh viên thất bại: ' + error.message : 'Thêm sinh viên thất bại: ' + error.message);
+        }
     }
 }
-
 function getStudentFormData() {
     return {
         studentCode: getValue('studentCode'),
@@ -682,6 +794,43 @@ function showAlert(type, message) {
             bsAlert.close();
         }
     }, 4000);
+}
+
+// Hiển thị thông báo nổi góc trên cùng bên trái (Top-Left Toast)
+function showListAlert(type, message) {
+    let listAlertBox = document.getElementById('listAlertBox');
+    if (!listAlertBox) {
+        listAlertBox = document.createElement('div');
+        listAlertBox.id = 'listAlertBox';
+        listAlertBox.className = 'top-left-alert-container';
+        document.body.appendChild(listAlertBox);
+    }
+
+    const icon = type === 'success' ? 'bi-check-circle-fill' : type === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill';
+    listAlertBox.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show shadow d-flex align-items-center gap-2" role="alert" style="border-radius:12px; font-size:0.94rem;">
+            <i class="bi ${icon} fs-5 flex-shrink-0"></i>
+            <div class="flex-grow-1">${message}</div>
+            <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+
+    if (window.gsap) {
+        gsap.from(listAlertBox.querySelector('.alert'), {
+            opacity: 0,
+            x: -25,
+            duration: 0.35,
+            ease: 'power2.out',
+            clearProps: 'all'
+        });
+    }
+
+    setTimeout(() => {
+        const alertEl = listAlertBox.querySelector('.alert');
+        if (alertEl && window.bootstrap) {
+            new bootstrap.Alert(alertEl).close();
+        }
+    }, 4500);
 }
 
 function escapeHtml(value) {

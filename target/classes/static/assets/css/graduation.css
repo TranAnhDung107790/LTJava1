@@ -1642,3 +1642,85 @@ button:active,
     cursor: not-allowed;
 }
 
+/* ==========================================================================
+   🔔 LIST ALERT BOX (Thông báo nổi góc trên cùng bên trái - Top-Left Toast)
+   ========================================================================== */
+#listAlertBox,
+.top-left-alert-container {
+    position: fixed !important;
+    top: 75px !important;
+    left: calc(var(--sidebar-width, 260px) + 24px) !important;
+    z-index: 999999 !important;
+    max-width: 480px !important;
+    width: calc(100vw - var(--sidebar-width, 260px) - 48px) !important;
+    pointer-events: none !important;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.sidebar-collapse #listAlertBox,
+body.sidebar-collapse .top-left-alert-container {
+    left: 24px !important;
+    width: calc(100vw - 48px) !important;
+}
+
+@media (max-width: 991.98px) {
+    #listAlertBox,
+    .top-left-alert-container {
+        left: 16px !important;
+        top: 65px !important;
+        width: calc(100vw - 32px) !important;
+        max-width: calc(100vw - 32px) !important;
+    }
+}
+
+#listAlertBox .alert,
+.top-left-alert-container .alert {
+    pointer-events: auto;
+    border-radius: 12px !important;
+    padding: 1rem 1.35rem !important;
+    font-size: 0.94rem !important;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    border-width: 1.5px !important;
+    animation: alertSlideDownLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    backdrop-filter: blur(8px);
+}
+
+#listAlertBox .alert-success,
+.top-left-alert-container .alert-success {
+    background: rgba(240, 253, 244, 0.96) !important;
+    border-color: #86EFAC !important;
+    color: #15803D !important;
+}
+
+#listAlertBox .alert-info,
+.top-left-alert-container .alert-info {
+    background: rgba(239, 246, 255, 0.96) !important;
+    border-color: #93C5FD !important;
+    color: #1D4ED8 !important;
+}
+
+#listAlertBox .alert-warning,
+.top-left-alert-container .alert-warning {
+    background: rgba(255, 251, 235, 0.96) !important;
+    border-color: #FDE68A !important;
+    color: #B45309 !important;
+}
+
+#listAlertBox .alert-danger,
+.top-left-alert-container .alert-danger {
+    background: rgba(254, 242, 242, 0.96) !important;
+    border-color: #FCA5A5 !important;
+    color: #B91C1C !important;
+}
+
+@keyframes alertSlideDownLeft {
+    from {
+        opacity: 0;
+        transform: translate3d(-40px, -15px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
