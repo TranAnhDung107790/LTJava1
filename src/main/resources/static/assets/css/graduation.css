@@ -405,9 +405,14 @@ body.sidebar-collapse .btn-sidebar-toggle i {
 }
 
 /* Tuyệt đối ẩn khi sidebar collapse hoặc màn hình nhỏ đóng sidebar, không bao giờ lộ ra ngoài phần giữa */
-body.sidebar-collapse .sidebar-messi-box,
-aside.app-sidebar:not(.sidebar-open) .sidebar-messi-box {
+body.sidebar-collapse .sidebar-messi-box {
     display: none !important;
+}
+
+@media (max-width: 991.98px) {
+    body:not(.sidebar-open) .sidebar-messi-box {
+        display: none !important;
+    }
 }
 
 /* ==========================================================================
