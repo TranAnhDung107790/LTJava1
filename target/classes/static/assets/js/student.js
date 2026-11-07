@@ -572,7 +572,7 @@ function setupFormMode(mode) {
 
     if (mode === 'create') {
         if (studentForm) studentForm.reset();
-        if (pageTitle) pageTitle.textContent = 'Thêm sinh viên | School Manager';
+        if (pageTitle) pageTitle.textContent = 'Quản lý tốt nghiệp - Nhóm 11';
         if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-person-plus text-primary me-2"></i>Thêm sinh viên';
         if (breadcrumbTitle) breadcrumbTitle.textContent = 'Thêm';
         if (formTitle) formTitle.innerHTML = '<i class="bi bi-person-vcard me-2"></i>Thêm sinh viên mới';
