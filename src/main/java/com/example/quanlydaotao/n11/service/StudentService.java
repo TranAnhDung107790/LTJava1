@@ -39,12 +39,12 @@ public class StudentService {
         }
 
         // Dự phòng tối thiểu nếu không đọc được file
-        fallbackStudents.add(createSample("8f64a671-de50-4c87-8b39-ff5bdbf387e8", "26687", "Hứa Tiến Tiến", "tien.hua@donga.edu.vn", "0901234561", "IT24AB"));
-        fallbackStudents.add(createSample("35f6941e-b583-4625-8ce2-ff4d1990a891", "26563", "Ngô Hữu Tuấn", "tuan.ngo@donga.edu.vn", "0901234562", "IT24AB"));
-        fallbackStudents.add(createSample("c21b452a-bb86-4054-a619-ff21dc207a19", "25549", "Hồ Hoàng Hùng", "hung.ho@donga.edu.vn", "0901234563", "IT24AB"));
-        fallbackStudents.add(createSample("0e374a91-d6e6-4174-b7df-ff19e2e5876f", "23017", "Vũ Khánh Tùng", "tung.vu@donga.edu.vn", "0901234564", "IT24AB"));
-        fallbackStudents.add(createSample("861670d3-393c-4c59-93b9-fea33e67b71f", "26395", "Hoàng Hoàng Tâm", "tam.hoang@donga.edu.vn", "0901234565", "IT24AB"));
-        fallbackStudents.add(createSample("e86e5ca4-db05-436a-9ab0-fe6a6e9d1afc", "26666", "Chu Hà Linh", "linh.chu@donga.edu.vn", "0901234566", "IT24AB"));
+        fallbackStudents.add(createSample("8f64a671-de50-4c87-8b39-ff5bdbf387e8", "26687", "Hứa Tiến Tiến", "tien.hua@donga.edu.vn", "0901234561", "OTO-K26-02"));
+        fallbackStudents.add(createSample("35f6941e-b583-4625-8ce2-ff4d1990a891", "26563", "Ngô Hữu Tuấn", "tuan.ngo@donga.edu.vn", "0901234562", "NNA-K26-01"));
+        fallbackStudents.add(createSample("c21b452a-bb86-4054-a619-ff21dc207a19", "25549", "Hồ Hoàng Hùng", "hung.ho@donga.edu.vn", "0901234563", "NNA-K25-01"));
+        fallbackStudents.add(createSample("0e374a91-d6e6-4174-b7df-ff19e2e5876f", "23017", "Vũ Khánh Tùng", "tung.vu@donga.edu.vn", "0901234564", "CNTT-K23-01"));
+        fallbackStudents.add(createSample("861670d3-393c-4c59-93b9-fea33e67b71f", "26395", "Hoàng Hoàng Tâm", "tam.hoang@donga.edu.vn", "0901234565", "KTPM-K26-02"));
+        fallbackStudents.add(createSample("e86e5ca4-db05-436a-9ab0-fe6a6e9d1afc", "26666", "Chu Hà Linh", "linh.chu@donga.edu.vn", "0901234566", "OTO-K26-01"));
     }
 
     private Student createSample(String idStr, String code, String name, String email, String phone, String className) {
@@ -110,7 +110,7 @@ public class StudentService {
                     String name = cleanStudentName(rawName, code);
                     String email = r[3] != null ? r[3].toString() : ("sv" + code + "@donga.edu.vn");
                     String phone = r[4] != null ? r[4].toString() : "0901234567";
-                    String cls = r[5] != null ? r[5].toString() : "IT24AB";
+                    String cls = r[5] != null ? r[5].toString() : "CNTT-K24-01";
                     Student s = new Student(code, name, email, phone, cls);
                     s.setId(id);
                     list.add(s);

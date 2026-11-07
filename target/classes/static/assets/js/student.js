@@ -320,7 +320,7 @@ function renderPaginatedStudents(triggerAnimation = false) {
                 </td>
                 <td class="text-center">
                     <span class="badge bg-light text-primary border fw-semibold px-2 py-1">
-                        ${escapeHtml(student.className || 'IT24AB')}
+                        ${escapeHtml(student.className || 'Chưa xếp lớp')}
                     </span>
                 </td>
                 <td class="text-center">
@@ -572,7 +572,7 @@ function setupFormMode(mode) {
 
     if (mode === 'create') {
         if (studentForm) studentForm.reset();
-        if (pageTitle) pageTitle.textContent = 'Quản lý tốt nghiệp - Nhóm 11';
+        if (pageTitle) pageTitle.textContent = 'Thêm sinh viên | Trường Đại học Đông Á';
         if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-person-plus text-primary me-2"></i>Thêm sinh viên';
         if (breadcrumbTitle) breadcrumbTitle.textContent = 'Thêm';
         if (formTitle) formTitle.innerHTML = '<i class="bi bi-person-vcard me-2"></i>Thêm sinh viên mới';
@@ -585,7 +585,7 @@ function setupFormMode(mode) {
     }
 
     if (mode === 'edit') {
-        if (pageTitle) pageTitle.textContent = 'Sửa sinh viên | School Manager';
+        if (pageTitle) pageTitle.textContent = 'Sửa sinh viên | Trường Đại học Đông Á';
         if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-pencil-square text-primary me-2"></i>Sửa sinh viên';
         if (breadcrumbTitle) breadcrumbTitle.textContent = 'Sửa';
         if (formTitle) formTitle.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin sinh viên';
@@ -598,7 +598,7 @@ function setupFormMode(mode) {
     }
 
     if (mode === 'view') {
-        if (pageTitle) pageTitle.textContent = 'Chi tiết sinh viên | School Manager';
+        if (pageTitle) pageTitle.textContent = 'Chi tiết sinh viên | Trường Đại học Đông Á';
         if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-person-badge text-primary me-2"></i>Chi tiết sinh viên';
         if (breadcrumbTitle) breadcrumbTitle.textContent = 'Xem';
         if (formTitle) formTitle.innerHTML = '<i class="bi bi-person-badge me-2"></i>Thông tin sinh viên';

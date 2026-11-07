@@ -473,7 +473,7 @@ async function handleSaveProfile(e) {
     }
 
     // 🚀 TỐI ƯU TỨC THÌ: Cập nhật trong 50ms không phải chờ đợi
-    const selStudent = studentsMap.get(studentId) || { id: studentId, studentCode: 'SV', fullName: 'Sinh viên IT24AB', className: 'IT24AB' };
+    const selStudent = studentsMap.get(studentId) || { id: studentId, studentCode: 'SV', fullName: 'Sinh viên', className: 'CNTT-K24-01' };
     const selSession = sessionsMap.get(payload.sessionId);
 
     const localItem = {
@@ -592,12 +592,12 @@ function sortStudentsAlphabetically(students) {
 // =================================================================================
 async function loadStudents() {
     const fallbackStudents = [
-        { id: "8f64a671-de50-4c87-8b39-ff5bdbf387e8", studentCode: "26687", fullName: "Hứa Tiến Tiến", className: "IT24AB" },
-        { id: "35f6941e-b583-4625-8ce2-ff4d1990a891", studentCode: "26563", fullName: "Ngô Hữu Tuấn", className: "IT24AB" },
-        { id: "c21b452a-bb86-4054-a619-ff21dc207a19", studentCode: "25549", fullName: "Hồ Hoàng Hùng", className: "IT24AB" },
-        { id: "0e374a91-d6e6-4174-b7df-ff19e2e5876f", studentCode: "23017", fullName: "Vũ Khánh Tùng", className: "IT24AB" },
-        { id: "861670d3-393c-4c59-93b9-fea33e67b71f", studentCode: "26395", fullName: "Hoàng Hoàng Tâm", className: "IT24AB" },
-        { id: "e86e5ca4-db05-436a-9ab0-fe6a6e9d1afc", studentCode: "26666", fullName: "Chu Hà Linh", className: "IT24AB" }
+        { id: "8f64a671-de50-4c87-8b39-ff5bdbf387e8", studentCode: "26687", fullName: "Hứa Tiến Tiến", className: "OTO-K26-02" },
+        { id: "35f6941e-b583-4625-8ce2-ff4d1990a891", studentCode: "26563", fullName: "Ngô Hữu Tuấn", className: "NNA-K26-01" },
+        { id: "c21b452a-bb86-4054-a619-ff21dc207a19", studentCode: "25549", fullName: "Hồ Hoàng Hùng", className: "KTPM-K26-02" },
+        { id: "0e374a91-d6e6-4174-b7df-ff19e2e5876f", studentCode: "23017", fullName: "Vũ Khánh Tùng", className: "CNTT-K24-01" },
+        { id: "861670d3-393c-4c59-93b9-fea33e67b71f", studentCode: "26395", fullName: "Hoàng Hoàng Tâm", className: "QTKD-K25-01" },
+        { id: "e86e5ca4-db05-436a-9ab0-fe6a6e9d1afc", studentCode: "26666", fullName: "Chu Hà Linh", className: "MKT-K26-01" }
     ];
 
     try {
@@ -625,7 +625,7 @@ async function loadStudents() {
 
         cleanedList.forEach(s => {
             studentsMap.set(s.id, s);
-            optionsHtml += `<option value="${s.id}">${escapeHtml(s.fullName)} - ${escapeHtml(s.studentCode || 'SV')} (${escapeHtml(s.className || 'IT24AB')})</option>`;
+            optionsHtml += `<option value="${s.id}">${escapeHtml(s.fullName)} - ${escapeHtml(s.studentCode || 'SV')} (${escapeHtml(s.className || 'Chưa xếp lớp')})</option>`;
         });
 
         if (select) {
