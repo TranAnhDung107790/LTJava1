@@ -1,6 +1,8 @@
 import { API_ENDPOINTS } from './config.js';
 import { renderMiniCalendar } from './calendar-widget.js';
 
+/*
+// Dữ liệu mẫu chuẩn hóa (Đã tắt - Hệ thống chuyển sang nạp 100% dữ liệu từ Database)
 const SEED_STUDENTS = [
     { studentCode: '26763', fullName: 'Bùi Gia An', email: 'sv26763@donga.edu.vn', phone: '0913291991', className: 'QTKD-K26-01', id: '5ebd4988-e688-4b46-a213-cf17bc237fe3' },
     { studentCode: '23205', fullName: 'Chu Anh An', email: 'sv23205@donga.edu.vn', phone: '0945473517', className: 'DL-K23-01', id: '8140bb0c-9e42-48bc-80c1-48ac73d5b0c2' },
@@ -23,6 +25,7 @@ const SEED_STUDENTS = [
     { studentCode: '26483', fullName: 'Châu Đại Bình', email: 'sv26483@donga.edu.vn', phone: '0911353765', className: 'MKT-K26-02', id: '870927ab-9a95-4245-8502-e63522f8487d' },
     { studentCode: '24027', fullName: 'Hoàng Đức Bình', email: 'sv24027@donga.edu.vn', phone: '0967744461', className: 'CNTT-K24-01', id: 'a8865bd0-630a-4ed8-b765-2ecd573b4888' }
 ];
+*/
 
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
@@ -205,21 +208,21 @@ async function loadStudents(keyword = '') {
         }
 
         // 2. Dự phòng: Thử gọi API backend nếu file static chưa có dữ liệu
-        if (!data || data.length < 20) {
+        if (!data || data.length === 0) {
             try {
                 const response = await fetch(API_ENDPOINTS.STUDENTS);
                 if (response.ok) {
                     const json = await response.json();
-                    if (Array.isArray(json) && json.length >= 20) {
+                    if (Array.isArray(json)) {
                         data = json;
                     }
                 }
             } catch (apiError) {
-                console.warn('API backend chưa khả dụng:', apiError);
+                console.error('API backend sinh viên chưa khả dụng:', apiError);
             }
         }
 
-        const rawList = Array.isArray(data) && data.length > 0 ? data : SEED_STUDENTS;
+        const rawList = Array.isArray(data) ? data : [];
         allStudents = rawList.map(s => {
             return {
                 ...s,
@@ -230,12 +233,8 @@ async function loadStudents(keyword = '') {
         // 🔤 Tự động sắp xếp alphabet A -> Z theo tên chuẩn tiếng Việt
         sortStudentsAlphabetically(allStudents);
     } catch (error) {
-        console.warn('Lỗi khi tải dữ liệu sinh viên:', error);
-        allStudents = SEED_STUDENTS.map(s => ({
-            ...s,
-            fullName: cleanStudentName(s.fullName, s.studentCode)
-        }));
-        sortStudentsAlphabetically(allStudents);
+        console.error('Lỗi khi tải dữ liệu sinh viên:', error);
+        allStudents = [];
     }
 
     applyFilterAndRender(keyword);
@@ -646,7 +645,7 @@ async function loadStudentDetail(id, mode) {
         }
 
         if (!student) {
-            student = SEED_STUDENTS.find(s => s.id === id || s.studentCode === id);
+            student = allStudents.find(s => s.id === id || s.studentCode === id);
         }
 
         if (!student) throw new Error('Không tìm thấy thông tin sinh viên!');

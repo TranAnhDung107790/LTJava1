@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from './config.js';
 
-// Dữ liệu mẫu chuẩn hóa 5 khóa đào tạo (K20 - K24) để hiển thị tức thì, không bị rỗng khi DB đang khởi động
+/*
+// Dữ liệu mẫu chuẩn hóa (Đã tắt - Hệ thống chuyển sang nạp 100% dữ liệu từ Database)
 const SEED_CONDITIONS = [
     {
         id: 'seed-k20',
@@ -63,8 +64,9 @@ const SEED_CONDITIONS = [
         isActive: true
     }
 ];
+*/
 
-let conditionsList = [...SEED_CONDITIONS];
+let conditionsList = [];
 let conditionModalInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -75,8 +77,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventListeners();
 
-    // 🚀 HIỂN THỊ DỮ LIỆU TỨC THÌ: Render ngay dữ liệu phong phú để chạy animation mượt mà, logic 100%
-    renderTable(conditionsList, false);
+    // Trạng thái đang nạp dữ liệu ban đầu từ Database
+    const initialTableBody = document.getElementById('conditionsTableBody');
+    if (initialTableBody) {
+        initialTableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-5">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    Đang tải danh sách tiêu chuẩn tốt nghiệp từ hệ thống...
+                </td>
+            </tr>
+        `;
+    }
 
     if (window.gsap) {
         gsap.from('.action-bar-card, .table-card-container', {
@@ -178,31 +190,21 @@ async function loadConditions(cohort = '') {
         const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
-            const list = Array.isArray(data) ? data : [data];
-            if (list.length > 0) {
-                const map = new Map();
-                SEED_CONDITIONS.forEach(c => map.set(c.appliedCohort || c.cohort, c));
-                list.forEach(c => {
-                    const key = c.appliedCohort || c.cohort;
-                    if (key) {
-                        const existing = map.get(key) || {};
-                        const conduct = (c.conductRequired && !c.conductRequired.includes('?'))
-                            ? c.conductRequired
-                            : (existing.conductRequired || fixCorruptedVietnamese(c.conductRequired));
-                        const it = (c.itRequirement && !c.itRequirement.includes('?'))
-                            ? c.itRequirement
-                            : (existing.itRequirement || fixCorruptedVietnamese(c.itRequirement));
-                        map.set(key, { ...existing, ...c, conductRequired: conduct, itRequirement: it });
-                    }
-                });
-                conditionsList = Array.from(map.values());
-                if (totalBadge) {
-                    totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${conditionsList.length} tiêu chuẩn`;
-                }
+            const list = Array.isArray(data) ? data : (data ? [data] : []);
+            conditionsList = list.map(c => ({
+                ...c,
+                conductRequired: fixCorruptedVietnamese(c.conductRequired),
+                itRequirement: fixCorruptedVietnamese(c.itRequirement)
+            }));
+            if (totalBadge) {
+                totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${conditionsList.length} tiêu chuẩn`;
             }
+        } else {
+            conditionsList = [];
         }
     } catch (error) {
-        console.warn('API sync fallback to seed data:', error);
+        console.error('Lỗi khi tải tiêu chuẩn tốt nghiệp từ API:', error);
+        conditionsList = [];
     }
 
     let displayList = conditionsList;

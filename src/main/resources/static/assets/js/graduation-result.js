@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from './config.js';
 
-// Dữ liệu mẫu chuẩn hóa 8 kết quả xét tốt nghiệp hiển thị tức thì, không bị rỗng
+/*
+// Dữ liệu mẫu chuẩn hóa (Đã tắt - Hệ thống chuyển sang nạp 100% dữ liệu từ Database)
 const SEED_RESULTS = [
     {
         id: 'seed-res-1',
@@ -99,8 +100,9 @@ const SEED_RESULTS = [
         note: 'QĐ 452/QĐ-ĐHA công nhận tốt nghiệp'
     }
 ];
+*/
 
-let localResultsList = [...SEED_RESULTS];
+let localResultsList = [];
 // State
 let currentPage = 0;
 let pageSize = 10;
@@ -128,8 +130,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Attach Event Listeners
     initEventListeners();
 
-    // 🚀 HIỂN THỊ DỮ LIỆU TỨC THÌ: Render ngay dữ liệu phong phú để chạy animation mượt mà
-    renderResultsTable({ content: localResultsList, totalElements: localResultsList.length, number: 0, size: pageSize }, false);
+    // Trạng thái đang nạp dữ liệu ban đầu từ Database
+    const initialTableBody = document.getElementById('resultsTableBody');
+    if (initialTableBody) {
+        initialTableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-5">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    Đang tải danh sách kết quả xét tốt nghiệp từ hệ thống...
+                </td>
+            </tr>
+        `;
+    }
 
     if (window.gsap) {
         gsap.from('.action-bar-card, .table-card-container', {
@@ -298,36 +310,6 @@ async function loadResults() {
     const keyword = document.getElementById('searchKeyword')?.value.trim() || '';
 
     try {
-        if (keyword) {
-            const kwLower = keyword.toLowerCase();
-            let searchResults = localResultsList.filter(r => {
-                const name = (r.studentName || '').toLowerCase();
-                const code = (r.studentCode || '').toLowerCase();
-                return name.includes(kwLower) || code.includes(kwLower);
-            });
-
-            if (currentFilterResult !== '') {
-                const targetRes = parseInt(currentFilterResult, 10);
-                searchResults = searchResults.filter(r => Number(r.result) === targetRes);
-            }
-            if (currentFilterCondition) {
-                searchResults = searchResults.filter(r => r.conditionId === currentFilterCondition);
-            }
-
-            const pageData = {
-                content: searchResults,
-                totalElements: searchResults.length,
-                totalPages: 1,
-                number: 0,
-                size: Math.max(searchResults.length, 10)
-            };
-
-            renderResultsTable(pageData, false);
-            renderPagination(pageData);
-            updateResultStats(pageData);
-            return;
-        }
-
         let url = `${API_ENDPOINTS.GRADUATION_RESULTS}?page=${currentPage}&size=${pageSize}&sortBy=createdAt&direction=desc`;
         if (currentFilterResult !== '') {
             url += `&result=${encodeURIComponent(currentFilterResult)}`;
@@ -339,36 +321,52 @@ async function loadResults() {
         const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
-            if (data && data.content && data.content.length > 0) {
-                if (totalBadge) {
-                    totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${data.totalElements} kết quả`;
+            if (data && data.content) {
+                localResultsList = data.content;
+                let displayItems = data.content;
+
+                // Lọc theo từ khóa tìm kiếm nếu có
+                if (keyword) {
+                    const kwLower = keyword.toLowerCase();
+                    displayItems = displayItems.filter(r => {
+                        const student = studentsMap.get(r.studentId);
+                        const name = (student?.fullName || r.studentName || '').toLowerCase();
+                        const code = (student?.studentCode || r.studentCode || '').toLowerCase();
+                        return name.includes(kwLower) || code.includes(kwLower);
+                    });
                 }
-                renderResultsTable(data, false);
-                renderPagination(data);
-                updateResultStats(data);
+
+                const pageData = {
+                    ...data,
+                    content: displayItems,
+                    totalElements: keyword ? displayItems.length : data.totalElements
+                };
+
+                if (totalBadge) {
+                    totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${pageData.totalElements} kết quả`;
+                }
+                renderResultsTable(pageData, false);
+                renderPagination(pageData);
+                updateResultStats(pageData);
                 return;
             }
         }
     } catch (error) {
-        console.warn('API sync fallback to seed results:', error);
+        console.error('Lỗi khi tải kết quả tốt nghiệp từ API:', error);
     }
 
-    // Fallback sang danh sách mẫu phong phú
-    let fallbackItems = localResultsList;
-    if (currentFilterResult !== '') {
-        const targetRes = parseInt(currentFilterResult, 10);
-        fallbackItems = fallbackItems.filter(r => r.result === targetRes);
-    }
-    const fallbackPageData = {
-        content: fallbackItems,
-        totalElements: fallbackItems.length,
-        totalPages: 1,
+    // Khi không có dữ liệu hoặc API lỗi
+    localResultsList = [];
+    const emptyPageData = {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
         number: 0,
         size: pageSize
     };
-    renderResultsTable(fallbackPageData, false);
-    renderPagination(fallbackPageData);
-    updateResultStats(fallbackPageData);
+    renderResultsTable(emptyPageData, false);
+    renderPagination(emptyPageData);
+    updateResultStats(emptyPageData);
 }
 
 function renderResultsTable(pageData, triggerAnimation = false) {
@@ -815,6 +813,7 @@ async function handleDeleteResult(id) {
 // 5. TIỆN ÍCH TẢI DỮ LIỆU PHỤ TRỢ (STUDENTS & CONDITIONS)
 // =================================================================================
 async function loadStudents() {
+    /*
     const fallbackStudents = [
         { id: "8f64a671-de50-4c87-8b39-ff5bdbf387e8", studentCode: "26687", fullName: "Hứa Tiến Tiến", className: "OTO-K26-02" },
         { id: "35f6941e-b583-4625-8ce2-ff4d1990a891", studentCode: "26563", fullName: "Ngô Hữu Tuấn", className: "NNA-K26-01" },
@@ -823,6 +822,7 @@ async function loadStudents() {
         { id: "861670d3-393c-4c59-93b9-fea33e67b71f", studentCode: "26395", fullName: "Hoàng Hoàng Tâm", className: "QTKD-K25-01" },
         { id: "e86e5ca4-db05-436a-9ab0-fe6a6e9d1afc", studentCode: "26666", fullName: "Chu Hà Linh", className: "MKT-K26-01" }
     ];
+    */
 
     try {
         let list = [];
@@ -839,8 +839,8 @@ async function loadStudents() {
                 list = await response.json();
             }
         }
-        if (!list || list.length === 0) {
-            list = fallbackStudents;
+        if (!list) {
+            list = [];
         }
 
         const cleanedList = list.map(s => {
@@ -865,20 +865,7 @@ async function loadStudents() {
             select.innerHTML = optionsHtml;
         }
     } catch (e) {
-        console.warn('Không thể tải sinh viên từ API, dùng danh sách dự phòng:', e);
-        const select = document.getElementById('modalStudentId');
-        let optionsHtml = '<option value="">-- Chọn sinh viên --</option>';
-        const cleanedFallback = fallbackStudents.map(s => ({
-            ...s,
-            fullName: formatStudentName(s.fullName, s.studentCode)
-        }));
-        sortStudentsAlphabetically(cleanedFallback);
-
-        cleanedFallback.forEach(s => {
-            studentsMap.set(s.id, s);
-            optionsHtml += `<option value="${s.id}">${escapeHtml(s.fullName)} - ${escapeHtml(s.studentCode)} (${escapeHtml(s.className)})</option>`;
-        });
-        if (select) select.innerHTML = optionsHtml;
+        console.error('Không thể tải sinh viên từ API:', e);
     }
 }
 

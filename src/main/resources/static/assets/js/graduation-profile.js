@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from './config.js';
 
-// Dữ liệu mẫu chuẩn hóa 8 hồ sơ sinh viên xét tốt nghiệp hiển thị tức thì, không bị rỗng
+/*
+// Dữ liệu mẫu chuẩn hóa (Đã tắt - Hệ thống chuyển sang nạp 100% dữ liệu từ Database)
 const SEED_PROFILES = [
     {
         id: 'seed-prof-1',
@@ -91,8 +92,9 @@ const SEED_PROFILES = [
         note: 'Hồ sơ đầy đủ, IELTS 6.0, MOS Đạt'
     }
 ];
+*/
 
-let profilesList = [...SEED_PROFILES];
+let profilesList = [];
 const studentsMap = new Map();
 const sessionsMap = new Map();
 
@@ -112,8 +114,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initEventListeners();
 
-    // 🚀 HIỂN THỊ DỮ LIỆU TỨC THÌ: Render ngay dữ liệu phong phú để chạy animation mượt mà
-    renderTable(profilesList, false);
+    // Trạng thái đang nạp dữ liệu ban đầu từ Database
+    const initialTableBody = document.getElementById('profilesTableBody');
+    if (initialTableBody) {
+        initialTableBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-muted py-5">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    Đang tải danh sách hồ sơ tốt nghiệp từ hệ thống...
+                </td>
+            </tr>
+        `;
+    }
 
     if (window.gsap) {
         gsap.from('.action-bar-card, .table-card-container', {
@@ -225,18 +237,16 @@ async function loadProfiles() {
         const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
-                const map = new Map();
-                SEED_PROFILES.forEach(p => map.set(p.profileCode, p));
-                data.forEach(p => map.set(p.profileCode, p));
-                profilesList = Array.from(map.values());
-                if (totalBadge) {
-                    totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${profilesList.length} hồ sơ`;
-                }
+            profilesList = Array.isArray(data) ? data : (data ? [data] : []);
+            if (totalBadge) {
+                totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${profilesList.length} hồ sơ`;
             }
+        } else {
+            profilesList = [];
         }
     } catch (error) {
-        console.warn('API sync fallback to seed profiles:', error);
+        console.error('Lỗi khi tải hồ sơ tốt nghiệp từ API:', error);
+        profilesList = [];
     }
 
     let displayList = profilesList;
@@ -592,6 +602,7 @@ function sortStudentsAlphabetically(students) {
 // 4. TIỆN ÍCH TẢI DỮ LIỆU LIÊN QUAN
 // =================================================================================
 async function loadStudents() {
+    /*
     const fallbackStudents = [
         { id: "8f64a671-de50-4c87-8b39-ff5bdbf387e8", studentCode: "26687", fullName: "Hứa Tiến Tiến", className: "OTO-K26-02" },
         { id: "35f6941e-b583-4625-8ce2-ff4d1990a891", studentCode: "26563", fullName: "Ngô Hữu Tuấn", className: "NNA-K26-01" },
@@ -600,6 +611,7 @@ async function loadStudents() {
         { id: "861670d3-393c-4c59-93b9-fea33e67b71f", studentCode: "26395", fullName: "Hoàng Hoàng Tâm", className: "QTKD-K25-01" },
         { id: "e86e5ca4-db05-436a-9ab0-fe6a6e9d1afc", studentCode: "26666", fullName: "Chu Hà Linh", className: "MKT-K26-01" }
     ];
+    */
 
     try {
         let list = [];
@@ -616,8 +628,8 @@ async function loadStudents() {
                 list = await response.json();
             }
         }
-        if (!list || list.length === 0) {
-            list = fallbackStudents;
+        if (!list) {
+            list = [];
         }
 
         const cleanedList = list.map(s => {
@@ -642,28 +654,17 @@ async function loadStudents() {
             select.innerHTML = optionsHtml;
         }
     } catch (e) {
-        console.warn('Không thể tải sinh viên từ API, dùng danh sách dự phòng:', e);
-        const select = document.getElementById('modalProfileStudentId');
-        let optionsHtml = '<option value="">-- Chọn sinh viên --</option>';
-        const cleanedFallback = fallbackStudents.map(s => ({
-            ...s,
-            fullName: cleanStudentName(s.fullName, s.studentCode)
-        }));
-        sortStudentsAlphabetically(cleanedFallback);
-
-        cleanedFallback.forEach(s => {
-            studentsMap.set(s.id, s);
-            optionsHtml += `<option value="${s.id}">${escapeHtml(s.fullName)} - ${escapeHtml(s.studentCode)} (${escapeHtml(s.className)})</option>`;
-        });
-        if (select) select.innerHTML = optionsHtml;
+        console.error('Không thể tải sinh viên từ API:', e);
     }
 }
 
 async function loadSessions() {
+    /*
     const fallbackSessions = [
         { id: "11111111-1111-1111-1111-111111111111", sessionCode: "DX2026_01", sessionName: "Xét tốt nghiệp Đợt 1 năm học 2026-2027" },
         { id: "22222222-2222-2222-2222-222222222222", sessionCode: "DX2026_02", sessionName: "Xét tốt nghiệp Đợt 2 năm học 2026-2027" }
     ];
+    */
 
     try {
         const response = await fetch(API_ENDPOINTS.GRADUATION_SESSIONS);
@@ -671,8 +672,8 @@ async function loadSessions() {
         if (response.ok) {
             list = await response.json();
         }
-        if (!list || list.length === 0) {
-            list = fallbackSessions;
+        if (!list) {
+            list = [];
         }
 
         const select = document.getElementById('modalProfileSessionId');
@@ -687,14 +688,7 @@ async function loadSessions() {
             select.innerHTML = optionsHtml;
         }
     } catch (e) {
-        console.warn('Không thể tải đợt xét, dùng danh sách dự phòng:', e);
-        const select = document.getElementById('modalProfileSessionId');
-        let optionsHtml = '<option value="">-- Chọn đợt xét tốt nghiệp --</option>';
-        fallbackSessions.forEach(sess => {
-            sessionsMap.set(sess.id, sess);
-            optionsHtml += `<option value="${sess.id}">${escapeHtml(sess.sessionCode)} - ${escapeHtml(sess.sessionName)}</option>`;
-        });
-        if (select) select.innerHTML = optionsHtml;
+        console.error('Không thể tải đợt xét từ API:', e);
     }
 }
 
