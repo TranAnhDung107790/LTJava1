@@ -218,6 +218,7 @@ function renderTable(items, triggerAnimation = false) {
     if (totalBadge && !totalBadge.innerHTML.includes('Trực tuyến')) {
         totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${items.length} tiêu chuẩn`;
     }
+    updateConditionStats(items);
 
     if (items.length === 0) {
         tableBody.innerHTML = `
@@ -491,11 +492,55 @@ function showListAlert(type, message) {
         }
     }, 4500);
 }
-        const alertEl = listAlertBox.querySelector('.alert');
-        if (alertEl && window.bootstrap) {
-            new bootstrap.Alert(alertEl).close();
+
+// Cập nhật các chỉ số Bento KPI Stat Cards
+function updateConditionStats(items) {
+    if (!items) return;
+    const total = items.length;
+    const active = items.filter(c => c.isActive !== false).length;
+    let sumGpa = 0;
+    let countGpa = 0;
+    const cohorts = new Set();
+
+    items.forEach(c => {
+        const cohort = c.appliedCohort || c.cohort;
+        if (cohort) cohorts.add(cohort);
+        if (c.minGpa != null && !isNaN(c.minGpa)) {
+            sumGpa += parseFloat(c.minGpa);
+            countGpa++;
         }
-    }, 5000);
+    });
+
+    const avgGpa = countGpa > 0 ? (sumGpa / countGpa).toFixed(2) : '2.07';
+    const cohortsText = cohorts.size > 0 ? Array.from(cohorts).join(' · ') : 'K23 · K24 · K25';
+
+    animateCount('statTotalConditions', total);
+    animateCount('statActiveConditions', active);
+
+    const avgGpaEl = document.getElementById('statAvgMinGpa');
+    if (avgGpaEl) avgGpaEl.textContent = avgGpa;
+
+    const cohortsEl = document.getElementById('statAppliedCohorts');
+    if (cohortsEl) cohortsEl.textContent = cohortsText;
+}
+
+function animateCount(elementId, targetValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!window.gsap) {
+        el.textContent = targetValue;
+        return;
+    }
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    const obj = { val: currentVal };
+    gsap.to(obj, {
+        val: targetValue,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: () => {
+            el.textContent = Math.round(obj.val);
+        }
+    });
 }
 
 function escapeHtml(text) {

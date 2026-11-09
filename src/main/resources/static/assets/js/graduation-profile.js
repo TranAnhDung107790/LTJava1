@@ -262,6 +262,7 @@ function renderTable(items, triggerAnimation = false) {
     if (totalBadge && !totalBadge.innerHTML.includes('Trực tuyến')) {
         totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${items.length} hồ sơ`;
     }
+    updateProfileStats(items);
 
     if (items.length === 0) {
         tableBody.innerHTML = `
@@ -753,6 +754,46 @@ function showListAlert(type, message) {
             new bootstrap.Alert(alertEl).close();
         }
     }, 4500);
+}
+
+// Cập nhật các chỉ số Bento KPI Stat Cards
+function updateProfileStats(items) {
+    if (!items) return;
+    const total = items.length;
+    let approved = 0;
+    let pending = 0;
+    let rejected = 0;
+
+    items.forEach(p => {
+        const status = (p.status || '').toLowerCase();
+        if (status === 'approved') approved++;
+        else if (status === 'rejected') rejected++;
+        else pending++;
+    });
+
+    animateCount('statTotalProfiles', total);
+    animateCount('statApprovedProfiles', approved);
+    animateCount('statPendingProfiles', pending);
+    animateCount('statRejectedProfiles', rejected);
+}
+
+function animateCount(elementId, targetValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!window.gsap) {
+        el.textContent = targetValue;
+        return;
+    }
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    const obj = { val: currentVal };
+    gsap.to(obj, {
+        val: targetValue,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: () => {
+            el.textContent = Math.round(obj.val);
+        }
+    });
 }
 
 function escapeHtml(text) {

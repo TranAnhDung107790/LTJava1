@@ -123,6 +123,62 @@
                 <div class="edu-layout">
                     <!-- ===== MAIN CONTENT ===== -->
                     <div class="edu-main-content">
+
+                        <!-- Bento KPI Stat Cards -->
+                        <div class="bento-grid">
+                            <div class="bento-stat-card bento-card-blue">
+                                <div class="bento-header">
+                                    <span class="bento-title">Tổng số hồ sơ</span>
+                                    <div class="bento-icon-wrapper bento-icon-blue">
+                                        <i class="bi bi-folder2-open"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value" id="statTotalProfiles">8</div>
+                                <div class="bento-subtitle">
+                                    <i class="bi bi-layers text-primary"></i>Hồ sơ đăng ký xét tốt nghiệp
+                                </div>
+                            </div>
+
+                            <div class="bento-stat-card bento-card-emerald">
+                                <div class="bento-header">
+                                    <span class="bento-title">Đã phê duyệt</span>
+                                    <div class="bento-icon-wrapper bento-icon-emerald">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value text-success" id="statApprovedProfiles">5</div>
+                                <div class="bento-subtitle text-success">
+                                    <span class="status-pulse-dot"></span>Đủ điều kiện xét cấp bằng
+                                </div>
+                            </div>
+
+                            <div class="bento-stat-card bento-card-amber">
+                                <div class="bento-header">
+                                    <span class="bento-title">Chờ xét duyệt</span>
+                                    <div class="bento-icon-wrapper bento-icon-amber">
+                                        <i class="bi bi-hourglass-split"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value text-warning" id="statPendingProfiles">2</div>
+                                <div class="bento-subtitle">
+                                    <i class="bi bi-clock-history text-warning"></i>Đang chờ hội đồng duyệt
+                                </div>
+                            </div>
+
+                            <div class="bento-stat-card bento-card-purple">
+                                <div class="bento-header">
+                                    <span class="bento-title">Từ chối hồ sơ</span>
+                                    <div class="bento-icon-wrapper bento-icon-purple">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value text-danger" id="statRejectedProfiles" style="font-size: 1.45rem;">1</div>
+                                <div class="bento-subtitle">
+                                    <i class="bi bi-exclamation-circle text-danger"></i>Cần bổ sung minh chứng
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Action Bar -->
                         <div class="action-bar-card mb-4 p-3">
                             <div class="row g-2 align-items-center justify-content-between">
