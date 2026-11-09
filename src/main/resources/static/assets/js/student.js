@@ -195,45 +195,32 @@ async function loadStudents(keyword = '') {
     if (!studentTableBody) return;
 
     try {
-        let data = null;
-
-        // 1. Ưu tiên nạp dataset chuẩn 800 sinh viên (đồng bộ hiển thị giống Render, không phụ thuộc CSDL local)
-        try {
-            const staticResp = await fetch('assets/data/students.json');
-            if (staticResp.ok) {
-                data = await staticResp.json();
-            }
-        } catch (staticError) {
-            console.warn('Không tải được assets/data/students.json:', staticError);
+        let url = API_ENDPOINTS.STUDENTS;
+        if (keyword) {
+            url += `?keyword=${encodeURIComponent(keyword)}`;
         }
 
-        // 2. Dự phòng: Thử gọi API backend nếu file static chưa có dữ liệu
-        if (!data || data.length === 0) {
-            try {
-                const response = await fetch(API_ENDPOINTS.STUDENTS);
-                if (response.ok) {
-                    const json = await response.json();
-                    if (Array.isArray(json)) {
-                        data = json;
-                    }
-                }
-            } catch (apiError) {
-                console.error('API backend sinh viên chưa khả dụng:', apiError);
+        const response = await fetch(url);
+        let data = [];
+        if (response.ok) {
+            const json = await response.json();
+            if (Array.isArray(json)) {
+                data = json;
             }
         }
 
-        const rawList = Array.isArray(data) ? data : [];
-        allStudents = rawList.map(s => {
+        allStudents = data.map(s => {
             return {
                 ...s,
-                fullName: cleanStudentName(s.fullName || s.name || '', s.studentCode || s.code)
+                fullName: cleanStudentName(s.fullName || s.name || '', s.studentCode || s.code),
+                status: s.status || 'Đang học'
             };
         });
 
         // 🔤 Tự động sắp xếp alphabet A -> Z theo tên chuẩn tiếng Việt
         sortStudentsAlphabetically(allStudents);
     } catch (error) {
-        console.error('Lỗi khi tải dữ liệu sinh viên:', error);
+        console.error('Lỗi khi tải dữ liệu sinh viên từ API:', error);
         allStudents = [];
     }
 
@@ -251,7 +238,8 @@ function applyFilterAndRender(keyword = '') {
             const email = (s.email || '').toLowerCase();
             const phone = (s.phone || '').toLowerCase();
             const cls = (s.className || '').toLowerCase();
-            return code.includes(trimmed) || name.includes(trimmed) || email.includes(trimmed) || phone.includes(trimmed) || cls.includes(trimmed);
+            const st = (s.status || '').toLowerCase();
+            return code.includes(trimmed) || name.includes(trimmed) || email.includes(trimmed) || phone.includes(trimmed) || cls.includes(trimmed) || st.includes(trimmed);
         });
     }
 
@@ -309,6 +297,16 @@ function renderPaginatedStudents(triggerAnimation = false) {
         const avatarColor = getAvatarColorClass(cleanName || student.studentCode || 'SV');
         const initials = getInitials(cleanName);
 
+        const statusText = student.status || 'Đang học';
+        let statusBadge = '<span class="badge-status badge-status-active"><span class="status-pulse-dot"></span>Đang học</span>';
+        if (statusText.toLowerCase().includes('bảo lưu')) {
+            statusBadge = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning px-2 py-1"><i class="bi bi-pause-circle me-1"></i>Bảo lưu</span>';
+        } else if (statusText.toLowerCase().includes('thôi') || statusText.toLowerCase().includes('nghỉ')) {
+            statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1"><i class="bi bi-x-circle me-1"></i>Thôi học</span>';
+        } else if (statusText.toLowerCase().includes('tốt nghiệp')) {
+            statusBadge = '<span class="badge bg-info-subtle text-info-emphasis border border-info px-2 py-1"><i class="bi bi-mortarboard-fill me-1"></i>Đã tốt nghiệp</span>';
+        }
+
         return `
             <tr>
                 <td class="text-center text-muted small fw-medium">${itemNumber}</td>
@@ -337,9 +335,7 @@ function renderPaginatedStudents(triggerAnimation = false) {
                     </span>
                 </td>
                 <td class="text-center">
-                    <span class="badge-status badge-status-active">
-                        <span class="status-pulse-dot"></span>Đang học
-                    </span>
+                    ${statusBadge}
                 </td>
                 <td class="text-end">
                     <div class="table-actions">
@@ -475,10 +471,11 @@ function renderPaginationControls() {
 function updateStudentStats(students, filteredCount = null) {
     if (!students) return;
     const total = students.length;
+    const active = students.filter(s => (s.status || 'Đang học').toLowerCase() === 'đang học').length;
     const classes = new Set(students.map(s => s.className).filter(Boolean)).size;
 
     animateCount('statTotalStudents', total);
-    animateCount('statActiveStudents', total);
+    animateCount('statActiveStudents', active);
     animateCount('statTotalClasses', classes || 1);
 
     const badge = document.getElementById('studentTotalBadge');
@@ -665,6 +662,7 @@ function fillStudentForm(student) {
     const email = document.getElementById('email');
     const phone = document.getElementById('phone');
     const className = document.getElementById('className');
+    const status = document.getElementById('status');
 
     const cleanName = cleanStudentName(student.fullName || '', student.studentCode || student.code);
     if (studentCode) studentCode.value = student.studentCode || '';
@@ -672,6 +670,7 @@ function fillStudentForm(student) {
     if (email) email.value = student.email || '';
     if (phone) phone.value = student.phone || '';
     if (className) className.value = student.className || '';
+    if (status) status.value = student.status || 'Đang học';
 }
 
 async function saveStudent(mode, id = null) {
@@ -763,7 +762,8 @@ function getStudentFormData() {
         fullName: getValue('fullName'),
         email: getValue('email'),
         phone: getValue('phone'),
-        className: getValue('className')
+        className: getValue('className'),
+        status: getValue('status') || 'Đang học'
     };
 }
 
@@ -787,6 +787,8 @@ function setFormReadOnly(readOnly) {
         const element = document.getElementById(id);
         if (element) element.readOnly = readOnly;
     });
+    const statusEl = document.getElementById('status');
+    if (statusEl) statusEl.disabled = readOnly;
 }
 
 function showAlert(type, message) {

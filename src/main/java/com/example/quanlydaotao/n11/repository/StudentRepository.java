@@ -19,9 +19,11 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     @Query(value = "SELECT s.id, COALESCE(s.code, 'SV'), s.full_name, " +
                    "LOWER(CONCAT('sv', s.code, '@donga.edu.vn')), " +
                    "'0901234567', " +
-                   "COALESCE(sc.code, sc.name, 'CNTT-K24-01') " +
+                   "COALESCE(sc.code, sc.name, 'CNTT-K24-01'), " +
+                   "COALESCE(ss.name, N'Đang học') " +
                    "FROM dbo.students_ s " +
                    "LEFT JOIN dbo.student_classes sc ON s.student_classess_id = sc.id " +
+                   "LEFT JOIN dbo.student_status ss ON s.id = ss.student_id " +
                    "WHERE s.is_active = 1", nativeQuery = true)
     List<Object[]> findAllFromStudents_();
 }

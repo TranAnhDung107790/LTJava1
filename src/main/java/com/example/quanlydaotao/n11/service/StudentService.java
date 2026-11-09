@@ -98,7 +98,18 @@ public class StudentService {
     }
 
     public List<Student> getAll() {
-        // 1. Ưu tiên đọc từ bảng students_ nếu có dữ liệu 800 sinh viên
+        // 1. Đọc trực tiếp từ bảng students (đầy đủ các trường: mã, họ tên, email, sđt, lớp, tình trạng)
+        try {
+            List<Student> list = studentRepository.findAll();
+            if (list != null && list.size() >= 50) {
+                list.forEach(s -> s.setFullName(cleanStudentName(s.getFullName(), s.getStudentCode())));
+                sortStudentsAlphabetically(list);
+                return list;
+            }
+        } catch (Exception ignored) {
+        }
+
+        // 2. Dự phòng: Đọc từ bảng students_ kết hợp bảng student_classes và student_status
         try {
             List<Object[]> rows = studentRepository.findAllFromStudents_();
             if (rows != null && !rows.isEmpty()) {
@@ -111,21 +122,11 @@ public class StudentService {
                     String email = r[3] != null ? r[3].toString() : ("sv" + code + "@donga.edu.vn");
                     String phone = r[4] != null ? r[4].toString() : "0901234567";
                     String cls = r[5] != null ? r[5].toString() : "CNTT-K24-01";
-                    Student s = new Student(code, name, email, phone, cls);
+                    String status = r.length > 6 && r[6] != null ? r[6].toString() : "Đang học";
+                    Student s = new Student(code, name, email, phone, cls, status);
                     s.setId(id);
                     list.add(s);
                 }
-                sortStudentsAlphabetically(list);
-                return list;
-            }
-        } catch (Exception ignored) {
-        }
-
-        // 2. Thử đọc từ bảng students
-        try {
-            List<Student> list = studentRepository.findAll();
-            if (list != null && list.size() >= 50) {
-                list.forEach(s -> s.setFullName(cleanStudentName(s.getFullName(), s.getStudentCode())));
                 sortStudentsAlphabetically(list);
                 return list;
             }
@@ -147,7 +148,8 @@ public class StudentService {
                         || (s.getFullName() != null && s.getFullName().toLowerCase().contains(kw))
                         || (s.getEmail() != null && s.getEmail().toLowerCase().contains(kw))
                         || (s.getPhone() != null && s.getPhone().toLowerCase().contains(kw))
-                        || (s.getClassName() != null && s.getClassName().toLowerCase().contains(kw)))
+                        || (s.getClassName() != null && s.getClassName().toLowerCase().contains(kw))
+                        || (s.getStatus() != null && s.getStatus().toLowerCase().contains(kw)))
                 .toList();
     }
 
