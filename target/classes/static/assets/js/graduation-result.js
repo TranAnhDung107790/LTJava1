@@ -4,8 +4,8 @@ import { API_ENDPOINTS } from './config.js';
 const SEED_RESULTS = [
     {
         id: 'seed-res-1',
-        studentName: 'Nguyễn Văn An',
-        studentCode: 'SV001',
+        studentName: 'Bùi Gia An',
+        studentCode: '26763',
         gpa: 3.45,
         totalCredits: 132,
         failedCredits: 0,

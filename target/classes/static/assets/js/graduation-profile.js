@@ -5,7 +5,7 @@ const SEED_PROFILES = [
     {
         id: 'seed-prof-1',
         profileCode: 'HS-2026-001',
-        student: { id: 's1', fullName: 'Nguyễn Văn An', studentCode: 'SV001', className: 'C2024A' },
+        student: { id: 's1', fullName: 'Bùi Gia An', studentCode: '26763', className: 'QTKD-K26-01' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
         status: 'Approved',

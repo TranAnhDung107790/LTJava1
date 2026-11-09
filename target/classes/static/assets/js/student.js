@@ -2,12 +2,26 @@ import { API_ENDPOINTS } from './config.js';
 import { renderMiniCalendar } from './calendar-widget.js';
 
 const SEED_STUDENTS = [
-    { studentCode: 'SV001', fullName: 'Nguyễn Văn An', email: 'a@gmail.com', phone: '0901234567', className: 'C2024A', id: '550e8400-e29b-41d4-a716-446655440001' },
-    { studentCode: 'SV002', fullName: 'Trần Thị B', email: 'b@gmail.com', phone: '0912345678', className: 'C2024B', id: '550e8400-e29b-41d4-a716-446655440002' },
-    { studentCode: 'SV003', fullName: 'Lê Hoàng C', email: 'c@gmail.com', phone: '0923456789', className: 'C2024C', id: '550e8400-e29b-41d4-a716-446655440003' },
-    { studentCode: 'SV004', fullName: 'Phạm Minh D', email: 'd@gmail.com', phone: '0933456789', className: 'C2024A', id: '550e8400-e29b-41d4-a716-446655440004' },
-    { studentCode: 'SV005', fullName: 'Hoàng Thị E', email: 'e@gmail.com', phone: '0944567890', className: 'C2024B', id: '550e8400-e29b-41d4-a716-446655440005' },
-    { studentCode: 'SV006', fullName: 'Vũ Đức F', email: 'f@gmail.com', phone: '0955678901', className: 'C2024C', id: '550e8400-e29b-41d4-a716-446655440006' }
+    { studentCode: '26763', fullName: 'Bùi Gia An', email: 'sv26763@donga.edu.vn', phone: '0913291991', className: 'QTKD-K26-01', id: '5ebd4988-e688-4b46-a213-cf17bc237fe3' },
+    { studentCode: '23205', fullName: 'Chu Anh An', email: 'sv23205@donga.edu.vn', phone: '0945473517', className: 'DL-K23-01', id: '8140bb0c-9e42-48bc-80c1-48ac73d5b0c2' },
+    { studentCode: '25053', fullName: 'Dương Hải An', email: 'sv25053@donga.edu.vn', phone: '0917581897', className: 'CNTT-K25-01', id: '1fcdd55b-0ec8-4aea-b06c-50695e47b4a8' },
+    { studentCode: '25741', fullName: 'Lý Công An', email: 'sv25741@donga.edu.vn', phone: '0970519039', className: 'QTKD-K25-01', id: 'b332f771-70eb-4b3d-a44e-c4de2cf860be' },
+    { studentCode: '23403', fullName: 'Nguyễn Minh An', email: 'sv23403@donga.edu.vn', phone: '0939516987', className: 'MKT-K23-01', id: 'f123d682-423e-4a94-988e-273d80d245fb' },
+    { studentCode: '24329', fullName: 'Phùng Hồng An', email: 'sv24329@donga.edu.vn', phone: '0951503420', className: 'KTPM-K24-01', id: 'bd40ed40-be19-4ac7-9e5b-ab777717d161' },
+    { studentCode: '26075', fullName: 'Tạ Quang An', email: 'sv26075@donga.edu.vn', phone: '0985444942', className: 'CNTT-K26-01', id: '08866a5f-d1dc-4633-83ab-3ae7d3824d61' },
+    { studentCode: '23519', fullName: 'Đào Trọng An', email: 'sv23519@donga.edu.vn', phone: '0930937920', className: 'NNA-K23-01', id: 'c09f3daf-8198-4dd3-8b35-5f07203b56ef' },
+    { studentCode: '25153', fullName: 'Đặng Ngọc An', email: 'sv25153@donga.edu.vn', phone: '0976599662', className: 'DD-K25-01', id: 'd2d131b7-9c38-4ded-8ee6-48f62b1ca140' },
+    { studentCode: '25547', fullName: 'Đỗ Minh An', email: 'sv25547@donga.edu.vn', phone: '0996417537', className: 'NNA-K25-01', id: 'aa920915-53c5-4b3e-bbfd-87b8a212dd1d' },
+    { studentCode: '23211', fullName: 'Đỗ Đình An', email: 'sv23211@donga.edu.vn', phone: '0938595598', className: 'DL-K23-01', id: 'a0b9c3a2-4aa8-444b-b899-0490047ca7de' },
+    { studentCode: '26074', fullName: 'Châu Bích Anh', email: 'sv26074@donga.edu.vn', phone: '0984763343', className: 'CNTT-K26-01', id: 'f60b6d4c-3791-4808-958a-3b3a9c8fed77' },
+    { studentCode: '26584', fullName: 'Diệp Hà Anh', email: 'sv26584@donga.edu.vn', phone: '0961894310', className: 'NNA-K26-02', id: '2f31a765-7365-4e75-8af1-4ea0fe1ab537' },
+    { studentCode: '24422', fullName: 'Mai Quỳnh Anh', email: 'sv24422@donga.edu.vn', phone: '0996856182', className: 'MKT-K24-01', id: 'b3b4d2d8-0668-478b-96b2-24b4d849c946' },
+    { studentCode: '24132', fullName: 'Ngô Thảo Anh', email: 'sv24132@donga.edu.vn', phone: '0991798719', className: 'DD-K24-01', id: '252113f6-c87d-4122-9b8a-8fc5a905b3e4' },
+    { studentCode: '25656', fullName: 'Đào Hà Anh', email: 'sv25656@donga.edu.vn', phone: '0998597929', className: 'OTO-K25-01', id: '56487bdb-003f-4142-b753-d36574449baa' },
+    { studentCode: '25746', fullName: 'Đỗ Kim Anh', email: 'sv25746@donga.edu.vn', phone: '0955092541', className: 'QTKD-K25-01', id: 'e6dade25-290e-4ff6-831d-f5d9435c1d9c' },
+    { studentCode: '26095', fullName: 'Bùi Đại Bình', email: 'sv26095@donga.edu.vn', phone: '0971591283', className: 'CNTT-K26-02', id: 'ff3ba06a-919e-46e1-a025-305bebc76491' },
+    { studentCode: '26483', fullName: 'Châu Đại Bình', email: 'sv26483@donga.edu.vn', phone: '0911353765', className: 'MKT-K26-02', id: '870927ab-9a95-4245-8502-e63522f8487d' },
+    { studentCode: '24027', fullName: 'Hoàng Đức Bình', email: 'sv24027@donga.edu.vn', phone: '0967744461', className: 'CNTT-K24-01', id: 'a8865bd0-630a-4ed8-b765-2ecd573b4888' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
