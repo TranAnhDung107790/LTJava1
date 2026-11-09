@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GraduationResultService {
@@ -292,32 +293,46 @@ public class GraduationResultService {
      * Lấy danh sách kết quả xét TN phân theo Đạt / Chưa đạt,
      * kèm tên lớp lấy từ bảng students thông qua JPQL Join và lý do không đạt chi
      * tiết.
+     * <p>
+     * Khi conditionId = null (xuất tất cả khóa), mỗi row đã chứa condition_id
+     * riêng (cột 9) → Service tự lookup cache bộ tiêu chí tương ứng để sinh
+     * lý do không đạt chi tiết cho từng khóa K23/K24/K25.
      */
     public Map<String, List<GraduationResultExportDTO>> getResultsForExport(UUID conditionId) {
 
         List<Object[]> rows = conditionId != null
                 ? repository.findExportDataByConditionId(conditionId)
                 : repository.findAllExportData();
-        List<GraduationResultExportDTO> rawList = new ArrayList<>();
-        for (Object[] row : rows) {
-            rawList.add(mapExportRow(row));
-        }
 
-        // 2. Lấy thông tin bộ điều kiện để tính lý do không đạt
-        GraduationCondition condition = null;
+        // Cache bộ điều kiện theo UUID để tránh truy vấn DB lặp lại
+        Map<UUID, GraduationCondition> conditionCache = new ConcurrentHashMap<>();
+
+        // Nếu chỉ lấy 1 bộ điều kiện, pre-load vào cache luôn
         if (conditionId != null) {
-            condition = conditionRepository.findById(conditionId).orElse(null);
+            conditionRepository.findById(conditionId)
+                    .ifPresent(c -> conditionCache.put(conditionId, c));
         }
 
-        // 3. Phân loại và tạo danh sách Đạt / Chưa đạt
+        // 2. Phân loại và tạo danh sách Đạt / Chưa đạt
         List<GraduationResultExportDTO> passedList = new ArrayList<>();
         List<GraduationResultExportDTO> failedList = new ArrayList<>();
 
         int passStt = 1, failStt = 1;
 
-        for (GraduationResultExportDTO dto : rawList) {
-            // Làm sạch số thừa ở đuôi tên sinh viên (nếu có do dữ liệu mẫu)
+        for (Object[] row : rows) {
+            GraduationResultExportDTO dto = mapExportRow(row);
             dto.setStudentName(cleanStudentName(dto.getStudentName()));
+
+            // Lấy condition_id của row này (cột 9) để tra bộ tiêu chí đúng khóa
+            UUID rowConditionId = toUUID(row.length > 9 ? row[9] : null);
+            if (rowConditionId == null) rowConditionId = conditionId;
+
+            GraduationCondition rowCondition = null;
+            if (rowConditionId != null) {
+                final UUID cid = rowConditionId;
+                rowCondition = conditionCache.computeIfAbsent(cid,
+                        k -> conditionRepository.findById(k).orElse(null));
+            }
 
             if (dto.getResult() != null && dto.getResult() == 1) {
                 // ĐẠT
@@ -325,10 +340,10 @@ public class GraduationResultService {
                 dto.setResultText("Đạt");
                 passedList.add(dto);
             } else {
-                // CHƯA ĐẠT
+                // CHƯA ĐẠT — dùng đúng bộ tiêu chí của khóa đó
                 dto.setStt(failStt++);
                 dto.setResultText("Chưa đạt");
-                dto.setFailureReasons(buildFailureReasons(dto, condition));
+                dto.setFailureReasons(buildFailureReasons(dto, rowCondition));
                 failedList.add(dto);
             }
         }
@@ -339,18 +354,30 @@ public class GraduationResultService {
         return resultMap;
     }
 
+    /**
+     * Parse hàng Object[] từ native query.
+     * Cột 0-8 là dữ liệu sinh viên/kết quả; cột 9 (condition_id) được đọc
+     * riêng trong getResultsForExport() — không cần đưa vào DTO.
+     */
     private GraduationResultExportDTO mapExportRow(Object[] row) {
-        String studentCode = row[0] != null ? row[0].toString() : "";
-        String studentName = row[1] != null ? row[1].toString() : "";
-        String className = row[2] != null ? row[2].toString() : "Chưa xếp lớp";
-        BigDecimal gpa = toBigDecimal(row[3]);
+        String studentCode   = row[0] != null ? row[0].toString() : "";
+        String studentName   = row[1] != null ? row[1].toString() : "";
+        String className     = row[2] != null ? row[2].toString() : "Chưa xếp lớp";
+        BigDecimal gpa       = toBigDecimal(row[3]);
         Integer totalCredits = toInteger(row[4]);
-        Integer failedCredits = toInteger(row[5]);
-        Short result = toShort(row[6]);
+        Integer failedCredits= toInteger(row[5]);
+        Short result         = toShort(row[6]);
         Short classification = toShort(row[7]);
-        String note = row[8] != null ? row[8].toString() : null;
+        String note          = row[8] != null ? row[8].toString() : null;
         return new GraduationResultExportDTO(
                 studentCode, studentName, className, gpa, totalCredits, failedCredits, result, classification, note);
+    }
+
+    /** Chuyển cột condition_id (UUID hoặc String) thành UUID, trả null nếu lỗi. */
+    private static UUID toUUID(Object value) {
+        if (value == null) return null;
+        if (value instanceof UUID uuid) return uuid;
+        try { return UUID.fromString(value.toString()); } catch (Exception e) { return null; }
     }
 
     private static BigDecimal toBigDecimal(Object value) {

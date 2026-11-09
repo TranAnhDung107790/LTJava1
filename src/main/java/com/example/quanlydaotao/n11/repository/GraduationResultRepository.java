@@ -78,22 +78,30 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
      * Xuất Word: native SQL để tránh lỗi JPQL join entity không có quan hệ
      * (GraduationResult.studentId không map @ManyToOne tới Student) và lệch kiểu Short/Integer.
      */
+    /**
+     * Xuất Word theo điều kiện: trả thêm condition_id (cột 9) để Service
+     * có thể load bộ tiêu chí tương ứng và sinh lý do chi tiết không đạt.
+     */
     @Query(value = "SELECT COALESCE(s.student_code, ''), COALESCE(s.full_name, N'Sinh viên'), " +
             "COALESCE(s.class_name, N'Chưa xếp lớp'), gr.gpa, gr.total_credits, " +
-            "gr.failed_credits, gr.result, gr.classification, gr.note " +
+            "gr.failed_credits, gr.result, gr.classification, gr.note, gr.condition_id " +
             "FROM dbo.graduation_results gr " +
             "LEFT JOIN dbo.students s ON s.id = gr.student_id " +
             "WHERE gr.is_active = 1 AND gr.condition_id = :conditionId " +
             "ORDER BY COALESCE(s.student_code, '') ASC", nativeQuery = true)
     List<Object[]> findExportDataByConditionId(@Param("conditionId") UUID conditionId);
 
+    /**
+     * Xuất Word toàn bộ: trả thêm condition_id (cột 9) để Service tự lookup
+     * bộ tiêu chí của từng khóa và sinh lý do chi tiết không đạt cho mọi khóa.
+     */
     @Query(value = "SELECT COALESCE(s.student_code, ''), COALESCE(s.full_name, N'Sinh viên'), " +
             "COALESCE(s.class_name, N'Chưa xếp lớp'), gr.gpa, gr.total_credits, " +
-            "gr.failed_credits, gr.result, gr.classification, gr.note " +
+            "gr.failed_credits, gr.result, gr.classification, gr.note, gr.condition_id " +
             "FROM dbo.graduation_results gr " +
             "LEFT JOIN dbo.students s ON s.id = gr.student_id " +
             "WHERE gr.is_active = 1 " +
-            "ORDER BY COALESCE(s.student_code, '') ASC", nativeQuery = true)
+            "ORDER BY gr.condition_id, COALESCE(s.student_code, '') ASC", nativeQuery = true)
     List<Object[]> findAllExportData();
 
     /**
