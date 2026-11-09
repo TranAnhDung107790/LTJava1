@@ -194,28 +194,28 @@ async function loadStudents(keyword = '') {
     try {
         let data = null;
 
-        // 1. Thử gọi API backend (được tối ưu trả về 800 sinh viên)
+        // 1. Ưu tiên nạp dataset chuẩn 800 sinh viên (đồng bộ hiển thị giống Render, không phụ thuộc CSDL local)
         try {
-            const response = await fetch(API_ENDPOINTS.STUDENTS);
-            if (response.ok) {
-                const json = await response.json();
-                if (Array.isArray(json) && json.length >= 20) {
-                    data = json;
-                }
+            const staticResp = await fetch('assets/data/students.json');
+            if (staticResp.ok) {
+                data = await staticResp.json();
             }
-        } catch (apiError) {
-            console.warn('API backend chưa khả dụng, chuyển sang dataset static 800 sinh viên:', apiError);
+        } catch (staticError) {
+            console.warn('Không tải được assets/data/students.json:', staticError);
         }
 
-        // 2. Nếu API chưa có dữ liệu 800 sinh viên, load từ file static 800 sinh viên
+        // 2. Dự phòng: Thử gọi API backend nếu file static chưa có dữ liệu
         if (!data || data.length < 20) {
             try {
-                const staticResp = await fetch('assets/data/students.json');
-                if (staticResp.ok) {
-                    data = await staticResp.json();
+                const response = await fetch(API_ENDPOINTS.STUDENTS);
+                if (response.ok) {
+                    const json = await response.json();
+                    if (Array.isArray(json) && json.length >= 20) {
+                        data = json;
+                    }
                 }
-            } catch (staticError) {
-                console.warn('Không tải được assets/data/students.json:', staticError);
+            } catch (apiError) {
+                console.warn('API backend chưa khả dụng:', apiError);
             }
         }
 
@@ -586,7 +586,7 @@ function setupFormMode(mode) {
 
     if (mode === 'create') {
         if (studentForm) studentForm.reset();
-        if (pageTitle) pageTitle.textContent = 'Thêm sinh viên | Trường Đại học Đông Á';
+        if (pageTitle) pageTitle.textContent = 'Quản lý tốt nghiệp - Nhóm 11';
         if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-person-plus text-primary me-2"></i>Thêm sinh viên';
         if (breadcrumbTitle) breadcrumbTitle.textContent = 'Thêm';
         if (formTitle) formTitle.innerHTML = '<i class="bi bi-person-vcard me-2"></i>Thêm sinh viên mới';
@@ -599,7 +599,7 @@ function setupFormMode(mode) {
     }
 
     if (mode === 'edit') {
-        if (pageTitle) pageTitle.textContent = 'Sửa sinh viên | Trường Đại học Đông Á';
+        if (pageTitle) pageTitle.textContent = 'Quản lý tốt nghiệp - Nhóm 11';
         if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-pencil-square text-primary me-2"></i>Sửa sinh viên';
         if (breadcrumbTitle) breadcrumbTitle.textContent = 'Sửa';
         if (formTitle) formTitle.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin sinh viên';
@@ -612,7 +612,7 @@ function setupFormMode(mode) {
     }
 
     if (mode === 'view') {
-        if (pageTitle) pageTitle.textContent = 'Chi tiết sinh viên | Trường Đại học Đông Á';
+        if (pageTitle) pageTitle.textContent = 'Quản lý tốt nghiệp - Nhóm 11';
         if (pageHeading) pageHeading.innerHTML = '<i class="bi bi-person-badge text-primary me-2"></i>Chi tiết sinh viên';
         if (breadcrumbTitle) breadcrumbTitle.textContent = 'Xem';
         if (formTitle) formTitle.innerHTML = '<i class="bi bi-person-badge me-2"></i>Thông tin sinh viên';
@@ -625,23 +625,24 @@ function setupFormMode(mode) {
 async function loadStudentDetail(id, mode) {
     try {
         let student = null;
+        // Ưu tiên tìm trong dataset static 800 sinh viên
         try {
-            const response = await fetch(`${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`);
-            if (response.ok) {
-                student = await response.json();
+            const staticResp = await fetch('assets/data/students.json');
+            if (staticResp.ok) {
+                const list = await staticResp.json();
+                student = list.find(s => s.id === id || s.studentCode === id);
             }
-        } catch (apiError) {
-            console.warn('API error fetching student:', apiError);
-        }
+        } catch (err) {}
 
         if (!student) {
             try {
-                const staticResp = await fetch('assets/data/students.json');
-                if (staticResp.ok) {
-                    const list = await staticResp.json();
-                    student = list.find(s => s.id === id || s.studentCode === id);
+                const response = await fetch(`${API_ENDPOINTS.STUDENTS}/${encodeURIComponent(id)}`);
+                if (response.ok) {
+                    student = await response.json();
                 }
-            } catch (err) {}
+            } catch (apiError) {
+                console.warn('API error fetching student:', apiError);
+            }
         }
 
         if (!student) {

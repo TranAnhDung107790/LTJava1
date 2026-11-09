@@ -601,10 +601,19 @@ async function loadStudents() {
     ];
 
     try {
-        const response = await fetch(API_ENDPOINTS.STUDENTS);
         let list = [];
-        if (response.ok) {
-            list = await response.json();
+        try {
+            const staticResp = await fetch('assets/data/students.json');
+            if (staticResp.ok) {
+                list = await staticResp.json();
+            }
+        } catch (err) {}
+
+        if (!list || list.length === 0) {
+            const response = await fetch(API_ENDPOINTS.STUDENTS);
+            if (response.ok) {
+                list = await response.json();
+            }
         }
         if (!list || list.length === 0) {
             list = fallbackStudents;
