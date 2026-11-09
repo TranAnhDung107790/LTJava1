@@ -1,4 +1,5 @@
 .aider*
+.agent/
 
 # Local student class update scripts
 update_student_classes.ps1
