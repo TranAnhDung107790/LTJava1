@@ -1,6 +1,5 @@
 package com.example.quanlydaotao.n11.repository;
 
-import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
 import com.example.quanlydaotao.n11.entity.GraduationResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -76,29 +75,26 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
     // =====================================================
 
     /**
-     * Truy vấn dữ liệu xuất Word kết hợp bảng Student để lấy class_name theo bộ điều kiện.
+     * Xuất Word: native SQL để tránh lỗi JPQL join entity không có quan hệ
+     * (GraduationResult.studentId không map @ManyToOne tới Student) và lệch kiểu Short/Integer.
      */
-    @Query("SELECT new com.example.quanlydaotao.n11.dto.GraduationResultExportDTO(" +
-           "s.studentCode, s.fullName, s.className, gr.gpa, gr.totalCredits, " +
-           "gr.failedCredits, gr.result, gr.classification, gr.note) " +
-           "FROM GraduationResult gr " +
-           "JOIN Student s ON gr.studentId = s.id " +
-           "WHERE gr.isActive = true " +
-           "AND (:conditionId IS NULL OR gr.conditionId = :conditionId) " +
-           "ORDER BY s.studentCode ASC")
-    List<GraduationResultExportDTO> findExportDataByConditionId(@Param("conditionId") UUID conditionId);
+    @Query(value = "SELECT COALESCE(s.student_code, ''), COALESCE(s.full_name, N'Sinh viên'), " +
+            "COALESCE(s.class_name, N'Chưa xếp lớp'), gr.gpa, gr.total_credits, " +
+            "gr.failed_credits, gr.result, gr.classification, gr.note " +
+            "FROM dbo.graduation_results gr " +
+            "LEFT JOIN dbo.students s ON s.id = gr.student_id " +
+            "WHERE gr.is_active = 1 AND gr.condition_id = :conditionId " +
+            "ORDER BY COALESCE(s.student_code, '') ASC", nativeQuery = true)
+    List<Object[]> findExportDataByConditionId(@Param("conditionId") UUID conditionId);
 
-    /**
-     * Truy vấn toàn bộ dữ liệu xuất Word kèm class_name (không lọc theo conditionId).
-     */
-    @Query("SELECT new com.example.quanlydaotao.n11.dto.GraduationResultExportDTO(" +
-           "s.studentCode, s.fullName, s.className, gr.gpa, gr.totalCredits, " +
-           "gr.failedCredits, gr.result, gr.classification, gr.note) " +
-           "FROM GraduationResult gr " +
-           "JOIN Student s ON gr.studentId = s.id " +
-           "WHERE gr.isActive = true " +
-           "ORDER BY s.studentCode ASC")
-    List<GraduationResultExportDTO> findAllExportData();
+    @Query(value = "SELECT COALESCE(s.student_code, ''), COALESCE(s.full_name, N'Sinh viên'), " +
+            "COALESCE(s.class_name, N'Chưa xếp lớp'), gr.gpa, gr.total_credits, " +
+            "gr.failed_credits, gr.result, gr.classification, gr.note " +
+            "FROM dbo.graduation_results gr " +
+            "LEFT JOIN dbo.students s ON s.id = gr.student_id " +
+            "WHERE gr.is_active = 1 " +
+            "ORDER BY COALESCE(s.student_code, '') ASC", nativeQuery = true)
+    List<Object[]> findAllExportData();
 
     /**
      * Lấy tất cả kết quả active theo bộ điều kiện (tương thích backward)

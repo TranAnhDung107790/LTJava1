@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,6 @@ import com.example.quanlydaotao.n11.service.GraduationConditionService;
 import com.example.quanlydaotao.n11.service.GraduationResultWordExportService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -56,6 +56,44 @@ public class GraduationResultController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseEntity.ok(service.findAll(result, conditionId, pageable));
+    }
+
+    // 8. Xuat bao cao ket qua xet tot nghiep ra file Word (khai bao truoc /{id})
+    @GetMapping("/export/word")
+    public ResponseEntity<byte[]> exportToWord(
+            @RequestParam(required = false) UUID conditionId) {
+        try {
+            Map<String, List<GraduationResultExportDTO>> data =
+                service.getResultsForExport(conditionId);
+
+            GraduationCondition condition = null;
+            if (conditionId != null) {
+                condition = conditionService.one(conditionId);
+            }
+
+            List<GraduationResultExportDTO> passed = data.getOrDefault("passed", List.of());
+            List<GraduationResultExportDTO> failed = data.getOrDefault("failed", List.of());
+            byte[] docBytes = wordExportService.generateReport(passed, failed, condition);
+
+            String filename = "BaoCao_XetTotNghiep_"
+                + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy"))
+                + ".docx";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setContentLength(docBytes.length);
+
+            return ResponseEntity.ok().headers(headers).body(docBytes);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Không thể xuất file Word: " + e.getMessage(),
+                    e);
+        }
     }
 
     // 2. Chi tiết 1 bản ghi
@@ -98,40 +136,4 @@ public class GraduationResultController {
         return ResponseEntity.noContent().build();
     }
 
-    // 8. Xuat bao cao ket qua xet tot nghiep ra file Word
-    @GetMapping("/export/word")
-    public ResponseEntity<byte[]> exportToWord(
-            @RequestParam(required = false) UUID conditionId) {
-        try {
-            // 1. Lay du lieu phan loai Dat / Chua dat
-            Map<String, List<GraduationResultExportDTO>> data =
-                service.getResultsForExport(conditionId);
-
-            // 2. Lay thong tin bo dieu kien (neu co)
-            GraduationCondition condition = null;
-            if (conditionId != null) {
-                condition = conditionService.one(conditionId);
-            }
-
-            // 3. Tao file Word
-            byte[] docBytes = wordExportService.generateReport(
-                data.get("passed"), data.get("failed"), condition);
-
-            // 4. Tra ve file download
-            String filename = "BaoCao_XetTotNghiep_"
-                + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy"))
-                + ".docx";
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-            headers.setContentDispositionFormData("attachment", filename);
-            headers.setContentLength(docBytes.length);
-
-            return ResponseEntity.ok().headers(headers).body(docBytes);
-
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().build();
-        }
-    }
 }

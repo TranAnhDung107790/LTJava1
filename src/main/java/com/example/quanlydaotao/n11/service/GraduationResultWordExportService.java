@@ -37,6 +37,13 @@ public class GraduationResultWordExportService {
             List<GraduationResultExportDTO> failedStudents,
             GraduationCondition condition) throws IOException {
 
+        if (passedStudents == null) {
+            passedStudents = List.of();
+        }
+        if (failedStudents == null) {
+            failedStudents = List.of();
+        }
+
         try (XWPFDocument document = new XWPFDocument();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
@@ -85,7 +92,7 @@ public class GraduationResultWordExportService {
     private void createReportHeader(XWPFDocument document) {
         XWPFTable headerTable = document.createTable(1, 2);
         headerTable.setWidth("100%");
-        headerTable.getCTTbl().getTblPr().unsetTblBorders();
+        removeTableBorders(headerTable);
 
         // Cột trái: Tên trường & Khoa
         XWPFTableCell leftCell = headerTable.getRow(0).getCell(0);
@@ -340,7 +347,7 @@ public class GraduationResultWordExportService {
 
         XWPFTable sigTable = document.createTable(2, 2);
         sigTable.setWidth("100%");
-        sigTable.getCTTbl().getTblPr().unsetTblBorders();
+        removeTableBorders(sigTable);
 
         setCellStyle(sigTable.getRow(0).getCell(0), "Người lập báo cáo", true, null, null, ParagraphAlignment.CENTER);
         setCellStyle(sigTable.getRow(0).getCell(1), "Trưởng Khoa", true, null, null, ParagraphAlignment.CENTER);
@@ -404,5 +411,15 @@ public class GraduationResultWordExportService {
 
     private String nvl(String value) {
         return value != null ? value : "";
+    }
+
+    private void removeTableBorders(XWPFTable table) {
+        var tblPr = table.getCTTbl().getTblPr();
+        if (tblPr == null) {
+            tblPr = table.getCTTbl().addNewTblPr();
+        }
+        if (tblPr.isSetTblBorders()) {
+            tblPr.unsetTblBorders();
+        }
     }
 }

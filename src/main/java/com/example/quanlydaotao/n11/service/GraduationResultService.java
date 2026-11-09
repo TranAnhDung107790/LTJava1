@@ -205,14 +205,15 @@ public class GraduationResultService {
         }
 
         if (studentIds.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, 
-                "Không tìm thấy sinh viên nào thuộc khóa " + (cohort != null ? cohort : "") + " để xét duyệt");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Không tìm thấy sinh viên nào thuộc khóa " + (cohort != null ? cohort : "") + " để xét duyệt");
         }
 
         // 3. Đọc dữ liệu tổng kết học tập thực tế từ bảng student_summaries
         List<Object[]> summaryRows = repository.findAllStudentSummaries();
         if (summaryRows.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không có dữ liệu tổng kết điểm trong bảng student_summaries để xét duyệt");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Không có dữ liệu tổng kết điểm trong bảng student_summaries để xét duyệt");
         }
 
         Map<UUID, StudentSummaryItem> summaryMap = new HashMap<>();
@@ -294,12 +295,12 @@ public class GraduationResultService {
      */
     public Map<String, List<GraduationResultExportDTO>> getResultsForExport(UUID conditionId) {
 
-        // 1. Thực thi truy vấn JPQL lấy trực tiếp danh sách DTO kèm tên lớp
-        List<GraduationResultExportDTO> rawList;
-        if (conditionId != null) {
-            rawList = repository.findExportDataByConditionId(conditionId);
-        } else {
-            rawList = repository.findAllExportData();
+        List<Object[]> rows = conditionId != null
+                ? repository.findExportDataByConditionId(conditionId)
+                : repository.findAllExportData();
+        List<GraduationResultExportDTO> rawList = new ArrayList<>();
+        for (Object[] row : rows) {
+            rawList.add(mapExportRow(row));
         }
 
         // 2. Lấy thông tin bộ điều kiện để tính lý do không đạt
@@ -336,6 +337,35 @@ public class GraduationResultService {
         resultMap.put("passed", passedList);
         resultMap.put("failed", failedList);
         return resultMap;
+    }
+
+    private GraduationResultExportDTO mapExportRow(Object[] row) {
+        String studentCode = row[0] != null ? row[0].toString() : "";
+        String studentName = row[1] != null ? row[1].toString() : "";
+        String className = row[2] != null ? row[2].toString() : "Chưa xếp lớp";
+        BigDecimal gpa = toBigDecimal(row[3]);
+        Integer totalCredits = toInteger(row[4]);
+        Integer failedCredits = toInteger(row[5]);
+        Short result = toShort(row[6]);
+        Short classification = toShort(row[7]);
+        String note = row[8] != null ? row[8].toString() : null;
+        return new GraduationResultExportDTO(
+                studentCode, studentName, className, gpa, totalCredits, failedCredits, result, classification, note);
+    }
+
+    private static BigDecimal toBigDecimal(Object value) {
+        if (value == null) {
+            return null;
+        }
+        return value instanceof BigDecimal bigDecimal ? bigDecimal : new BigDecimal(value.toString());
+    }
+
+    private static Integer toInteger(Object value) {
+        return value instanceof Number number ? number.intValue() : null;
+    }
+
+    private static Short toShort(Object value) {
+        return value instanceof Number number ? number.shortValue() : null;
     }
 
     /**
