@@ -1597,3 +1597,278 @@ button:active,
 .modal.fade .modal-dialog {
     transition: none !important;
 }
+
+/* ==========================================================================
+   🎓 GRADUATION PROFILE - REDESIGNED BUTTON SYSTEM (ISOLATED SCOPE)
+   ========================================================================== */
+
+/* 1. Nhóm nút Thao tác từng dòng trong Bảng (Table Row Actions) */
+.prof-btn-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+/* Nút Duyệt hồ sơ - Pill Button trực quan nổi bật */
+.prof-btn-review {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.32rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    background: #EEF2FF;
+    color: #4338CA;
+    border: 1px solid #C7D2FE;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    text-decoration: none;
+    line-height: 1.2;
+}
+
+.prof-btn-review i {
+    font-size: 0.85rem;
+}
+
+.prof-btn-review:hover {
+    background: #4F46E5;
+    color: #FFFFFF;
+    border-color: #4F46E5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28);
+}
+
+.prof-btn-review:active {
+    transform: translateY(0);
+}
+
+/* Hồ sơ chờ duyệt (Pending) - Nút duyệt có màu hổ phách ấm để ưu tiên xử lý */
+.prof-btn-review.is-pending {
+    background: #FEF3C7;
+    color: #92400E;
+    border-color: #FCD34D;
+    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.15);
+}
+
+.prof-btn-review.is-pending:hover {
+    background: #D97706;
+    color: #FFFFFF;
+    border-color: #D97706;
+    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.32);
+}
+
+/* Hồ sơ đã xét duyệt (Approved / Rejected) - Làm mờ nút duyệt, khóa click, hướng dẫn dùng nút Sửa */
+.prof-btn-review.is-reviewed {
+    background: #F1F5F9 !important;
+    color: #94A3B8 !important;
+    border-color: #E2E8F0 !important;
+    opacity: 0.65;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+    pointer-events: auto;
+}
+
+.prof-btn-review.is-reviewed:hover {
+    background: #F1F5F9 !important;
+    color: #94A3B8 !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.prof-btn-review.is-reviewed i {
+    opacity: 0.75;
+}
+
+/* Cụm nút phụ (Sửa, Xóa) có vạch ngăn cách mỏng chống bấm nhầm */
+.prof-secondary-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding-left: 6px;
+    border-left: 1px solid #E2E8F0;
+}
+
+/* Nút Sửa */
+.prof-btn-edit {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #F8FAFC;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.prof-btn-edit:hover {
+    background: #EDE9FE;
+    color: #6D28D9;
+    border-color: #DDD6FE;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(109, 40, 217, 0.18);
+}
+
+/* Nút Xóa */
+.prof-btn-delete {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #FFF1F2;
+    color: #E11D48;
+    border: 1px solid #FFE4E6;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.prof-btn-delete:hover {
+    background: #E11D48;
+    color: #FFFFFF;
+    border-color: #E11D48;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(225, 29, 72, 0.25);
+}
+
+/* 2. Thanh lọc trạng thái 1 chạm (Segmented Status Filter Pills) */
+.prof-filter-group {
+    display: inline-flex;
+    align-items: center;
+    background: #FFFFFF;
+    padding: 3px;
+    border-radius: 12px;
+    border: 1px solid #E8E0FF;
+    gap: 2px;
+}
+
+.prof-filter-btn {
+    border: none;
+    background: transparent;
+    color: #64748B;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.7rem;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.prof-filter-btn:hover {
+    color: var(--purple-accent);
+    background: rgba(243, 238, 255, 0.5);
+}
+
+.prof-filter-btn.active {
+    background: linear-gradient(135deg, var(--purple-start), var(--purple-accent));
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(124, 92, 252, 0.3);
+}
+
+.prof-filter-btn .prof-count-badge {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.08);
+    color: inherit;
+    line-height: 1.1;
+}
+
+.prof-filter-btn.active .prof-count-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+}
+
+/* 3. Nút Quyết định trong Modal Phê duyệt (Decision Selection Cards) */
+.prof-decision-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 0.25rem;
+}
+
+.prof-decision-card {
+    border: 2px solid #E2E8F0;
+    border-radius: 12px;
+    background: #FFFFFF;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.prof-decision-card i {
+    font-size: 1.4rem;
+    transition: transform 0.2s ease;
+}
+
+.prof-decision-card .title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #334155;
+    line-height: 1.2;
+}
+
+.prof-decision-card .desc {
+    font-size: 0.7rem;
+    color: #94A3B8;
+    line-height: 1.1;
+}
+
+.prof-decision-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Kiểu Approved */
+.prof-decision-card.type-approved:hover,
+.prof-decision-card.type-approved.active {
+    border-color: #10B981;
+    background: #ECFDF5;
+}
+.prof-decision-card.type-approved i { color: #059669; }
+.prof-decision-card.type-approved.active .title { color: #065F46; }
+
+/* Kiểu Pending */
+.prof-decision-card.type-pending:hover,
+.prof-decision-card.type-pending.active {
+    border-color: #F59E0B;
+    background: #FFFBEB;
+}
+.prof-decision-card.type-pending i { color: #D97706; }
+.prof-decision-card.type-pending.active .title { color: #92400E; }
+
+/* Kiểu Rejected */
+.prof-decision-card.type-rejected:hover,
+.prof-decision-card.type-rejected.active {
+    border-color: #EF4444;
+    background: #FEF2F2;
+}
+.prof-decision-card.type-rejected i { color: #DC2626; }
+.prof-decision-card.type-rejected.active .title { color: #991B1B; }
+
+.prof-decision-card.active {
+    box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.2);
+}

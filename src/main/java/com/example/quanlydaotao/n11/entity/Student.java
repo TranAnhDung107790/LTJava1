@@ -28,7 +28,7 @@ public class Student {
     private String email;
 
     @Column(name = "phone")
-    private String phone;
+    private String phone; 
 
     @Column(name = "class_name")
     private String className;

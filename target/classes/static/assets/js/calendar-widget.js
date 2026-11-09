@@ -3,39 +3,52 @@
 // ==========================================================================
 
 export let currentCalDate = new Date();
+let selectedDay = null; // Ngày đang được chọn để xem chi tiết
 
 // Danh sách sự kiện quan trọng của 4 phần theo các tháng
 export const GRADUATION_EVENTS = [
     // --- Năm 2026 ---
     // Tháng 10/2026 (Tháng 9 trong JS Date: 0-indexed)
-    { day: 1, month: 9, year: 2026, part: 'd', title: '[Phần D - Đợt xét] Mở nhận hồ sơ xét tốt nghiệp Đợt 1' },
-    { day: 5, month: 9, year: 2026, part: 'a', title: '[Phần A - Tiêu chuẩn] Cập nhật khung điều kiện tốt nghiệp HK1' },
-    { day: 15, month: 9, year: 2026, part: 'c', title: '[Phần C - Hồ sơ] Tiếp nhận minh chứng chứng chỉ đợt đầu' },
-    { day: 31, month: 9, year: 2026, part: 'd', title: '[Phần D - Đợt xét] Chốt danh sách sinh viên dự kiến' },
+    { day: 1, month: 9, year: 2026, part: 'd', partName: 'Phần D - Đợt xét', title: 'Mở nhận hồ sơ xét tốt nghiệp Đợt 1', desc: 'Bắt đầu mở cổng trực tuyến tiếp nhận hồ sơ xét tốt nghiệp Đợt 1 năm học 2026-2027 cho sinh viên các khóa K20, K21, K22.' },
+    { day: 5, month: 9, year: 2026, part: 'a', partName: 'Phần A - Tiêu chuẩn', title: 'Cập nhật khung điều kiện tốt nghiệp HK1', desc: 'Hội đồng đào tạo ban hành chuẩn đầu ra, điều kiện tín chỉ tích lũy tối thiểu và chuẩn ngoại ngữ/tin học.' },
+    { day: 15, month: 9, year: 2026, part: 'c', partName: 'Phần C - Hồ sơ', title: 'Tiếp nhận minh chứng chứng chỉ đợt đầu', desc: 'Sinh viên nộp bổ sung bản sao công chứng chứng chỉ TOEIC, CNTT cơ bản và các hồ sơ miễn giảm học phần.' },
+    { day: 31, month: 9, year: 2026, part: 'd', partName: 'Phần D - Đợt xét', title: 'Chốt danh sách sinh viên dự kiến', desc: 'Khoa Công nghệ Thông tin rà soát và lập danh sách sinh viên đủ điều kiện dự kiến đợt 1.' },
 
     // Tháng 11/2026 (Tháng 10 trong JS Date: 0-indexed)
-    { day: 5, month: 10, year: 2026, part: 'a', title: '[Phần A - Tiêu chuẩn] Rà soát đối chiếu tiêu chuẩn tín chỉ & GPA' },
-    { day: 10, month: 10, year: 2026, part: 'c', title: '[Phần C - Hồ sơ] Hạn cuối nộp bổ sung hồ sơ đề nghị tốt nghiệp' },
-    { day: 18, month: 10, year: 2026, part: 'd', title: '[Phần D - Đợt xét] Hạn chót đợt xét tốt nghiệp Đợt 1' },
-    { day: 25, month: 10, year: 2026, part: 'b', title: '[Phần B - Kết quả] Công bố kết quả xét tốt nghiệp chính thức' },
+    { day: 5, month: 10, year: 2026, part: 'a', partName: 'Phần A - Tiêu chuẩn', title: 'Rà soát đối chiếu tiêu chuẩn tín chỉ & GPA', desc: 'Hệ thống tự động quét và kiểm tra điều kiện tốt nghiệp: tối thiểu 120-135 tín chỉ, GPA ≥ 2.00, không nợ môn bắt buộc.' },
+    { day: 10, month: 10, year: 2026, part: 'c', partName: 'Phần C - Hồ sơ', title: 'Tiếp nhận & đối soát hồ sơ tốt nghiệp', desc: 'Phòng Đào tạo mở tiếp nhận hồ sơ đề nghị tốt nghiệp bản giấy, đối soát tính hợp lệ của văn bằng chứng chỉ và ảnh làm bằng.' },
+    { day: 12, month: 10, year: 2026, part: 'c', partName: 'Phần C - Hồ sơ', title: 'Hạn chót nộp bổ sung chứng chỉ ngoại ngữ & tin học', desc: 'Hạn cuối cùng để sinh viên nộp bổ sung chứng chỉ Tiếng Anh (TOEIC/IELTS) và Tin học (MOS/IC3) để kịp xét đợt 1.' },
+    { day: 18, month: 10, year: 2026, part: 'd', partName: 'Phần D - Đợt xét', title: 'Hạn chót đợt xét tốt nghiệp Đợt 1 & Họp Hội đồng', desc: 'Đóng cổng tiếp nhận hồ sơ trực tuyến Đợt 1 năm học 2026-2027. Hội đồng xét tốt nghiệp họp thẩm định danh sách.' },
+    { day: 25, month: 10, year: 2026, part: 'b', partName: 'Phần B - Kết quả', title: 'Công bố kết quả xét tốt nghiệp chính thức', desc: 'Ban hành quyết định công nhận tốt nghiệp, công bố danh sách đạt chuẩn và xếp loại tốt nghiệp (Xuất sắc, Giỏi, Khá).' },
 
     // Tháng 12/2026 (Tháng 11 trong JS Date)
-    { day: 10, month: 11, year: 2026, part: 'b', title: '[Phần B - Kết quả] Lễ trao bằng tốt nghiệp Đợt 1' },
+    { day: 10, month: 11, year: 2026, part: 'b', partName: 'Phần B - Kết quả', title: 'Lễ trao bằng tốt nghiệp Đợt 1', desc: 'Tổ chức lễ bế giảng và trao bằng tốt nghiệp cử nhân, kỹ sư cho các tân cử nhân đạt chuẩn.' },
 
     // --- Năm 2027 ---
     // Tháng 3/2027 (Tháng 2 trong JS Date)
-    { day: 1, month: 2, year: 2027, part: 'd', title: '[Phần D - Đợt xét] Mở nhận hồ sơ xét tốt nghiệp Đợt 2' },
-    { day: 10, month: 2, year: 2027, part: 'a', title: '[Phần A - Tiêu chuẩn] Rà soát điều kiện tốt nghiệp HK2' },
-    { day: 20, month: 2, year: 2027, part: 'c', title: '[Phần C - Hồ sơ] Hạn nộp hồ sơ xét Đợt 2' },
-    { day: 30, month: 3, year: 2027, part: 'd', title: '[Phần D - Đợt xét] Hạn chót nộp hồ sơ xét Đợt 2' },
-    { day: 15, month: 4, year: 2027, part: 'b', title: '[Phần B - Kết quả] Công bố kết quả xét Đợt 2' },
+    { day: 1, month: 2, year: 2027, part: 'd', partName: 'Phần D - Đợt xét', title: 'Mở nhận hồ sơ xét tốt nghiệp Đợt 2', desc: 'Bắt đầu tiếp nhận hồ sơ xét tốt nghiệp học kỳ 2 năm học 2026-2027.' },
+    { day: 10, month: 2, year: 2027, part: 'a', partName: 'Phần A - Tiêu chuẩn', title: 'Rà soát điều kiện tốt nghiệp HK2', desc: 'Cập nhật tiêu chuẩn cho các sinh viên làm đồ án tốt nghiệp trong học kỳ 2.' },
+    { day: 20, month: 2, year: 2027, part: 'c', partName: 'Phần C - Hồ sơ', title: 'Hạn nộp hồ sơ xét Đợt 2', desc: 'Sinh viên nộp hồ sơ đăng ký tốt nghiệp bổ sung HK2.' },
+    { day: 30, month: 3, year: 2027, part: 'd', partName: 'Phần D - Đợt xét', title: 'Hạn chót nộp hồ sơ xét Đợt 2', desc: 'Khóa cổng đăng ký xét tốt nghiệp Đợt 2.' },
+    { day: 15, month: 4, year: 2027, part: 'b', partName: 'Phần B - Kết quả', title: 'Công bố kết quả xét Đợt 2', desc: 'Công bố danh sách tốt nghiệp Đợt 2 năm học 2026-2027.' },
 
     // Sự kiện neo mặc định cho các tháng khác
-    { day: 5, part: 'a', title: '[Phần A - Tiêu chuẩn] Rà soát quy chuẩn đào tạo & tín chỉ' },
-    { day: 12, part: 'c', title: '[Phần C - Hồ sơ] Kiểm tra hồ sơ & chứng chỉ sinh viên' },
-    { day: 18, part: 'd', title: '[Phần D - Đợt xét] Hạn chót nộp hồ sơ đợt xét' },
-    { day: 25, part: 'b', title: '[Phần B - Kết quả] Họp hội đồng công bố kết quả xét' }
+    { day: 5, part: 'a', partName: 'Phần A - Tiêu chuẩn', title: 'Rà soát quy chuẩn đào tạo & tín chỉ', desc: 'Kiểm tra khung chương trình và điều kiện tích lũy tín chỉ.' },
+    { day: 10, part: 'c', partName: 'Phần C - Hồ sơ', title: 'Mở cổng nộp hồ sơ trực tuyến', desc: 'Tiếp nhận hồ sơ đăng ký xét tốt nghiệp của sinh viên.' },
+    { day: 12, part: 'c', partName: 'Phần C - Hồ sơ', title: 'Kiểm tra hồ sơ & chứng chỉ sinh viên', desc: 'Đối soát văn bằng, chứng chỉ ngoại ngữ và tin học lưu trữ trên hệ thống.' },
+    { day: 18, part: 'd', partName: 'Phần D - Đợt xét', title: 'Hạn chót nộp hồ sơ đợt xét', desc: 'Khóa tiếp nhận hồ sơ đợt xét trong tháng.' },
+    { day: 25, part: 'b', partName: 'Phần B - Kết quả', title: 'Họp hội đồng công bố kết quả xét', desc: 'Hội đồng xét tốt nghiệp họp và công bố danh sách đạt chuẩn.' }
 ];
+
+function getPartName(part) {
+    switch (part) {
+        case 'a': return 'Phần A - Tiêu chuẩn';
+        case 'b': return 'Phần B - Kết quả';
+        case 'c': return 'Phần C - Hồ sơ';
+        case 'd': return 'Phần D - Đợt xét';
+        default: return 'Sự kiện tốt nghiệp';
+    }
+}
 
 export function renderMiniCalendar(customEvents = []) {
     const container = document.getElementById('miniCalendar');
@@ -62,6 +75,9 @@ export function renderMiniCalendar(customEvents = []) {
         daysHTML += '<span class="cal-day empty"></span>';
     }
 
+    // Lưu map sự kiện theo ngày để gắn click handler
+    const dayEventsMap = new Map();
+
     for (let d = 1; d <= daysInMonth; d++) {
         const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) ? ' today' : '';
 
@@ -78,6 +94,8 @@ export function renderMiniCalendar(customEvents = []) {
             matchingEvents = allEvents.filter(ev => ev.month === undefined && ev.day === d);
         }
 
+        dayEventsMap.set(d, matchingEvents);
+
         let dotsHTML = '';
         let tooltipText = '';
 
@@ -93,10 +111,11 @@ export function renderMiniCalendar(customEvents = []) {
         }
 
         const hasEventClass = matchingEvents.length > 0 ? ' has-event' : '';
-        const titleAttr = tooltipText ? ` title="${escapeHtml(tooltipText)}"` : '';
+        const isSelectedClass = (selectedDay === d) ? ' cal-day-selected' : '';
+        const titleAttr = tooltipText ? ` title="${escapeHtml(tooltipText)}"` : ' title="Nhấp để xem sự kiện ngày này"';
 
         daysHTML += `
-            <span class="cal-day${isToday}${hasEventClass}"${titleAttr}>
+            <span class="cal-day${isToday}${hasEventClass}${isSelectedClass}" data-day="${d}"${titleAttr}>
                 <span class="day-num">${d}</span>
                 ${dotsHTML ? `<span class="cal-day-dots">${dotsHTML}</span>` : ''}
             </span>
@@ -125,13 +144,26 @@ export function renderMiniCalendar(customEvents = []) {
                 <span class="d-flex align-items-center gap-1"><span class="cal-legend-dot dot-part-d"></span>D: Đợt xét</span>
             </div>
         </div>
+        <div class="cal-event-box" id="calEventBox" style="display: none;"></div>
     `;
+
+    // Gắn sự kiện click cho từng ngày trên lịch
+    container.querySelectorAll('.cal-day:not(.empty)').forEach(dayEl => {
+        dayEl.addEventListener('click', () => {
+            const dayNum = parseInt(dayEl.getAttribute('data-day'), 10);
+            if (dayNum) {
+                const events = dayEventsMap.get(dayNum) || [];
+                handleCalendarDayClick(dayNum, month, year, events, container);
+            }
+        });
+    });
 
     const prevBtn = container.querySelector('#calPrevBtn');
     const nextBtn = container.querySelector('#calNextBtn');
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
             currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+            selectedDay = null;
             renderMiniCalendar(customEvents);
             animateCalendarTransition(-1);
         });
@@ -139,9 +171,86 @@ export function renderMiniCalendar(customEvents = []) {
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
             currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+            selectedDay = null;
             renderMiniCalendar(customEvents);
             animateCalendarTransition(1);
         });
+    }
+}
+
+function handleCalendarDayClick(day, month, year, events, container) {
+    const eventBox = container.querySelector('#calEventBox');
+    if (!eventBox) return;
+
+    // Nếu nhấp lại đúng ngày đang mở -> đóng lại
+    if (selectedDay === day && eventBox.style.display !== 'none') {
+        eventBox.style.display = 'none';
+        selectedDay = null;
+        container.querySelectorAll('.cal-day').forEach(el => el.classList.remove('cal-day-selected'));
+        return;
+    }
+
+    selectedDay = day;
+    container.querySelectorAll('.cal-day').forEach(el => el.classList.remove('cal-day-selected'));
+    const targetDayEl = container.querySelector(`.cal-day[data-day="${day}"]`);
+    if (targetDayEl) targetDayEl.classList.add('cal-day-selected');
+
+    const formattedDate = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+
+    if (!events || events.length === 0) {
+        eventBox.innerHTML = `
+            <div class="cal-event-box-header">
+                <span><i class="bi bi-calendar3 me-1 text-primary"></i>Ngày ${formattedDate}</span>
+                <button type="button" class="btn-close cal-event-close" style="font-size: 0.65rem;" title="Đóng"></button>
+            </div>
+            <div class="cal-event-empty-box">
+                <i class="bi bi-calendar-x text-muted fs-5 d-block mb-1"></i>
+                Không có sự kiện hoặc hạn chót nào trong ngày này.
+            </div>
+        `;
+    } else {
+        const eventsHTML = events.map(ev => {
+            const part = ev.part || 'd';
+            const partName = ev.partName || getPartName(part);
+            return `
+                <div class="cal-event-item item-part-${part}">
+                    <span class="cal-event-item-badge badge-part-${part}">
+                        <span class="cal-mini-dot dot-part-${part} me-1" style="display:inline-block;vertical-align:middle;"></span>${escapeHtml(partName)}
+                    </span>
+                    <div class="cal-event-item-title">${escapeHtml(ev.title)}</div>
+                    ${ev.desc ? `<div class="cal-event-item-desc">${escapeHtml(ev.desc)}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        eventBox.innerHTML = `
+            <div class="cal-event-box-header">
+                <span><i class="bi bi-calendar-event-fill me-1 text-primary"></i>Sự kiện ngày ${formattedDate} (${events.length})</span>
+                <button type="button" class="btn-close cal-event-close" style="font-size: 0.65rem;" title="Đóng"></button>
+            </div>
+            <div class="cal-events-list">
+                ${eventsHTML}
+            </div>
+        `;
+    }
+
+    eventBox.style.display = 'block';
+
+    const closeBtn = eventBox.querySelector('.cal-event-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            eventBox.style.display = 'none';
+            selectedDay = null;
+            container.querySelectorAll('.cal-day').forEach(el => el.classList.remove('cal-day-selected'));
+        });
+    }
+
+    if (window.gsap) {
+        gsap.fromTo(eventBox,
+            { opacity: 0, y: 8, scale: 0.96 },
+            { opacity: 1, y: 0, scale: 1, duration: 0.25, ease: 'power2.out', clearProps: 'all' }
+        );
     }
 }
 

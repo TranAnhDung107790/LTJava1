@@ -151,15 +151,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initEventListeners() {
-    // Filter by status
+    // 1. Filter bằng nút Segmented Pills 1 chạm trực quan
+    const filterPills = document.querySelectorAll('.prof-filter-btn');
     const filterStatus = document.getElementById('filterStatus');
+
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            filterPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const val = pill.getAttribute('data-status') || '';
+            if (filterStatus) filterStatus.value = val;
+            loadProfiles();
+        });
+    });
+
     if (filterStatus) {
         filterStatus.addEventListener('change', () => {
+            const currentVal = filterStatus.value;
+            filterPills.forEach(p => {
+                if ((p.getAttribute('data-status') || '') === currentVal) {
+                    p.classList.add('active');
+                } else {
+                    p.classList.remove('active');
+                }
+            });
             loadProfiles();
         });
     }
 
-    // Search
+    // 2. Search
     const btnSearch = document.getElementById('btnSearch');
     const searchKeyword = document.getElementById('searchKeyword');
 
@@ -177,32 +197,100 @@ function initEventListeners() {
         });
     }
 
-    // Refresh
+    // 3. Refresh (Đặt lại trạng thái các nút và bộ lọc)
     const btnRefresh = document.getElementById('btnRefresh');
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {
             if (searchKeyword) searchKeyword.value = '';
             if (filterStatus) filterStatus.value = '';
+            filterPills.forEach(p => {
+                if ((p.getAttribute('data-status') || '') === '') {
+                    p.classList.add('active');
+                } else {
+                    p.classList.remove('active');
+                }
+            });
             loadProfiles();
         });
     }
 
-    // Open Create Modal
+    // 4. Open Create Modal
     const btnOpenCreateModal = document.getElementById('btnOpenCreateModal');
     if (btnOpenCreateModal) {
         btnOpenCreateModal.addEventListener('click', openCreateModal);
     }
 
-    // Save Profile Form
+    // 5. Nút Quyết định trong Modal Xét duyệt (Decision Selection Cards)
+    document.querySelectorAll('.prof-decision-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const val = card.getAttribute('data-val');
+            setReviewDecision(val, true);
+        });
+    });
+
+    // 6. Save Profile Form
     const profileForm = document.getElementById('profileForm');
     if (profileForm) {
         profileForm.addEventListener('submit', handleSaveProfile);
     }
 
-    // Submit Review Form
+    // 7. Submit Review Form
     const reviewForm = document.getElementById('reviewForm');
     if (reviewForm) {
         reviewForm.addEventListener('submit', handleSubmitReview);
+    }
+}
+
+// Cập nhật số đếm trên các nút lọc trạng thái 1 chạm
+function updateFilterCounts(allList) {
+    if (!Array.isArray(allList)) return;
+    const countAll = allList.length;
+    const countPending = allList.filter(p => (p.status || '').toLowerCase() === 'pending').length;
+    const countApproved = allList.filter(p => (p.status || '').toLowerCase() === 'approved').length;
+    const countRejected = allList.filter(p => (p.status || '').toLowerCase() === 'rejected').length;
+
+    const elAll = document.getElementById('countAll');
+    const elPending = document.getElementById('countPending');
+    const elApproved = document.getElementById('countApproved');
+    const elRejected = document.getElementById('countRejected');
+
+    if (elAll) elAll.textContent = countAll;
+    if (elPending) elPending.textContent = countPending;
+    if (elApproved) elApproved.textContent = countApproved;
+    if (elRejected) elRejected.textContent = countRejected;
+}
+
+// Chuyển đổi trạng thái quyết định phê duyệt và đồng bộ giao diện nút
+function setReviewDecision(status, autoFillTemplate = false) {
+    const hiddenInput = document.getElementById('reviewStatus');
+    if (hiddenInput) hiddenInput.value = status;
+
+    document.querySelectorAll('.prof-decision-card').forEach(c => {
+        if (c.getAttribute('data-val') === status) {
+            c.classList.add('active');
+        } else {
+            c.classList.remove('active');
+        }
+    });
+
+    const submitBtn = document.getElementById('btnSubmitReview');
+    const noteEl = document.getElementById('reviewNote');
+
+    if (submitBtn) {
+        submitBtn.className = 'btn btn-sm fw-bold px-3 shadow-sm';
+        if (status === 'Approved') {
+            submitBtn.classList.add('btn-success');
+            submitBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Xác nhận chấp thuận hồ sơ';
+            if (autoFillTemplate && (!noteEl.value || noteEl.value.includes('chứng chỉ') || noteEl.value.includes('Từ chối') || noteEl.value.includes('chưa đạt'))) {
+                noteEl.value = 'Hồ sơ đầy đủ, đủ điều kiện công nhận tốt nghiệp.';
+            }
+        } else {
+            submitBtn.classList.add('btn-danger');
+            submitBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Xác nhận từ chối hồ sơ';
+            if (autoFillTemplate && (!noteEl.value || noteEl.value.includes('công nhận') || noteEl.value.includes('đủ điều kiện'))) {
+                noteEl.value = 'Hồ sơ chưa đạt điều kiện tốt nghiệp (chưa đủ tín chỉ tích lũy hoặc thiếu chứng chỉ chuẩn đầu ra).';
+            }
+        }
     }
 }
 
@@ -263,6 +351,9 @@ function renderTable(items, triggerAnimation = false) {
         totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${items.length} hồ sơ`;
     }
 
+    // Luôn cập nhật số lượng trên các nút lọc trạng thái
+    updateFilterCounts(profilesList);
+
     if (items.length === 0) {
         tableBody.innerHTML = `
             <tr>
@@ -304,6 +395,46 @@ function renderTable(items, triggerAnimation = false) {
         // Ghi chú
         const noteDisplay = item.note ? escapeHtml(item.note) : '<span class="text-muted">-</span>';
 
+        // Nút Xét duyệt: Hồ sơ Pending nổi bật, Hồ sơ đã duyệt/từ chối được làm mờ (disabled)
+        const isPending = (item.status === 'Pending');
+        const isApproved = (item.status === 'Approved');
+        const isRejected = (item.status === 'Rejected');
+
+        let reviewBtnHtml = '';
+        if (isPending) {
+            reviewBtnHtml = `
+                <button class="prof-btn-review is-pending btn-review" data-id="${item.id}" title="Xét duyệt ngay (Đang chờ duyệt)">
+                    <i class="bi bi-exclamation-circle-fill"></i><span>Xét duyệt</span>
+                </button>
+            `;
+        } else if (isApproved) {
+            const dateStr = item.reviewDate ? item.reviewDate.substring(0, 10) : '';
+            const titleStr = dateStr 
+                ? `Hồ sơ đã được phê duyệt ngày ${dateStr}. Dùng nút Chỉnh sửa nếu cần thay đổi.` 
+                : 'Hồ sơ đã được phê duyệt. Dùng nút Chỉnh sửa nếu cần thay đổi.';
+            reviewBtnHtml = `
+                <button class="prof-btn-review is-reviewed is-approved" disabled title="${titleStr}">
+                    <i class="bi bi-check-circle-fill text-success"></i><span>Đã duyệt</span>
+                </button>
+            `;
+        } else if (isRejected) {
+            const dateStr = item.reviewDate ? item.reviewDate.substring(0, 10) : '';
+            const titleStr = dateStr 
+                ? `Hồ sơ đã bị từ chối ngày ${dateStr}. Dùng nút Chỉnh sửa nếu cần thay đổi.` 
+                : 'Hồ sơ đã bị từ chối. Dùng nút Chỉnh sửa nếu cần thay đổi.';
+            reviewBtnHtml = `
+                <button class="prof-btn-review is-reviewed is-rejected" disabled title="${titleStr}">
+                    <i class="bi bi-x-circle-fill text-danger"></i><span>Đã từ chối</span>
+                </button>
+            `;
+        } else {
+            reviewBtnHtml = `
+                <button class="prof-btn-review btn-review" data-id="${item.id}" title="Xét duyệt hồ sơ">
+                    <i class="bi bi-clipboard-check-fill"></i><span>Xét duyệt</span>
+                </button>
+            `;
+        }
+
         return `
             <tr>
                 <td class="text-center text-muted small">${index + 1}</td>
@@ -315,15 +446,17 @@ function renderTable(items, triggerAnimation = false) {
                 <td class="small">${reviewDateDisplay}</td>
                 <td class="small text-secondary" style="max-width: 220px;">${noteDisplay}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-outline-info me-1 btn-review" data-id="${item.id}" title="Xét duyệt hồ sơ">
-                        <i class="bi bi-check2-square"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${item.id}" title="Chỉnh sửa">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}" title="Xóa">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="prof-btn-group">
+                        ${reviewBtnHtml}
+                        <div class="prof-secondary-actions">
+                            <button class="prof-btn-edit btn-edit" data-id="${item.id}" title="Chỉnh sửa thông tin">
+                                <i class="bi bi-pencil-fill"></i>
+                            </button>
+                            <button class="prof-btn-delete btn-delete" data-id="${item.id}" title="Xóa hồ sơ">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         `;
@@ -358,17 +491,20 @@ function renderTable(items, triggerAnimation = false) {
 // 2. PHÊ DUYỆT HỒ SƠ TỐT NGHIỆP
 // =================================================================================
 function openReviewModal(id) {
-    const item = profilesList.find(x => x.id === id);
+    const item = profilesList.find(x => String(x.id) === String(id));
     if (!item) return;
 
     document.getElementById('reviewProfileId').value = item.id;
-    document.getElementById('reviewStatus').value = item.status === 'Approved' ? 'Approved' : (item.status === 'Rejected' ? 'Rejected' : 'Approved');
     document.getElementById('reviewReviewerId').value = item.reviewerId || 'cedeed49-0178-4394-a16c-02bc11cdb15a';
     document.getElementById('reviewNote').value = item.note || '';
 
     const student = item.student || studentsMap.get(item.student?.id);
     const studentText = student ? `${student.fullName} (${student.studentCode})` : 'Mã: ' + item.profileCode;
     document.getElementById('reviewProfileInfo').textContent = `Mã hồ sơ: ${item.profileCode} | Sinh viên: ${studentText}`;
+
+    // Đồng bộ trạng thái quyết định phê duyệt và nhãn nút bấm (Mặc định Approved, hoặc Rejected nếu trạng thái hiện tại là Rejected)
+    const targetStatus = (item.status === 'Rejected') ? 'Rejected' : 'Approved';
+    setReviewDecision(targetStatus, !item.note);
 
     if (reviewModalInstance) {
         reviewModalInstance.show();
@@ -380,15 +516,56 @@ async function handleSubmitReview(e) {
     const id = document.getElementById('reviewProfileId').value;
     const submitBtn = document.getElementById('btnSubmitReview');
 
+    const statusVal = document.getElementById('reviewStatus').value || 'Approved';
+    let reviewerIdVal = document.getElementById('reviewReviewerId').value.trim();
+    if (!reviewerIdVal) {
+        reviewerIdVal = 'cedeed49-0178-4394-a16c-02bc11cdb15a';
+    }
+    const noteVal = document.getElementById('reviewNote').value.trim() || null;
+
     const payload = {
-        status: document.getElementById('reviewStatus').value,
-        reviewerId: document.getElementById('reviewReviewerId').value.trim() || null,
-        note: document.getElementById('reviewNote').value.trim() || null
+        status: statusVal,
+        reviewerId: reviewerIdVal,
+        note: noteVal
     };
 
     submitBtn.disabled = true;
 
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    const isRealUuid = UUID_REGEX.test(id);
+
     try {
+        if (!isRealUuid) {
+            // Xử lý hồ sơ mẫu (seed data) trong phiên làm việc hiện tại:
+            // Cập nhật trực tiếp dữ liệu bộ nhớ để không gửi id phi-UUID lên Spring Boot (tránh lỗi 400 Bad Request)
+            const nowStr = new Date().toISOString().substring(0, 10);
+            
+            const targetProfile = profilesList.find(p => String(p.id) === String(id));
+            if (targetProfile) {
+                targetProfile.status = payload.status;
+                targetProfile.reviewDate = nowStr;
+                targetProfile.reviewerId = payload.reviewerId;
+                targetProfile.note = payload.note;
+            }
+
+            const targetSeed = SEED_PROFILES.find(p => String(p.id) === String(id));
+            if (targetSeed) {
+                targetSeed.status = payload.status;
+                targetSeed.reviewDate = nowStr;
+                targetSeed.reviewerId = payload.reviewerId;
+                targetSeed.note = payload.note;
+            }
+
+            if (reviewModalInstance) {
+                reviewModalInstance.hide();
+            }
+
+            showAlert('success', `Đã xét duyệt thành công hồ sơ: ${payload.status === 'Approved' ? 'Chấp thuận' : 'Từ chối'}!`);
+            renderTable(profilesList, true);
+            return;
+        }
+
+        // Trường hợp hồ sơ thực trong cơ sở dữ liệu (UUID hợp lệ):
         const response = await fetch(`${API_ENDPOINTS.GRADUATION_PROFILES}/${id}/review`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -396,15 +573,30 @@ async function handleSubmitReview(e) {
         });
 
         if (!response.ok) {
-            throw new Error(`Lỗi cập nhật trạng thái (${response.status})`);
+            let errorMsg = `Lỗi cập nhật trạng thái (${response.status})`;
+            try {
+                const errData = await response.json();
+                if (errData && (errData.message || errData.error)) {
+                    errorMsg = errData.message || errData.error;
+                }
+            } catch (_) {}
+            throw new Error(errorMsg);
+        }
+
+        const updatedData = await response.json();
+
+        // Cập nhật lại trong danh sách hồ sơ
+        const idx = profilesList.findIndex(p => String(p.id) === String(id));
+        if (idx !== -1) {
+            profilesList[idx] = { ...profilesList[idx], ...updatedData };
         }
 
         if (reviewModalInstance) {
             reviewModalInstance.hide();
         }
 
-        showAlert('success', `Đã cập nhật trạng thái hồ sơ thành công: ${payload.status}!`);
-        loadProfiles();
+        showAlert('success', `Đã cập nhật trạng thái hồ sơ thành công: ${payload.status === 'Approved' ? 'Chấp thuận' : 'Từ chối'}!`);
+        renderTable(profilesList, true);
     } catch (error) {
         alert(`Không thể duyệt hồ sơ: ${error.message}`);
     } finally {
@@ -427,7 +619,7 @@ function openCreateModal() {
 }
 
 function openEditModal(id) {
-    const item = profilesList.find(x => x.id === id);
+    const item = profilesList.find(x => String(x.id) === String(id));
     if (!item) return;
 
     document.getElementById('profileModalLabel').innerHTML = `<i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin hồ sơ`;
@@ -466,7 +658,38 @@ async function handleSaveProfile(e) {
     const submitBtn = document.getElementById('btnSaveProfile');
     submitBtn.disabled = true;
 
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
     try {
+        if (isEdit && !UUID_REGEX.test(id)) {
+            const target = profilesList.find(p => String(p.id) === String(id));
+            if (target) {
+                target.profileCode = payload.profileCode;
+                target.sessionId = payload.sessionId;
+                target.status = payload.status;
+                target.note = payload.note;
+                if (studentsMap.has(studentId)) {
+                    target.student = studentsMap.get(studentId);
+                }
+            }
+            const sTarget = SEED_PROFILES.find(p => String(p.id) === String(id));
+            if (sTarget) {
+                sTarget.profileCode = payload.profileCode;
+                sTarget.sessionId = payload.sessionId;
+                sTarget.status = payload.status;
+                sTarget.note = payload.note;
+                if (studentsMap.has(studentId)) {
+                    sTarget.student = studentsMap.get(studentId);
+                }
+            }
+            if (profileModalInstance) {
+                profileModalInstance.hide();
+            }
+            showAlert('success', 'Cập nhật hồ sơ thành công!');
+            renderTable(profilesList, true);
+            return;
+        }
+
         const url = isEdit
             ? `${API_ENDPOINTS.GRADUATION_PROFILES}/${id}`
             : API_ENDPOINTS.GRADUATION_PROFILES;
@@ -498,6 +721,16 @@ async function handleSaveProfile(e) {
 
 async function handleDeleteProfile(id) {
     if (!confirm('Bạn có chắc chắn muốn xóa hồ sơ này?')) {
+        return;
+    }
+
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!UUID_REGEX.test(id)) {
+        profilesList = profilesList.filter(p => String(p.id) !== String(id));
+        const sIdx = SEED_PROFILES.findIndex(p => String(p.id) === String(id));
+        if (sIdx !== -1) SEED_PROFILES.splice(sIdx, 1);
+        showAlert('success', 'Đã xóa hồ sơ thành công!');
+        renderTable(profilesList, true);
         return;
     }
 

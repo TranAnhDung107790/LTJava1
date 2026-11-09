@@ -348,6 +348,69 @@ body.sidebar-collapse .btn-sidebar-toggle i {
 }
 
 /* ==========================================================================
+   🏆 SIDEBAR MESSI CARD (Phần D — Chỉ nằm trọn vẹn trong sidebar)
+   ========================================================================== */
+.sidebar-messi-box {
+    padding: 0.75rem 0.85rem 1.25rem !important;
+    margin-top: 1.25rem !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+.sidebar-messi-card {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    border-radius: 14px !important;
+    padding: 0.5rem !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    backdrop-filter: blur(8px) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-align: center !important;
+    overflow: hidden !important;
+}
+
+.sidebar-messi-card:hover {
+    transform: translateY(-3px) scale(1.02) !important;
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-color: rgba(255, 255, 255, 0.38) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35) !important;
+}
+
+.sidebar-messi-img {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 195px !important;
+    object-fit: cover !important;
+    object-position: top center !important;
+    border-radius: 10px !important;
+    display: block !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.sidebar-messi-badge {
+    margin-top: 0.5rem !important;
+    padding: 0.28rem 0.65rem !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 20px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: #FFFFFF !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    letter-spacing: -0.01em !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Tuyệt đối ẩn khi sidebar collapse hoặc màn hình nhỏ đóng sidebar, không bao giờ lộ ra ngoài phần giữa */
+body.sidebar-collapse .sidebar-messi-box,
+aside.app-sidebar:not(.sidebar-open) .sidebar-messi-box {
+    display: none !important;
+}
+
+/* ==========================================================================
    🔝 HEADER
    ========================================================================== */
 
@@ -1033,10 +1096,15 @@ nav.app-header,
     font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-main);
-    cursor: default;
+    cursor: pointer !important;
     margin: 0 auto;
     position: relative;
     transition: all 0.2s ease;
+}
+
+.mini-calendar .cal-day:hover {
+    background: var(--pastel-lavender) !important;
+    border-radius: 50%;
 }
 
 .mini-calendar .cal-day.today {
@@ -1044,6 +1112,17 @@ nav.app-header,
     color: #FFFFFF !important;
     font-weight: 700;
     box-shadow: 0 2px 6px rgba(124, 92, 252, 0.4);
+}
+
+.mini-calendar .cal-day.cal-day-selected {
+    box-shadow: 0 0 0 2px #7C3AED, 0 4px 10px rgba(124, 58, 237, 0.25) !important;
+    background: #EDE9FE !important;
+    color: #4D44B5 !important;
+    font-weight: 700;
+}
+
+.mini-calendar .cal-day.today.cal-day-selected {
+    box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #7C3AED !important;
 }
 
 /* Các chấm sự kiện cho 4 phần trên lịch */
@@ -1086,6 +1165,7 @@ nav.app-header,
 
 .mini-calendar .cal-day.empty {
     visibility: hidden;
+    cursor: default !important;
 }
 
 /* Chú thích màu sắc 4 phần */
@@ -1101,6 +1181,82 @@ nav.app-header,
 .dot-part-b { background: #059669 !important; } /* Green - Kết quả */
 .dot-part-c { background: #D97706 !important; } /* Amber - Hồ sơ */
 .dot-part-d { background: #7C3AED !important; } /* Purple - Đợt xét */
+
+/* Interactive Calendar Event Popover Box */
+.cal-event-box {
+    margin-top: 0.85rem;
+    padding: 0.85rem;
+    background: #F8F7FF;
+    border: 1.5px solid #E4E0FB;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(124, 92, 252, 0.08);
+    transition: all 0.3s ease;
+}
+
+.cal-event-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.45rem;
+    margin-bottom: 0.45rem;
+    border-bottom: 1px dashed #DDD6FE;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #4D44B5;
+}
+
+.cal-event-item {
+    padding: 0.55rem 0.65rem;
+    border-radius: 8px;
+    background: #FFFFFF;
+    border-left: 3.5px solid #7C3AED;
+    margin-bottom: 0.45rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.cal-event-item:last-child {
+    margin-bottom: 0;
+}
+
+.cal-event-item.item-part-a { border-left-color: #2563EB; }
+.cal-event-item.item-part-b { border-left-color: #059669; }
+.cal-event-item.item-part-c { border-left-color: #D97706; }
+.cal-event-item.item-part-d { border-left-color: #7C3AED; }
+
+.cal-event-item-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 0.25rem;
+}
+
+.cal-event-item-badge.badge-part-a { background: #DBEAFE; color: #1D4ED8; }
+.cal-event-item-badge.badge-part-b { background: #D1FAE5; color: #047857; }
+.cal-event-item-badge.badge-part-c { background: #FEF3C7; color: #B45309; }
+.cal-event-item-badge.badge-part-d { background: #EDE9FE; color: #6D28D9; }
+
+.cal-event-item-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1E1B4B;
+    line-height: 1.35;
+    margin-bottom: 0.2rem;
+}
+
+.cal-event-item-desc {
+    font-size: 0.73rem;
+    color: #64748B;
+    line-height: 1.35;
+}
+
+.cal-event-empty-box {
+    font-size: 0.78rem;
+    color: #64748B;
+    text-align: center;
+    padding: 0.4rem 0;
+}
 
 /* Team Members Widget */
 .team-widget {
@@ -1440,4 +1596,279 @@ button:active,
 /* Modal Smooth Physics Override */
 .modal.fade .modal-dialog {
     transition: none !important;
+}
+
+/* ==========================================================================
+   🎓 GRADUATION PROFILE - REDESIGNED BUTTON SYSTEM (ISOLATED SCOPE)
+   ========================================================================== */
+
+/* 1. Nhóm nút Thao tác từng dòng trong Bảng (Table Row Actions) */
+.prof-btn-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+/* Nút Duyệt hồ sơ - Pill Button trực quan nổi bật */
+.prof-btn-review {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.32rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    background: #EEF2FF;
+    color: #4338CA;
+    border: 1px solid #C7D2FE;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    text-decoration: none;
+    line-height: 1.2;
+}
+
+.prof-btn-review i {
+    font-size: 0.85rem;
+}
+
+.prof-btn-review:hover {
+    background: #4F46E5;
+    color: #FFFFFF;
+    border-color: #4F46E5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28);
+}
+
+.prof-btn-review:active {
+    transform: translateY(0);
+}
+
+/* Hồ sơ chờ duyệt (Pending) - Nút duyệt có màu hổ phách ấm để ưu tiên xử lý */
+.prof-btn-review.is-pending {
+    background: #FEF3C7;
+    color: #92400E;
+    border-color: #FCD34D;
+    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.15);
+}
+
+.prof-btn-review.is-pending:hover {
+    background: #D97706;
+    color: #FFFFFF;
+    border-color: #D97706;
+    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.32);
+}
+
+/* Hồ sơ đã xét duyệt (Approved / Rejected) - Làm mờ nút duyệt, khóa click, hướng dẫn dùng nút Sửa */
+.prof-btn-review.is-reviewed {
+    background: #F1F5F9 !important;
+    color: #94A3B8 !important;
+    border-color: #E2E8F0 !important;
+    opacity: 0.65;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+    pointer-events: auto;
+}
+
+.prof-btn-review.is-reviewed:hover {
+    background: #F1F5F9 !important;
+    color: #94A3B8 !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.prof-btn-review.is-reviewed i {
+    opacity: 0.75;
+}
+
+/* Cụm nút phụ (Sửa, Xóa) có vạch ngăn cách mỏng chống bấm nhầm */
+.prof-secondary-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding-left: 6px;
+    border-left: 1px solid #E2E8F0;
+}
+
+/* Nút Sửa */
+.prof-btn-edit {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #F8FAFC;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.prof-btn-edit:hover {
+    background: #EDE9FE;
+    color: #6D28D9;
+    border-color: #DDD6FE;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(109, 40, 217, 0.18);
+}
+
+/* Nút Xóa */
+.prof-btn-delete {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #FFF1F2;
+    color: #E11D48;
+    border: 1px solid #FFE4E6;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.prof-btn-delete:hover {
+    background: #E11D48;
+    color: #FFFFFF;
+    border-color: #E11D48;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(225, 29, 72, 0.25);
+}
+
+/* 2. Thanh lọc trạng thái 1 chạm (Segmented Status Filter Pills) */
+.prof-filter-group {
+    display: inline-flex;
+    align-items: center;
+    background: #FFFFFF;
+    padding: 3px;
+    border-radius: 12px;
+    border: 1px solid #E8E0FF;
+    gap: 2px;
+}
+
+.prof-filter-btn {
+    border: none;
+    background: transparent;
+    color: #64748B;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.7rem;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.prof-filter-btn:hover {
+    color: var(--purple-accent);
+    background: rgba(243, 238, 255, 0.5);
+}
+
+.prof-filter-btn.active {
+    background: linear-gradient(135deg, var(--purple-start), var(--purple-accent));
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(124, 92, 252, 0.3);
+}
+
+.prof-filter-btn .prof-count-badge {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.08);
+    color: inherit;
+    line-height: 1.1;
+}
+
+.prof-filter-btn.active .prof-count-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+}
+
+/* 3. Nút Quyết định trong Modal Phê duyệt (Decision Selection Cards) */
+.prof-decision-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 0.25rem;
+}
+
+.prof-decision-card {
+    border: 2px solid #E2E8F0;
+    border-radius: 12px;
+    background: #FFFFFF;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.prof-decision-card i {
+    font-size: 1.4rem;
+    transition: transform 0.2s ease;
+}
+
+.prof-decision-card .title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #334155;
+    line-height: 1.2;
+}
+
+.prof-decision-card .desc {
+    font-size: 0.7rem;
+    color: #94A3B8;
+    line-height: 1.1;
+}
+
+.prof-decision-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Kiểu Approved */
+.prof-decision-card.type-approved:hover,
+.prof-decision-card.type-approved.active {
+    border-color: #10B981;
+    background: #ECFDF5;
+}
+.prof-decision-card.type-approved i { color: #059669; }
+.prof-decision-card.type-approved.active .title { color: #065F46; }
+
+/* Kiểu Pending */
+.prof-decision-card.type-pending:hover,
+.prof-decision-card.type-pending.active {
+    border-color: #F59E0B;
+    background: #FFFBEB;
+}
+.prof-decision-card.type-pending i { color: #D97706; }
+.prof-decision-card.type-pending.active .title { color: #92400E; }
+
+/* Kiểu Rejected */
+.prof-decision-card.type-rejected:hover,
+.prof-decision-card.type-rejected.active {
+    border-color: #EF4444;
+    background: #FEF2F2;
+}
+.prof-decision-card.type-rejected i { color: #DC2626; }
+.prof-decision-card.type-rejected.active .title { color: #991B1B; }
+
+.prof-decision-card.active {
+    box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.2);
 }
