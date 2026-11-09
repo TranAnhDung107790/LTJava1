@@ -1,5 +1,6 @@
 package com.example.quanlydaotao.n11.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -7,6 +8,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "graduation_profiles", schema = "dbo")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class GraduationProfile extends BaseEntity {
 
     @Id
@@ -17,8 +19,9 @@ public class GraduationProfile extends BaseEntity {
     @Column(name = "profile_code", nullable = false, unique = true, length = 50)
     private String profileCode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Student student;
 
     @Column(name = "session_id")

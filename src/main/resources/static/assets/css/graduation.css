@@ -348,69 +348,6 @@ body.sidebar-collapse .btn-sidebar-toggle i {
 }
 
 /* ==========================================================================
-   🏆 SIDEBAR MESSI CARD (Phần D — Chỉ nằm trọn vẹn trong sidebar)
-   ========================================================================== */
-.sidebar-messi-box {
-    padding: 0.75rem 0.85rem 1.25rem !important;
-    margin-top: 1.25rem !important;
-    box-sizing: border-box !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-}
-
-.sidebar-messi-card {
-    background: rgba(255, 255, 255, 0.12) !important;
-    border: 1px solid rgba(255, 255, 255, 0.22) !important;
-    border-radius: 14px !important;
-    padding: 0.5rem !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
-    backdrop-filter: blur(8px) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    text-align: center !important;
-    overflow: hidden !important;
-}
-
-.sidebar-messi-card:hover {
-    transform: translateY(-3px) scale(1.02) !important;
-    background: rgba(255, 255, 255, 0.18) !important;
-    border-color: rgba(255, 255, 255, 0.38) !important;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35) !important;
-}
-
-.sidebar-messi-img {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 195px !important;
-    object-fit: cover !important;
-    object-position: top center !important;
-    border-radius: 10px !important;
-    display: block !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
-}
-
-.sidebar-messi-badge {
-    margin-top: 0.5rem !important;
-    padding: 0.28rem 0.65rem !important;
-    background: rgba(0, 0, 0, 0.3) !important;
-    border-radius: 20px !important;
-    font-size: 0.72rem !important;
-    font-weight: 700 !important;
-    color: #FFFFFF !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    letter-spacing: -0.01em !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
-}
-
-/* Tuyệt đối ẩn khi sidebar collapse hoặc màn hình nhỏ đóng sidebar, không bao giờ lộ ra ngoài phần giữa */
-body.sidebar-collapse .sidebar-messi-box,
-aside.app-sidebar:not(.sidebar-open) .sidebar-messi-box {
-    display: none !important;
-}
-
-/* ==========================================================================
    🔝 HEADER
    ========================================================================== */
 
@@ -1597,6 +1534,7 @@ button:active,
 .modal.fade .modal-dialog {
     transition: none !important;
 }
+
 
 /* ==========================================================================
    🎓 GRADUATION PROFILE - REDESIGNED BUTTON SYSTEM (ISOLATED SCOPE)
