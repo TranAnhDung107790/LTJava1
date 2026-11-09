@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "students")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Student {
 
     @Id
@@ -83,6 +83,7 @@ public class Student {
         this.fullName = fullName;
     }
 
+    @jakarta.persistence.Transient
     public String getName() {
         return fullName;
     }
