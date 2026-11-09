@@ -589,8 +589,8 @@ async function handleSaveResult(e) {
     submitBtn.disabled = true;
 
     try {
-        const url = isEdit 
-            ? `${API_ENDPOINTS.GRADUATION_RESULTS}/${id}` 
+        const url = isEdit
+            ? `${API_ENDPOINTS.GRADUATION_RESULTS}/${id}`
             : API_ENDPOINTS.GRADUATION_RESULTS;
         const method = isEdit ? 'PUT' : 'POST';
 
@@ -783,8 +783,8 @@ async function handleExportWord() {
         if (!filename) {
             const now = new Date();
             const dateStr = String(now.getDate()).padStart(2, '0') +
-                            String(now.getMonth() + 1).padStart(2, '0') +
-                            now.getFullYear();
+                String(now.getMonth() + 1).padStart(2, '0') +
+                now.getFullYear();
             filename = `BaoCao_XetTotNghiep_${dateStr}.docx`;
         }
 
