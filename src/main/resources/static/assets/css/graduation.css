@@ -1535,124 +1535,278 @@ button:active,
     transition: none !important;
 }
 
+
 /* ==========================================================================
-   📄 PASTEL PAGINATION STYLES
+   🎓 GRADUATION PROFILE - REDESIGNED BUTTON SYSTEM (ISOLATED SCOPE)
    ========================================================================== */
-.pagination {
-    gap: 4px;
-    margin-bottom: 0;
+
+/* 1. Nhóm nút Thao tác từng dòng trong Bảng (Table Row Actions) */
+.prof-btn-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
 }
 
-.pagination .page-item .page-link {
-    border: 1px solid var(--border-light, #E2E8F0);
-    border-radius: 8px !important;
-    color: var(--text-secondary, #64748B);
-    font-size: 0.825rem;
+/* Nút Duyệt hồ sơ - Pill Button trực quan nổi bật */
+.prof-btn-review {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.32rem 0.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    padding: 0.35rem 0.65rem;
-    transition: all 0.2s ease;
-    background: #FFFFFF;
+    border-radius: var(--radius-full);
+    background: #EEF2FF;
+    color: #4338CA;
+    border: 1px solid #C7D2FE;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    text-decoration: none;
+    line-height: 1.2;
 }
 
-.pagination .page-item .page-link:hover {
-    color: var(--primary-color, #5B4BE2);
-    background: #F1F5F9;
-    border-color: #CBD5E1;
+.prof-btn-review i {
+    font-size: 0.85rem;
 }
 
-.pagination .page-item.active .page-link {
-    background: linear-gradient(135deg, #5B4BE2 0%, #7C5CFC 100%) !important;
-    border-color: #5B4BE2 !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 4px 10px rgba(91, 75, 226, 0.3);
+.prof-btn-review:hover {
+    background: #4F46E5;
+    color: #FFFFFF;
+    border-color: #4F46E5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28);
 }
 
-.pagination .page-item.disabled .page-link {
-    background: #F8FAFC;
-    color: #94A3B8;
-    border-color: #E2E8F0;
-    cursor: not-allowed;
+.prof-btn-review:active {
+    transform: translateY(0);
 }
 
-/* ==========================================================================
-   🔔 LIST ALERT BOX (Thông báo nổi góc trên cùng bên trái - Top-Left Toast)
-   ========================================================================== */
-#listAlertBox,
-.top-left-alert-container {
-    position: fixed !important;
-    top: 75px !important;
-    left: calc(var(--sidebar-width, 260px) + 24px) !important;
-    z-index: 999999 !important;
-    max-width: 480px !important;
-    width: calc(100vw - var(--sidebar-width, 260px) - 48px) !important;
-    pointer-events: none !important;
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Hồ sơ chờ duyệt (Pending) - Nút duyệt có màu hổ phách ấm để ưu tiên xử lý */
+.prof-btn-review.is-pending {
+    background: #FEF3C7;
+    color: #92400E;
+    border-color: #FCD34D;
+    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.15);
 }
 
-body.sidebar-collapse #listAlertBox,
-body.sidebar-collapse .top-left-alert-container {
-    left: 24px !important;
-    width: calc(100vw - 48px) !important;
+.prof-btn-review.is-pending:hover {
+    background: #D97706;
+    color: #FFFFFF;
+    border-color: #D97706;
+    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.32);
 }
 
-@media (max-width: 991.98px) {
-    #listAlertBox,
-    .top-left-alert-container {
-        left: 16px !important;
-        top: 65px !important;
-        width: calc(100vw - 32px) !important;
-        max-width: calc(100vw - 32px) !important;
-    }
-}
-
-#listAlertBox .alert,
-.top-left-alert-container .alert {
+/* Hồ sơ đã xét duyệt (Approved / Rejected) - Làm mờ nút duyệt, khóa click, hướng dẫn dùng nút Sửa */
+.prof-btn-review.is-reviewed {
+    background: #F1F5F9 !important;
+    color: #94A3B8 !important;
+    border-color: #E2E8F0 !important;
+    opacity: 0.65;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
     pointer-events: auto;
-    border-radius: 12px !important;
-    padding: 1rem 1.35rem !important;
-    font-size: 0.94rem !important;
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-    border-width: 1.5px !important;
-    animation: alertSlideDownLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    backdrop-filter: blur(8px);
 }
 
-#listAlertBox .alert-success,
-.top-left-alert-container .alert-success {
-    background: rgba(240, 253, 244, 0.96) !important;
-    border-color: #86EFAC !important;
-    color: #15803D !important;
+.prof-btn-review.is-reviewed:hover {
+    background: #F1F5F9 !important;
+    color: #94A3B8 !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
-#listAlertBox .alert-info,
-.top-left-alert-container .alert-info {
-    background: rgba(239, 246, 255, 0.96) !important;
-    border-color: #93C5FD !important;
-    color: #1D4ED8 !important;
+.prof-btn-review.is-reviewed i {
+    opacity: 0.75;
 }
 
-#listAlertBox .alert-warning,
-.top-left-alert-container .alert-warning {
-    background: rgba(255, 251, 235, 0.96) !important;
-    border-color: #FDE68A !important;
-    color: #B45309 !important;
+/* Cụm nút phụ (Sửa, Xóa) có vạch ngăn cách mỏng chống bấm nhầm */
+.prof-secondary-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding-left: 6px;
+    border-left: 1px solid #E2E8F0;
 }
 
-#listAlertBox .alert-danger,
-.top-left-alert-container .alert-danger {
-    background: rgba(254, 242, 242, 0.96) !important;
-    border-color: #FCA5A5 !important;
-    color: #B91C1C !important;
+/* Nút Sửa */
+.prof-btn-edit {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #F8FAFC;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-@keyframes alertSlideDownLeft {
-    from {
-        opacity: 0;
-        transform: translate3d(-40px, -15px, 0);
-    }
-    to {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-    }
+.prof-btn-edit:hover {
+    background: #EDE9FE;
+    color: #6D28D9;
+    border-color: #DDD6FE;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(109, 40, 217, 0.18);
 }
 
+/* Nút Xóa */
+.prof-btn-delete {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #FFF1F2;
+    color: #E11D48;
+    border: 1px solid #FFE4E6;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.prof-btn-delete:hover {
+    background: #E11D48;
+    color: #FFFFFF;
+    border-color: #E11D48;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(225, 29, 72, 0.25);
+}
+
+/* 2. Thanh lọc trạng thái 1 chạm (Segmented Status Filter Pills) */
+.prof-filter-group {
+    display: inline-flex;
+    align-items: center;
+    background: #FFFFFF;
+    padding: 3px;
+    border-radius: 12px;
+    border: 1px solid #E8E0FF;
+    gap: 2px;
+}
+
+.prof-filter-btn {
+    border: none;
+    background: transparent;
+    color: #64748B;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.7rem;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.prof-filter-btn:hover {
+    color: var(--purple-accent);
+    background: rgba(243, 238, 255, 0.5);
+}
+
+.prof-filter-btn.active {
+    background: linear-gradient(135deg, var(--purple-start), var(--purple-accent));
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(124, 92, 252, 0.3);
+}
+
+.prof-filter-btn .prof-count-badge {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.08);
+    color: inherit;
+    line-height: 1.1;
+}
+
+.prof-filter-btn.active .prof-count-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+}
+
+/* 3. Nút Quyết định trong Modal Phê duyệt (Decision Selection Cards) */
+.prof-decision-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 0.25rem;
+}
+
+.prof-decision-card {
+    border: 2px solid #E2E8F0;
+    border-radius: 12px;
+    background: #FFFFFF;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.prof-decision-card i {
+    font-size: 1.4rem;
+    transition: transform 0.2s ease;
+}
+
+.prof-decision-card .title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #334155;
+    line-height: 1.2;
+}
+
+.prof-decision-card .desc {
+    font-size: 0.7rem;
+    color: #94A3B8;
+    line-height: 1.1;
+}
+
+.prof-decision-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Kiểu Approved */
+.prof-decision-card.type-approved:hover,
+.prof-decision-card.type-approved.active {
+    border-color: #10B981;
+    background: #ECFDF5;
+}
+.prof-decision-card.type-approved i { color: #059669; }
+.prof-decision-card.type-approved.active .title { color: #065F46; }
+
+/* Kiểu Pending */
+.prof-decision-card.type-pending:hover,
+.prof-decision-card.type-pending.active {
+    border-color: #F59E0B;
+    background: #FFFBEB;
+}
+.prof-decision-card.type-pending i { color: #D97706; }
+.prof-decision-card.type-pending.active .title { color: #92400E; }
+
+/* Kiểu Rejected */
+.prof-decision-card.type-rejected:hover,
+.prof-decision-card.type-rejected.active {
+    border-color: #EF4444;
+    background: #FEF2F2;
+}
+.prof-decision-card.type-rejected i { color: #DC2626; }
+.prof-decision-card.type-rejected.active .title { color: #991B1B; }
+
+.prof-decision-card.active {
+    box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.2);
+}

@@ -1,12 +1,11 @@
 import { API_ENDPOINTS } from './config.js';
 
-/*
-// Dữ liệu mẫu chuẩn hóa (Đã tắt - Hệ thống chuyển sang nạp 100% dữ liệu từ Database)
+// Dữ liệu mẫu chuẩn hóa 8 hồ sơ sinh viên xét tốt nghiệp hiển thị tức thì, không bị rỗng
 const SEED_PROFILES = [
     {
         id: 'seed-prof-1',
         profileCode: 'HS-2026-001',
-        student: { id: 's1', fullName: 'Bùi Gia An', studentCode: '26763', className: 'QTKD-K26-01' },
+        student: { id: 's1', fullName: 'Nguyễn Văn An', studentCode: 'SV001', className: 'C2024A' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
         status: 'Approved',
@@ -92,9 +91,8 @@ const SEED_PROFILES = [
         note: 'Hồ sơ đầy đủ, IELTS 6.0, MOS Đạt'
     }
 ];
-*/
 
-let profilesList = [];
+let profilesList = [...SEED_PROFILES];
 const studentsMap = new Map();
 const sessionsMap = new Map();
 
@@ -114,18 +112,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initEventListeners();
 
-    // Trạng thái đang nạp dữ liệu ban đầu từ Database
-    const initialTableBody = document.getElementById('profilesTableBody');
-    if (initialTableBody) {
-        initialTableBody.innerHTML = `
-            <tr>
-                <td colspan="9" class="text-center text-muted py-5">
-                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                    Đang tải danh sách hồ sơ tốt nghiệp từ hệ thống...
-                </td>
-            </tr>
-        `;
-    }
+    // 🚀 HIỂN THỊ DỮ LIỆU TỨC THÌ: Render ngay dữ liệu phong phú để chạy animation mượt mà
+    renderTable(profilesList, false);
 
     if (window.gsap) {
         gsap.from('.action-bar-card, .table-card-container', {
@@ -163,15 +151,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initEventListeners() {
-    // Filter by status
+    // 1. Filter bằng nút Segmented Pills 1 chạm trực quan
+    const filterPills = document.querySelectorAll('.prof-filter-btn');
     const filterStatus = document.getElementById('filterStatus');
+
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            filterPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const val = pill.getAttribute('data-status') || '';
+            if (filterStatus) filterStatus.value = val;
+            loadProfiles();
+        });
+    });
+
     if (filterStatus) {
         filterStatus.addEventListener('change', () => {
+            const currentVal = filterStatus.value;
+            filterPills.forEach(p => {
+                if ((p.getAttribute('data-status') || '') === currentVal) {
+                    p.classList.add('active');
+                } else {
+                    p.classList.remove('active');
+                }
+            });
             loadProfiles();
         });
     }
 
-    // Search
+    // 2. Search
     const btnSearch = document.getElementById('btnSearch');
     const searchKeyword = document.getElementById('searchKeyword');
 
@@ -189,32 +197,100 @@ function initEventListeners() {
         });
     }
 
-    // Refresh
+    // 3. Refresh (Đặt lại trạng thái các nút và bộ lọc)
     const btnRefresh = document.getElementById('btnRefresh');
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {
             if (searchKeyword) searchKeyword.value = '';
             if (filterStatus) filterStatus.value = '';
+            filterPills.forEach(p => {
+                if ((p.getAttribute('data-status') || '') === '') {
+                    p.classList.add('active');
+                } else {
+                    p.classList.remove('active');
+                }
+            });
             loadProfiles();
         });
     }
 
-    // Open Create Modal
+    // 4. Open Create Modal
     const btnOpenCreateModal = document.getElementById('btnOpenCreateModal');
     if (btnOpenCreateModal) {
         btnOpenCreateModal.addEventListener('click', openCreateModal);
     }
 
-    // Save Profile Form
+    // 5. Nút Quyết định trong Modal Xét duyệt (Decision Selection Cards)
+    document.querySelectorAll('.prof-decision-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const val = card.getAttribute('data-val');
+            setReviewDecision(val, true);
+        });
+    });
+
+    // 6. Save Profile Form
     const profileForm = document.getElementById('profileForm');
     if (profileForm) {
         profileForm.addEventListener('submit', handleSaveProfile);
     }
 
-    // Submit Review Form
+    // 7. Submit Review Form
     const reviewForm = document.getElementById('reviewForm');
     if (reviewForm) {
         reviewForm.addEventListener('submit', handleSubmitReview);
+    }
+}
+
+// Cập nhật số đếm trên các nút lọc trạng thái 1 chạm
+function updateFilterCounts(allList) {
+    if (!Array.isArray(allList)) return;
+    const countAll = allList.length;
+    const countPending = allList.filter(p => (p.status || '').toLowerCase() === 'pending').length;
+    const countApproved = allList.filter(p => (p.status || '').toLowerCase() === 'approved').length;
+    const countRejected = allList.filter(p => (p.status || '').toLowerCase() === 'rejected').length;
+
+    const elAll = document.getElementById('countAll');
+    const elPending = document.getElementById('countPending');
+    const elApproved = document.getElementById('countApproved');
+    const elRejected = document.getElementById('countRejected');
+
+    if (elAll) elAll.textContent = countAll;
+    if (elPending) elPending.textContent = countPending;
+    if (elApproved) elApproved.textContent = countApproved;
+    if (elRejected) elRejected.textContent = countRejected;
+}
+
+// Chuyển đổi trạng thái quyết định phê duyệt và đồng bộ giao diện nút
+function setReviewDecision(status, autoFillTemplate = false) {
+    const hiddenInput = document.getElementById('reviewStatus');
+    if (hiddenInput) hiddenInput.value = status;
+
+    document.querySelectorAll('.prof-decision-card').forEach(c => {
+        if (c.getAttribute('data-val') === status) {
+            c.classList.add('active');
+        } else {
+            c.classList.remove('active');
+        }
+    });
+
+    const submitBtn = document.getElementById('btnSubmitReview');
+    const noteEl = document.getElementById('reviewNote');
+
+    if (submitBtn) {
+        submitBtn.className = 'btn btn-sm fw-bold px-3 shadow-sm';
+        if (status === 'Approved') {
+            submitBtn.classList.add('btn-success');
+            submitBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Xác nhận chấp thuận hồ sơ';
+            if (autoFillTemplate && (!noteEl.value || noteEl.value.includes('chứng chỉ') || noteEl.value.includes('Từ chối') || noteEl.value.includes('chưa đạt'))) {
+                noteEl.value = 'Hồ sơ đầy đủ, đủ điều kiện công nhận tốt nghiệp.';
+            }
+        } else {
+            submitBtn.classList.add('btn-danger');
+            submitBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Xác nhận từ chối hồ sơ';
+            if (autoFillTemplate && (!noteEl.value || noteEl.value.includes('công nhận') || noteEl.value.includes('đủ điều kiện'))) {
+                noteEl.value = 'Hồ sơ chưa đạt điều kiện tốt nghiệp (chưa đủ tín chỉ tích lũy hoặc thiếu chứng chỉ chuẩn đầu ra).';
+            }
+        }
     }
 }
 
@@ -237,16 +313,18 @@ async function loadProfiles() {
         const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
-            profilesList = Array.isArray(data) ? data : (data ? [data] : []);
-            if (totalBadge) {
-                totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${profilesList.length} hồ sơ`;
+            if (Array.isArray(data) && data.length > 0) {
+                const map = new Map();
+                SEED_PROFILES.forEach(p => map.set(p.profileCode, p));
+                data.forEach(p => map.set(p.profileCode, p));
+                profilesList = Array.from(map.values());
+                if (totalBadge) {
+                    totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${profilesList.length} hồ sơ`;
+                }
             }
-        } else {
-            profilesList = [];
         }
     } catch (error) {
-        console.error('Lỗi khi tải hồ sơ tốt nghiệp từ API:', error);
-        profilesList = [];
+        console.warn('API sync fallback to seed profiles:', error);
     }
 
     let displayList = profilesList;
@@ -272,7 +350,9 @@ function renderTable(items, triggerAnimation = false) {
     if (totalBadge && !totalBadge.innerHTML.includes('Trực tuyến')) {
         totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${items.length} hồ sơ`;
     }
-    updateProfileStats(items);
+
+    // Luôn cập nhật số lượng trên các nút lọc trạng thái
+    updateFilterCounts(profilesList);
 
     if (items.length === 0) {
         tableBody.innerHTML = `
@@ -289,9 +369,8 @@ function renderTable(items, triggerAnimation = false) {
     tableBody.innerHTML = items.map((item, index) => {
         // Sinh viên
         const student = item.student || studentsMap.get(item.student?.id);
-        const sName = student ? cleanStudentName(student.fullName || '', student.studentCode || '') : '';
         const studentDisplay = student 
-            ? `<strong>${escapeHtml(sName)}</strong><br/><small class="text-muted"><i class="bi bi-person-vcard me-1"></i>${escapeHtml(student.studentCode)} - ${escapeHtml(student.className || '')}</small>`
+            ? `<strong>${escapeHtml(student.fullName)}</strong><br/><small class="text-muted"><i class="bi bi-person-vcard me-1"></i>${escapeHtml(student.studentCode)} - ${escapeHtml(student.className || '')}</small>`
             : '<span class="text-muted">-</span>';
 
         // Đợt xét
@@ -316,6 +395,46 @@ function renderTable(items, triggerAnimation = false) {
         // Ghi chú
         const noteDisplay = item.note ? escapeHtml(item.note) : '<span class="text-muted">-</span>';
 
+        // Nút Xét duyệt: Hồ sơ Pending nổi bật, Hồ sơ đã duyệt/từ chối được làm mờ (disabled)
+        const isPending = (item.status === 'Pending');
+        const isApproved = (item.status === 'Approved');
+        const isRejected = (item.status === 'Rejected');
+
+        let reviewBtnHtml = '';
+        if (isPending) {
+            reviewBtnHtml = `
+                <button class="prof-btn-review is-pending btn-review" data-id="${item.id}" title="Xét duyệt ngay (Đang chờ duyệt)">
+                    <i class="bi bi-exclamation-circle-fill"></i><span>Xét duyệt</span>
+                </button>
+            `;
+        } else if (isApproved) {
+            const dateStr = item.reviewDate ? item.reviewDate.substring(0, 10) : '';
+            const titleStr = dateStr 
+                ? `Hồ sơ đã được phê duyệt ngày ${dateStr}. Dùng nút Chỉnh sửa nếu cần thay đổi.` 
+                : 'Hồ sơ đã được phê duyệt. Dùng nút Chỉnh sửa nếu cần thay đổi.';
+            reviewBtnHtml = `
+                <button class="prof-btn-review is-reviewed is-approved" disabled title="${titleStr}">
+                    <i class="bi bi-check-circle-fill text-success"></i><span>Đã duyệt</span>
+                </button>
+            `;
+        } else if (isRejected) {
+            const dateStr = item.reviewDate ? item.reviewDate.substring(0, 10) : '';
+            const titleStr = dateStr 
+                ? `Hồ sơ đã bị từ chối ngày ${dateStr}. Dùng nút Chỉnh sửa nếu cần thay đổi.` 
+                : 'Hồ sơ đã bị từ chối. Dùng nút Chỉnh sửa nếu cần thay đổi.';
+            reviewBtnHtml = `
+                <button class="prof-btn-review is-reviewed is-rejected" disabled title="${titleStr}">
+                    <i class="bi bi-x-circle-fill text-danger"></i><span>Đã từ chối</span>
+                </button>
+            `;
+        } else {
+            reviewBtnHtml = `
+                <button class="prof-btn-review btn-review" data-id="${item.id}" title="Xét duyệt hồ sơ">
+                    <i class="bi bi-clipboard-check-fill"></i><span>Xét duyệt</span>
+                </button>
+            `;
+        }
+
         return `
             <tr>
                 <td class="text-center text-muted small">${index + 1}</td>
@@ -327,15 +446,17 @@ function renderTable(items, triggerAnimation = false) {
                 <td class="small">${reviewDateDisplay}</td>
                 <td class="small text-secondary" style="max-width: 220px;">${noteDisplay}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-outline-info me-1 btn-review" data-id="${item.id}" title="Xét duyệt hồ sơ">
-                        <i class="bi bi-check2-square"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${item.id}" title="Chỉnh sửa">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}" title="Xóa">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="prof-btn-group">
+                        ${reviewBtnHtml}
+                        <div class="prof-secondary-actions">
+                            <button class="prof-btn-edit btn-edit" data-id="${item.id}" title="Chỉnh sửa thông tin">
+                                <i class="bi bi-pencil-fill"></i>
+                            </button>
+                            <button class="prof-btn-delete btn-delete" data-id="${item.id}" title="Xóa hồ sơ">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         `;
@@ -370,17 +491,20 @@ function renderTable(items, triggerAnimation = false) {
 // 2. PHÊ DUYỆT HỒ SƠ TỐT NGHIỆP
 // =================================================================================
 function openReviewModal(id) {
-    const item = profilesList.find(x => x.id === id);
+    const item = profilesList.find(x => String(x.id) === String(id));
     if (!item) return;
 
     document.getElementById('reviewProfileId').value = item.id;
-    document.getElementById('reviewStatus').value = item.status === 'Approved' ? 'Approved' : (item.status === 'Rejected' ? 'Rejected' : 'Approved');
     document.getElementById('reviewReviewerId').value = item.reviewerId || 'cedeed49-0178-4394-a16c-02bc11cdb15a';
     document.getElementById('reviewNote').value = item.note || '';
 
     const student = item.student || studentsMap.get(item.student?.id);
     const studentText = student ? `${student.fullName} (${student.studentCode})` : 'Mã: ' + item.profileCode;
     document.getElementById('reviewProfileInfo').textContent = `Mã hồ sơ: ${item.profileCode} | Sinh viên: ${studentText}`;
+
+    // Đồng bộ trạng thái quyết định phê duyệt và nhãn nút bấm (Mặc định Approved, hoặc Rejected nếu trạng thái hiện tại là Rejected)
+    const targetStatus = (item.status === 'Rejected') ? 'Rejected' : 'Approved';
+    setReviewDecision(targetStatus, !item.note);
 
     if (reviewModalInstance) {
         reviewModalInstance.show();
@@ -392,39 +516,91 @@ async function handleSubmitReview(e) {
     const id = document.getElementById('reviewProfileId').value;
     const submitBtn = document.getElementById('btnSubmitReview');
 
-    const statusVal = document.getElementById('reviewStatus').value;
+    const statusVal = document.getElementById('reviewStatus').value || 'Approved';
+    let reviewerIdVal = document.getElementById('reviewReviewerId').value.trim();
+    if (!reviewerIdVal) {
+        reviewerIdVal = 'cedeed49-0178-4394-a16c-02bc11cdb15a';
+    }
+    const noteVal = document.getElementById('reviewNote').value.trim() || null;
+
     const payload = {
         status: statusVal,
-        reviewerId: document.getElementById('reviewReviewerId').value.trim() || null,
-        note: document.getElementById('reviewNote').value.trim() || null
+        reviewerId: reviewerIdVal,
+        note: noteVal
     };
 
-    if (reviewModalInstance) {
-        reviewModalInstance.hide();
-    }
+    submitBtn.disabled = true;
 
-    // 🚀 TỐI ƯU TỨC THÌ: Cập nhật trạng thái ngay lập tức
-    const targetProf = profilesList.find(x => String(x.id) === String(id));
-    if (targetProf) {
-        targetProf.status = statusVal;
-        targetProf.reviewDate = new Date().toISOString().split('T')[0];
-        if (payload.note) targetProf.note = payload.note;
-    }
-
-    renderCards(profilesList);
-    renderTable(profilesList);
-
-    const statusBadgeText = statusVal === 'Approved' ? 'Đã duyệt' : (statusVal === 'Rejected' ? 'Từ chối' : 'Chờ duyệt');
-    showListAlert('info', `📋 Đã xét duyệt hồ sơ <strong>${targetProf ? targetProf.profileCode : ''}</strong> sang trạng thái: <strong>${statusBadgeText}</strong>`);
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    const isRealUuid = UUID_REGEX.test(id);
 
     try {
-        await fetch(`${API_ENDPOINTS.GRADUATION_PROFILES}/${id}/review`, {
+        if (!isRealUuid) {
+            // Xử lý hồ sơ mẫu (seed data) trong phiên làm việc hiện tại:
+            // Cập nhật trực tiếp dữ liệu bộ nhớ để không gửi id phi-UUID lên Spring Boot (tránh lỗi 400 Bad Request)
+            const nowStr = new Date().toISOString().substring(0, 10);
+            
+            const targetProfile = profilesList.find(p => String(p.id) === String(id));
+            if (targetProfile) {
+                targetProfile.status = payload.status;
+                targetProfile.reviewDate = nowStr;
+                targetProfile.reviewerId = payload.reviewerId;
+                targetProfile.note = payload.note;
+            }
+
+            const targetSeed = SEED_PROFILES.find(p => String(p.id) === String(id));
+            if (targetSeed) {
+                targetSeed.status = payload.status;
+                targetSeed.reviewDate = nowStr;
+                targetSeed.reviewerId = payload.reviewerId;
+                targetSeed.note = payload.note;
+            }
+
+            if (reviewModalInstance) {
+                reviewModalInstance.hide();
+            }
+
+            showAlert('success', `Đã xét duyệt thành công hồ sơ: ${payload.status === 'Approved' ? 'Chấp thuận' : 'Từ chối'}!`);
+            renderTable(profilesList, true);
+            return;
+        }
+
+        // Trường hợp hồ sơ thực trong cơ sở dữ liệu (UUID hợp lệ):
+        const response = await fetch(`${API_ENDPOINTS.GRADUATION_PROFILES}/${id}/review`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+
+        if (!response.ok) {
+            let errorMsg = `Lỗi cập nhật trạng thái (${response.status})`;
+            try {
+                const errData = await response.json();
+                if (errData && (errData.message || errData.error)) {
+                    errorMsg = errData.message || errData.error;
+                }
+            } catch (_) {}
+            throw new Error(errorMsg);
+        }
+
+        const updatedData = await response.json();
+
+        // Cập nhật lại trong danh sách hồ sơ
+        const idx = profilesList.findIndex(p => String(p.id) === String(id));
+        if (idx !== -1) {
+            profilesList[idx] = { ...profilesList[idx], ...updatedData };
+        }
+
+        if (reviewModalInstance) {
+            reviewModalInstance.hide();
+        }
+
+        showAlert('success', `Đã cập nhật trạng thái hồ sơ thành công: ${payload.status === 'Approved' ? 'Chấp thuận' : 'Từ chối'}!`);
+        renderTable(profilesList, true);
     } catch (error) {
-        console.warn('Lỗi gọi API review lên backend:', error);
+        alert(`Không thể duyệt hồ sơ: ${error.message}`);
+    } finally {
+        submitBtn.disabled = false;
     }
 }
 
@@ -443,7 +619,7 @@ function openCreateModal() {
 }
 
 function openEditModal(id) {
-    const item = profilesList.find(x => x.id === id);
+    const item = profilesList.find(x => String(x.id) === String(id));
     if (!item) return;
 
     document.getElementById('profileModalLabel').innerHTML = `<i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin hồ sơ`;
@@ -479,45 +655,41 @@ async function handleSaveProfile(e) {
         note: document.getElementById('modalProfileNote').value.trim() || null
     };
 
-    if (profileModalInstance) {
-        profileModalInstance.hide();
-    }
+    const submitBtn = document.getElementById('btnSaveProfile');
+    submitBtn.disabled = true;
 
-    // 🚀 TỐI ƯU TỨC THÌ: Cập nhật trong 50ms không phải chờ đợi
-    const selStudent = studentsMap.get(studentId) || { id: studentId, studentCode: 'SV', fullName: 'Sinh viên', className: 'CNTT-K24-01' };
-    const selSession = sessionsMap.get(payload.sessionId);
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
-    const localItem = {
-        id: isEdit ? id : ('prof-' + Date.now()),
-        profileCode: payload.profileCode,
-        student: selStudent,
-        sessionId: payload.sessionId,
-        sessionName: selSession ? selSession.sessionName : 'Đợt xét tốt nghiệp',
-        status: payload.status || 'Pending',
-        note: payload.note,
-        submittedDate: new Date().toISOString().split('T')[0],
-        reviewDate: payload.status === 'Approved' ? new Date().toISOString().split('T')[0] : null,
-        isActive: true
-    };
-
-    if (isEdit) {
-        const idx = profilesList.findIndex(x => String(x.id) === String(id));
-        if (idx !== -1) profilesList[idx] = { ...profilesList[idx], ...localItem };
-    } else {
-        profilesList.unshift(localItem);
-    }
-
-    renderCards(profilesList);
-    renderTable(profilesList);
-
-    const statusText = payload.status === 'Approved' ? 'Đã duyệt' : (payload.status === 'Rejected' ? 'Từ chối' : 'Chờ duyệt');
-    const successMsg = isEdit
-        ? `✅ Đã cập nhật hồ sơ: <strong>${payload.profileCode}</strong> (${selStudent.fullName}) thành công!`
-        : `✅ Đã nộp mới hồ sơ xét tốt nghiệp: <strong>${payload.profileCode}</strong> cho sinh viên <strong>${selStudent.fullName}</strong> (${selStudent.studentCode}) - Trạng thái: <strong>${statusText}</strong>!`;
-    showListAlert('success', successMsg);
-
-    // Gửi đồng bộ ngầm lên backend
     try {
+        if (isEdit && !UUID_REGEX.test(id)) {
+            const target = profilesList.find(p => String(p.id) === String(id));
+            if (target) {
+                target.profileCode = payload.profileCode;
+                target.sessionId = payload.sessionId;
+                target.status = payload.status;
+                target.note = payload.note;
+                if (studentsMap.has(studentId)) {
+                    target.student = studentsMap.get(studentId);
+                }
+            }
+            const sTarget = SEED_PROFILES.find(p => String(p.id) === String(id));
+            if (sTarget) {
+                sTarget.profileCode = payload.profileCode;
+                sTarget.sessionId = payload.sessionId;
+                sTarget.status = payload.status;
+                sTarget.note = payload.note;
+                if (studentsMap.has(studentId)) {
+                    sTarget.student = studentsMap.get(studentId);
+                }
+            }
+            if (profileModalInstance) {
+                profileModalInstance.hide();
+            }
+            showAlert('success', 'Cập nhật hồ sơ thành công!');
+            renderTable(profilesList, true);
+            return;
+        }
+
         const url = isEdit
             ? `${API_ENDPOINTS.GRADUATION_PROFILES}/${id}`
             : API_ENDPOINTS.GRADUATION_PROFILES;
@@ -529,14 +701,21 @@ async function handleSaveProfile(e) {
             body: JSON.stringify(payload)
         });
 
-        if (response.ok) {
-            const savedData = await response.json();
-            if (savedData && savedData.id && !isEdit) {
-                localItem.id = savedData.id;
-            }
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || err.error || `Lỗi máy chủ (${response.status})`);
         }
+
+        if (profileModalInstance) {
+            profileModalInstance.hide();
+        }
+
+        showAlert('success', isEdit ? 'Cập nhật hồ sơ thành công!' : 'Đã nộp hồ sơ tốt nghiệp mới thành công!');
+        loadProfiles();
     } catch (error) {
-        console.warn('API backend hồ sơ đang xử lý ngầm:', error);
+        alert(`Lỗi khi lưu hồ sơ: ${error.message}`);
+    } finally {
+        submitBtn.disabled = false;
     }
 }
 
@@ -545,136 +724,62 @@ async function handleDeleteProfile(id) {
         return;
     }
 
-    const item = profilesList.find(x => String(x.id) === String(id));
-    const pCode = item ? item.profileCode : '';
-
-    profilesList = profilesList.filter(x => String(x.id) !== String(id));
-    renderCards(profilesList);
-    renderTable(profilesList);
-    showListAlert('success', `🗑️ Đã xóa hồ sơ <strong>${pCode}</strong> thành công!`);
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!UUID_REGEX.test(id)) {
+        profilesList = profilesList.filter(p => String(p.id) !== String(id));
+        const sIdx = SEED_PROFILES.findIndex(p => String(p.id) === String(id));
+        if (sIdx !== -1) SEED_PROFILES.splice(sIdx, 1);
+        showAlert('success', 'Đã xóa hồ sơ thành công!');
+        renderTable(profilesList, true);
+        return;
+    }
 
     try {
-        await fetch(`${API_ENDPOINTS.GRADUATION_PROFILES}/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_ENDPOINTS.GRADUATION_PROFILES}/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Lỗi máy chủ (${response.status})`);
+        }
+
+        showAlert('success', 'Đã xóa hồ sơ thành công!');
+        loadProfiles();
     } catch (error) {
-        console.warn('Lỗi xóa API hồ sơ:', error);
+        alert(`Không thể xóa: ${error.message}`);
     }
-}
-
-// ==========================================================================
-// TIỆN ÍCH LÀM SẠCH TÊN & SẮP XẾP ALPHABET TIẾNG VIỆT
-// ==========================================================================
-function cleanStudentName(name, code) {
-    if (!name) return '';
-    let cleaned = String(name).trim();
-    if (code) {
-        const escapedCode = String(code).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        cleaned = cleaned.replace(new RegExp(`(\\s*[-–/|,]?\\s*\\(?\\[?${escapedCode}\\)?\\]?\\s*)$`, 'i'), '');
-    }
-    cleaned = cleaned.replace(/\s*\([A-Za-z0-9_.-]+\)\s*$/, '');
-    cleaned = cleaned.replace(/\s*\[[A-Za-z0-9_.-]+\]\s*$/, '');
-    cleaned = cleaned.replace(/\s*[-–]\s*[A-Za-z0-9_.-]+\s*$/, '');
-    cleaned = cleaned.replace(/\s+(?:SV|sv|it|IT)?[0-9]{3,8}\s*$/i, '');
-    cleaned = cleaned.replace(/\s+\d+\s*$/, '');
-    return cleaned.trim();
-}
-
-function getVietnameseSortKey(fullName) {
-    if (!fullName) return '';
-    const parts = fullName.trim().split(/\s+/);
-    if (parts.length <= 1) return fullName.trim();
-    const firstName = parts[parts.length - 1];
-    const lastNameAndMiddle = parts.slice(0, parts.length - 1).join(' ');
-    return `${firstName} ${lastNameAndMiddle}`;
-}
-
-function sortStudentsAlphabetically(students) {
-    if (!Array.isArray(students)) return [];
-    return students.sort((a, b) => {
-        const nameA = cleanStudentName(a.fullName || a.name || '', a.studentCode || a.code);
-        const nameB = cleanStudentName(b.fullName || b.name || '', b.studentCode || b.code);
-        const keyA = getVietnameseSortKey(nameA);
-        const keyB = getVietnameseSortKey(nameB);
-        return keyA.localeCompare(keyB, 'vi', { sensitivity: 'base' });
-    });
 }
 
 // =================================================================================
 // 4. TIỆN ÍCH TẢI DỮ LIỆU LIÊN QUAN
 // =================================================================================
 async function loadStudents() {
-    /*
-    const fallbackStudents = [
-        { id: "8f64a671-de50-4c87-8b39-ff5bdbf387e8", studentCode: "26687", fullName: "Hứa Tiến Tiến", className: "OTO-K26-02" },
-        { id: "35f6941e-b583-4625-8ce2-ff4d1990a891", studentCode: "26563", fullName: "Ngô Hữu Tuấn", className: "NNA-K26-01" },
-        { id: "c21b452a-bb86-4054-a619-ff21dc207a19", studentCode: "25549", fullName: "Hồ Hoàng Hùng", className: "KTPM-K26-02" },
-        { id: "0e374a91-d6e6-4174-b7df-ff19e2e5876f", studentCode: "23017", fullName: "Vũ Khánh Tùng", className: "CNTT-K24-01" },
-        { id: "861670d3-393c-4c59-93b9-fea33e67b71f", studentCode: "26395", fullName: "Hoàng Hoàng Tâm", className: "QTKD-K25-01" },
-        { id: "e86e5ca4-db05-436a-9ab0-fe6a6e9d1afc", studentCode: "26666", fullName: "Chu Hà Linh", className: "MKT-K26-01" }
-    ];
-    */
-
     try {
-        let list = [];
-        try {
-            const staticResp = await fetch('assets/data/students.json');
-            if (staticResp.ok) {
-                list = await staticResp.json();
-            }
-        } catch (err) {}
-
-        if (!list || list.length === 0) {
-            const response = await fetch(API_ENDPOINTS.STUDENTS);
-            if (response.ok) {
-                list = await response.json();
-            }
-        }
-        if (!list) {
-            list = [];
-        }
-
-        const cleanedList = list.map(s => {
-            const code = s.studentCode || s.code || '';
-            return {
-                ...s,
-                studentCode: code,
-                fullName: cleanStudentName(s.fullName || s.name || 'Sinh viên', code)
-            };
-        });
-        sortStudentsAlphabetically(cleanedList);
+        const response = await fetch(API_ENDPOINTS.STUDENTS);
+        if (!response.ok) return;
+        const list = await response.json();
 
         const select = document.getElementById('modalProfileStudentId');
         let optionsHtml = '<option value="">-- Chọn sinh viên --</option>';
 
-        cleanedList.forEach(s => {
+        list.forEach(s => {
             studentsMap.set(s.id, s);
-            optionsHtml += `<option value="${s.id}">${escapeHtml(s.fullName)} - ${escapeHtml(s.studentCode || 'SV')} (${escapeHtml(s.className || 'Chưa xếp lớp')})</option>`;
+            optionsHtml += `<option value="${s.id}">${escapeHtml(s.studentCode)} - ${escapeHtml(s.fullName)} (${escapeHtml(s.className || 'Chưa xếp lớp')})</option>`;
         });
 
         if (select) {
             select.innerHTML = optionsHtml;
         }
     } catch (e) {
-        console.error('Không thể tải sinh viên từ API:', e);
+        console.warn('Không thể tải sinh viên:', e);
     }
 }
 
 async function loadSessions() {
-    /*
-    const fallbackSessions = [
-        { id: "11111111-1111-1111-1111-111111111111", sessionCode: "DX2026_01", sessionName: "Xét tốt nghiệp Đợt 1 năm học 2026-2027" },
-        { id: "22222222-2222-2222-2222-222222222222", sessionCode: "DX2026_02", sessionName: "Xét tốt nghiệp Đợt 2 năm học 2026-2027" }
-    ];
-    */
-
     try {
         const response = await fetch(API_ENDPOINTS.GRADUATION_SESSIONS);
-        let list = [];
-        if (response.ok) {
-            list = await response.json();
-        }
-        if (!list) {
-            list = [];
-        }
+        if (!response.ok) return;
+        const list = await response.json();
 
         const select = document.getElementById('modalProfileSessionId');
         let optionsHtml = '<option value="">-- Chọn đợt xét tốt nghiệp --</option>';
@@ -688,7 +793,7 @@ async function loadSessions() {
             select.innerHTML = optionsHtml;
         }
     } catch (e) {
-        console.error('Không thể tải đợt xét từ API:', e);
+        console.warn('Không thể tải đợt xét:', e);
     }
 }
 
@@ -711,83 +816,6 @@ function showAlert(type, message) {
             bsAlert.close();
         }
     }, 4000);
-}
-
-// Hiển thị thông báo nổi góc trên cùng bên trái (Top-Left Toast)
-function showListAlert(type, message) {
-    let listAlertBox = document.getElementById('listAlertBox');
-    if (!listAlertBox) {
-        listAlertBox = document.createElement('div');
-        listAlertBox.id = 'listAlertBox';
-        listAlertBox.className = 'top-left-alert-container';
-        document.body.appendChild(listAlertBox);
-    }
-
-    const icon = type === 'success' ? 'bi-check-circle-fill' : type === 'info' ? 'bi-info-circle-fill' : 'bi-exclamation-triangle-fill';
-    listAlertBox.innerHTML = `
-        <div class="alert alert-${type} alert-dismissible fade show shadow d-flex align-items-center gap-2" role="alert" style="border-radius:12px; font-size:0.94rem;">
-            <i class="bi ${icon} fs-5 flex-shrink-0"></i>
-            <div class="flex-grow-1">${message}</div>
-            <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-
-    if (window.gsap) {
-        gsap.from(listAlertBox.querySelector('.alert'), {
-            opacity: 0,
-            x: -25,
-            duration: 0.35,
-            ease: 'power2.out',
-            clearProps: 'all'
-        });
-    }
-
-    setTimeout(() => {
-        const alertEl = listAlertBox.querySelector('.alert');
-        if (alertEl && window.bootstrap) {
-            new bootstrap.Alert(alertEl).close();
-        }
-    }, 4500);
-}
-
-// Cập nhật các chỉ số Bento KPI Stat Cards
-function updateProfileStats(items) {
-    if (!items) return;
-    const total = items.length;
-    let approved = 0;
-    let pending = 0;
-    let rejected = 0;
-
-    items.forEach(p => {
-        const status = (p.status || '').toLowerCase();
-        if (status === 'approved') approved++;
-        else if (status === 'rejected') rejected++;
-        else pending++;
-    });
-
-    animateCount('statTotalProfiles', total);
-    animateCount('statApprovedProfiles', approved);
-    animateCount('statPendingProfiles', pending);
-    animateCount('statRejectedProfiles', rejected);
-}
-
-function animateCount(elementId, targetValue) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-    if (!window.gsap) {
-        el.textContent = targetValue;
-        return;
-    }
-    const currentVal = parseInt(el.textContent, 10) || 0;
-    const obj = { val: currentVal };
-    gsap.to(obj, {
-        val: targetValue,
-        duration: 0.6,
-        ease: 'power2.out',
-        onUpdate: () => {
-            el.textContent = Math.round(obj.val);
-        }
-    });
 }
 
 function escapeHtml(text) {
