@@ -110,10 +110,12 @@ let currentFilterResult = '';
 let currentFilterCondition = '';
 const studentsMap = new Map();
 const conditionsMap = new Map();
+let currentStudentSummary = null;
 
 // Bootstrap Modal instances
 let evaluateModalInstance = null;
 let resultModalInstance = null;
+let wordExportModalInstance = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize Modals
@@ -125,6 +127,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resModalEl = document.getElementById('resultModal');
     if (resModalEl && window.bootstrap) {
         resultModalInstance = new bootstrap.Modal(resModalEl);
+    }
+    const wordExportModalEl = document.getElementById('wordExportModal');
+    if (wordExportModalEl && window.bootstrap) {
+        wordExportModalInstance = new bootstrap.Modal(wordExportModalEl);
     }
 
     // Attach Event Listeners
@@ -173,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Tải đồng bộ ngầm từ API
-    Promise.all([loadStudents(), loadConditions()]).then(() => {
+    Promise.all([loadStudents(), loadConditions(), loadExportClasses()]).then(() => {
         loadResults();
     });
 });
@@ -220,7 +226,20 @@ function initEventListeners() {
 
     const btnExportWord = document.getElementById('btnExportWord');
     if (btnExportWord) {
-        btnExportWord.addEventListener('click', handleExportWord);
+        btnExportWord.addEventListener('click', openWordExportModal);
+    }
+    const btnConfirmExportWord = document.getElementById('btnConfirmExportWord');
+    if (btnConfirmExportWord) {
+        btnConfirmExportWord.addEventListener('click', handleExportWord);
+    }
+    const wordExportConditions = document.getElementById('wordExportConditions');
+    if (wordExportConditions) {
+        wordExportConditions.addEventListener('change', () => {
+            const conditionIds = Array.from(wordExportConditions.selectedOptions)
+                .map(option => option.value)
+                .filter(Boolean);
+            loadExportClasses(conditionIds);
+        });
     }
 
     // Filter by Page Size
@@ -297,6 +316,15 @@ function initEventListeners() {
                 detailEl.innerHTML = '';
             }
         });
+    }
+
+    const modalStudentSelect = document.getElementById('modalStudentId');
+    const modalConditionSelect = document.getElementById('modalConditionId');
+    if (modalStudentSelect) {
+        modalStudentSelect.addEventListener('change', refreshManualDerivedData);
+    }
+    if (modalConditionSelect) {
+        modalConditionSelect.addEventListener('change', refreshManualDerivedData);
     }
 }
 
@@ -624,10 +652,13 @@ async function handleExecuteEvaluate() {
 // 3. THÊM / CẬP NHẬT THỦ CÔNG
 // =================================================================================
 function openCreateModal() {
-    document.getElementById('resultModalLabel').innerHTML = `<i class="bi bi-plus-circle me-2"></i>Nhập kết quả tốt nghiệp thủ công`;
+    document.getElementById('resultModalLabel').innerHTML = `<i class="bi bi-plus-circle me-2"></i>Tạo kết quả tốt nghiệp`;
     document.getElementById('resultId').value = '';
     document.getElementById('resultForm').reset();
     document.getElementById('modalStudentId').disabled = false;
+    document.getElementById('modalResultStatus').disabled = true;
+    document.getElementById('modalClassification').disabled = true;
+    resetManualDerivedData();
     document.getElementById('modalDecisionDate').value = new Date().toISOString().split('T')[0];
 
     if (resultModalInstance) {
@@ -663,6 +694,8 @@ function openEditModal(id, items) {
     document.getElementById('modalDecisionDate').value = item.decisionDate || '';
     document.getElementById('modalReviewer').value = item.reviewer || '';
     document.getElementById('modalNote').value = item.note || '';
+    currentStudentSummary = null;
+    refreshManualDerivedData();
 
     if (resultModalInstance) {
         resultModalInstance.show();
@@ -676,9 +709,18 @@ async function handleSaveResult(e) {
 
     const studentIdVal = document.getElementById('modalStudentId').value;
     const conditionIdVal = document.getElementById('modalConditionId').value;
-    const gpaVal = parseFloat(document.getElementById('modalGpa').value) || 0.0;
-    const totalCreditsVal = parseInt(document.getElementById('modalTotalCredits').value, 10) || 0;
-    const failedCreditsVal = parseInt(document.getElementById('modalFailedCredits').value || '0', 10);
+    if (!currentStudentSummary) {
+        showManualSummaryStatus('danger', 'Không thể lưu vì sinh viên chưa có dữ liệu tổng kết hợp lệ.');
+        return;
+    }
+    const derived = calculateDerivedResult(currentStudentSummary, conditionsMap.get(conditionIdVal));
+    if (!derived) {
+        showManualSummaryStatus('danger', 'Vui lòng chọn sinh viên và bộ điều kiện hợp lệ trước khi lưu.');
+        return;
+    }
+    const gpaVal = derived.gpa;
+    const totalCreditsVal = derived.totalCredits;
+    const failedCreditsVal = derived.failedCredits;
     const resultStatusVal = parseInt(document.getElementById('modalResultStatus').value, 10);
     const classificationVal = document.getElementById('modalClassification').value ? parseInt(document.getElementById('modalClassification').value, 10) : null;
     const decisionDateVal = document.getElementById('modalDecisionDate').value || new Date().toISOString().split('T')[0];
@@ -767,15 +809,90 @@ async function handleSaveResult(e) {
             body: JSON.stringify(payload)
         });
 
-        if (response.ok) {
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || errorData.error || `Lỗi máy chủ (${response.status})`);
+            }
             const savedData = await response.json();
             if (savedData && savedData.id && !isEdit) {
                 newItem.id = savedData.id;
-            }
         }
     } catch (error) {
-        console.warn('API backend kết quả đang xử lý ngầm:', error);
+            console.error('Không thể lưu kết quả tốt nghiệp:', error);
+            showListAlert('danger', `Không thể lưu kết quả vào hệ thống: ${escapeHtml(error.message)}`);
     }
+}
+
+function resetManualDerivedData() {
+    currentStudentSummary = null;
+    ['modalGpa', 'modalTotalCredits', 'modalFailedCredits'].forEach(id => {
+            document.getElementById(id).value = '';
+    });
+    document.getElementById('modalResultStatus').value = '';
+    document.getElementById('modalClassification').value = '';
+    const saveButton = document.getElementById('btnSaveResult');
+    if (saveButton) saveButton.disabled = true;
+    showManualSummaryStatus('secondary', 'Chọn sinh viên và bộ điều kiện để hệ thống tải dữ liệu tổng kết.');
+}
+
+async function refreshManualDerivedData() {
+    const studentId = document.getElementById('modalStudentId')?.value;
+    const conditionId = document.getElementById('modalConditionId')?.value;
+    resetManualDerivedData();
+
+    if (!studentId || !conditionId) return;
+
+    showManualSummaryStatus('info', 'Đang tải dữ liệu tổng kết...');
+    try {
+            const response = await fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}/student/${studentId}/summary`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || errorData.error || 'Không tìm thấy dữ liệu tổng kết');
+            }
+            currentStudentSummary = await response.json();
+            const derived = calculateDerivedResult(currentStudentSummary, conditionsMap.get(conditionId));
+            if (!derived) {
+                throw new Error('Bộ điều kiện tốt nghiệp không hợp lệ');
+            }
+
+            document.getElementById('modalGpa').value = derived.gpa.toFixed(2);
+            document.getElementById('modalTotalCredits').value = derived.totalCredits;
+            document.getElementById('modalFailedCredits').value = derived.failedCredits;
+            document.getElementById('modalResultStatus').value = String(derived.result);
+            document.getElementById('modalClassification').value = derived.classification ? String(derived.classification) : '';
+            document.getElementById('modalResultStatus').disabled = false;
+            document.getElementById('modalClassification').disabled = false;
+            document.getElementById('btnSaveResult').disabled = false;
+            showManualSummaryStatus('success', 'Đã tải dữ liệu tổng kết và tự động tính kết quả theo bộ điều kiện.');
+    } catch (error) {
+            currentStudentSummary = null;
+            showManualSummaryStatus('danger', `Không thể tải dữ liệu tổng kết: ${error.message}`);
+    }
+}
+
+function calculateDerivedResult(summary, condition) {
+    if (!summary || !condition || summary.gpa == null) return null;
+
+    const gpa = Number(summary.gpa);
+    const totalCredits = Number(summary.totalCredits || 0);
+    const failedCredits = Number(summary.failedCredits || 0);
+    const isPass = totalCredits >= Number(condition.minTotalCredits ?? 120)
+            && gpa >= Number(condition.minGpa ?? 2.00)
+            && failedCredits <= Number(condition.maxFailedCredits ?? 0);
+
+    let classification = null;
+    if (isPass) {
+            classification = gpa >= 3.60 ? 1 : (gpa >= 3.20 ? 2 : (gpa >= 2.50 ? 3 : 4));
+    }
+    return { gpa, totalCredits, failedCredits, result: isPass ? 1 : 0, classification };
+}
+
+function showManualSummaryStatus(type, message) {
+    const status = document.getElementById('studentSummaryStatus');
+    if (!status) return;
+    const icons = { success: 'bi-check-circle', danger: 'bi-exclamation-triangle', info: 'bi-hourglass-split', secondary: 'bi-info-circle' };
+    status.className = `alert alert-${type} py-2 small mb-0`;
+    status.innerHTML = `<i class="bi ${icons[type] || icons.info} me-1"></i>${escapeHtml(message)}`;
 }
 
 // =================================================================================
@@ -878,10 +995,12 @@ async function loadConditions() {
         const modalSelect = document.getElementById('modalConditionId');
         const evalSelect = document.getElementById('evalConditionSelect');
         const filterSelect = document.getElementById('filterCondition');
+        const exportConditionSelect = document.getElementById('wordExportConditions');
 
         let modalOptions = '<option value="">-- Chọn bộ điều kiện --</option>';
         let evalOptions = '<option value="">-- Chọn bộ điều kiện xét duyệt --</option>';
         let filterOptions = '<option value="">Tất cả tiêu chí</option>';
+        let exportOptions = '';
 
         list.forEach(c => {
             conditionsMap.set(c.id, c);
@@ -890,6 +1009,7 @@ async function loadConditions() {
             modalOptions += opt;
             evalOptions += opt;
             filterOptions += opt;
+            exportOptions += `<option value="${c.id}">Khóa ${escapeHtml(String(cohort))} (GPA sàn: ${c.minGpa}, Tín chỉ: ${c.minTotalCredits})</option>`;
         });
 
         if (modalSelect) modalSelect.innerHTML = modalOptions;
@@ -898,8 +1018,40 @@ async function loadConditions() {
             filterSelect.innerHTML = filterOptions;
             filterSelect.value = currentFilterCondition;
         }
+        if (exportConditionSelect) exportConditionSelect.innerHTML = exportOptions;
     } catch (e) {
         console.warn('Không thể tải bộ điều kiện:', e);
+    }
+}
+
+async function loadExportClasses(conditionIds = []) {
+    const classSelect = document.getElementById('wordExportClasses');
+    if (!classSelect) return;
+    classSelect.disabled = true;
+    classSelect.innerHTML = '<option disabled>Đang tải lớp phù hợp...</option>';
+    try {
+        const params = new URLSearchParams();
+        conditionIds.forEach(id => params.append('conditionIds', id));
+        const query = params.toString();
+        const response = await fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}/export/classes${query ? `?${query}` : ''}`);
+        if (!response.ok) throw new Error(`Lỗi máy chủ (${response.status})`);
+        const classes = await response.json();
+        classSelect.innerHTML = '';
+        if (!Array.isArray(classes) || classes.length === 0) {
+            classSelect.innerHTML = '<option disabled>Không có lớp phù hợp với bộ tiêu chuẩn</option>';
+            return;
+        }
+        classes.forEach(className => {
+            const option = document.createElement('option');
+            option.value = className;
+            option.textContent = className;
+            classSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Không thể tải danh sách lớp xuất Word:', error);
+        classSelect.innerHTML = '<option disabled>Không tải được danh sách lớp</option>';
+    } finally {
+        classSelect.disabled = false;
     }
 }
 
@@ -977,21 +1129,56 @@ function showAlert(type, message) {
 // =================================================================================
 // 6. XUẤT BÁO CÁO WORD (.DOCX) - PHƯƠNG ÁN 3
 // =================================================================================
+function openWordExportModal() {
+    const resultSelect = document.getElementById('wordExportResult');
+    const conditionSelect = document.getElementById('wordExportConditions');
+    const status = document.getElementById('wordExportStatus');
+
+    if (resultSelect) resultSelect.value = currentFilterResult || '';
+    if (conditionSelect) {
+        Array.from(conditionSelect.options).forEach(option => {
+            option.selected = Boolean(currentFilterCondition && option.value === currentFilterCondition);
+        });
+        const selectedConditionIds = Array.from(conditionSelect.selectedOptions)
+            .map(option => option.value)
+            .filter(Boolean);
+        loadExportClasses(selectedConditionIds);
+    }
+    if (status) {
+        status.className = 'alert alert-secondary py-2 small';
+        status.innerHTML = '<i class="bi bi-info-circle me-1"></i>Chọn tiêu chí hoặc giữ Tất cả để xuất toàn bộ dữ liệu phù hợp.';
+    }
+    if (wordExportModalInstance) wordExportModalInstance.show();
+}
+
 async function handleExportWord() {
     const btnExport = document.getElementById('btnExportWord');
-    if (!btnExport) return;
+    const confirmButton = document.getElementById('btnConfirmExportWord');
+    if (!btnExport || !confirmButton) return;
 
-    const originalHtml = btnExport.innerHTML;
-    btnExport.disabled = true;
-    btnExport.innerHTML = `
+    const originalHtml = confirmButton.innerHTML;
+    confirmButton.disabled = true;
+    confirmButton.innerHTML = `
         <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
         Đang tạo Word...
     `;
 
     try {
         const params = new URLSearchParams();
-        if (currentFilterCondition) {
-            params.append('conditionId', currentFilterCondition);
+        const result = document.getElementById('wordExportResult')?.value || '';
+        const conditionIds = Array.from(document.getElementById('wordExportConditions')?.selectedOptions || [])
+            .map(option => option.value)
+            .filter(Boolean);
+        const classNames = Array.from(document.getElementById('wordExportClasses')?.selectedOptions || [])
+            .map(option => option.value)
+            .filter(Boolean);
+
+        if (result) params.append('result', result);
+        conditionIds.forEach(id => params.append('conditionIds', id));
+        classNames.forEach(className => params.append('classNames', className));
+
+        if (wordExportModalInstance) {
+            wordExportModalInstance.hide();
         }
 
         const queryString = params.toString();
@@ -1040,8 +1227,8 @@ async function handleExportWord() {
         console.error('Lỗi khi xuất file Word:', error);
         showAlert('danger', `Không thể xuất file Word: ${error.message}`);
     } finally {
-        btnExport.disabled = false;
-        btnExport.innerHTML = originalHtml;
+        confirmButton.disabled = false;
+        confirmButton.innerHTML = originalHtml;
     }
 }
 

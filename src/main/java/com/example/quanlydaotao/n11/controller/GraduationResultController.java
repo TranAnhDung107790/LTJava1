@@ -1,6 +1,7 @@
 package com.example.quanlydaotao.n11.controller;
 
 import com.example.quanlydaotao.n11.dto.EvaluateGraduationRequest;
+import com.example.quanlydaotao.n11.dto.StudentSummaryResponse;
 import com.example.quanlydaotao.n11.entity.GraduationResult;
 import com.example.quanlydaotao.n11.exception.NotFoundException;
 import com.example.quanlydaotao.n11.service.GraduationResultService;
@@ -71,26 +72,43 @@ public class GraduationResultController {
     }
 
     // 8. Xuat bao cao ket qua xet tot nghiep ra file Word (khai bao truoc /{id})
+    @GetMapping("/export/classes")
+    public ResponseEntity<List<String>> exportClassNames(
+            @RequestParam(required = false) List<UUID> conditionIds) {
+        return ResponseEntity.ok(service.getExportClassNames(conditionIds));
+    }
+
     @GetMapping("/export/word")
     public ResponseEntity<byte[]> exportToWord(
+            @RequestParam(required = false) Short result,
+            @RequestParam(required = false) List<UUID> conditionIds,
+            @RequestParam(required = false) List<String> classNames,
             @RequestParam(required = false) UUID conditionId) {
         try {
+            if (conditionIds == null && conditionId != null) {
+                conditionIds = List.of(conditionId);
+            }
             Map<String, List<GraduationResultExportDTO>> data =
-                service.getResultsForExport(conditionId);
+                service.getResultsForExport(result, conditionIds, classNames);
 
             GraduationCondition condition = null;
-            if (conditionId != null) {
+            if (conditionIds != null && conditionIds.size() == 1) {
                 // LỖI 2 FIX: NotFoundException được bắt → trả 404 thay vì 500
                 try {
-                    condition = conditionService.one(conditionId);
+                    condition = conditionService.one(conditionIds.get(0));
                 } catch (NotFoundException e) {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                            "Không tìm thấy bộ điều kiện ID=" + conditionId);
+                            "Không tìm thấy bộ điều kiện ID=" + conditionIds.get(0));
                 }
             }
 
             List<GraduationResultExportDTO> passed = data.getOrDefault("passed", List.of());
             List<GraduationResultExportDTO> failed = data.getOrDefault("failed", List.of());
+            if (passed.isEmpty() && failed.isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Không có kết quả xét tốt nghiệp phù hợp với tiêu chí đã chọn");
+            }
             byte[] docBytes = wordExportService.generateReport(passed, failed, condition);
 
             String filename = "BaoCao_XetTotNghiep_"
@@ -124,6 +142,11 @@ public class GraduationResultController {
     @GetMapping("/student/{studentId}")
     public ResponseEntity<List<GraduationResult>> findByStudentId(@PathVariable UUID studentId) {
         return ResponseEntity.ok(service.findByStudentId(studentId));
+    }
+
+    @GetMapping("/student/{studentId}/summary")
+    public ResponseEntity<StudentSummaryResponse> findStudentSummary(@PathVariable UUID studentId) {
+        return ResponseEntity.ok(service.findStudentSummary(studentId));
     }
 
     // 4. Nhập kết quả thủ công

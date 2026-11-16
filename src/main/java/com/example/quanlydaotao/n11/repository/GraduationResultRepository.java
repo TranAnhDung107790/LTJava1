@@ -62,6 +62,11 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
             "WHERE is_active = 1 AND student_id IS NOT NULL", nativeQuery = true)
     List<Object[]> findAllStudentSummaries();
 
+    @Query(value = "SELECT student_id, gpa_value, total_credits, failed_credits " +
+            "FROM dbo.student_summaries " +
+            "WHERE is_active = 1 AND student_id = :studentId", nativeQuery = true)
+    List<Object[]> findStudentSummary(@Param("studentId") UUID studentId);
+
     // Lấy danh sách ID sinh viên thuộc riêng một khóa cụ thể (VD: '24' cho K24, '25' cho K25, '23' cho K23)
     @Query(value = "SELECT DISTINCT id FROM (" +
             "SELECT id FROM dbo.students WHERE (:cohortSuffix IS NULL OR student_code LIKE :cohortSuffix + '%' OR class_name LIKE 'IT' + :cohortSuffix + '%') " +
@@ -103,6 +108,23 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
             "WHERE gr.is_active = 1 " +
             "ORDER BY gr.condition_id, COALESCE(s.student_code, '') ASC", nativeQuery = true)
     List<Object[]> findAllExportData();
+
+    @Query(value = "SELECT DISTINCT s.class_name " +
+            "FROM dbo.graduation_results gr " +
+            "INNER JOIN dbo.students s ON s.id = gr.student_id " +
+            "WHERE gr.is_active = 1 " +
+            "AND s.class_name IS NOT NULL AND LTRIM(RTRIM(s.class_name)) <> '' " +
+            "ORDER BY s.class_name", nativeQuery = true)
+    List<String> findDistinctExportClassNames();
+
+    @Query(value = "SELECT DISTINCT s.class_name " +
+            "FROM dbo.graduation_results gr " +
+            "INNER JOIN dbo.students s ON s.id = gr.student_id " +
+            "WHERE gr.is_active = 1 " +
+            "AND gr.condition_id IN (:conditionIds) " +
+            "AND s.class_name IS NOT NULL AND LTRIM(RTRIM(s.class_name)) <> '' " +
+            "ORDER BY s.class_name", nativeQuery = true)
+    List<String> findDistinctExportClassNamesByConditions(@Param("conditionIds") List<UUID> conditionIds);
 
     /**
      * Lấy tất cả kết quả active theo bộ điều kiện (tương thích backward)
