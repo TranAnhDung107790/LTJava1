@@ -8,7 +8,7 @@ update_student_classes.py
 database/update_student_classes.sql
 
 # Documentation & Database
-docs/
+/docs/
 database/
 
 # ====================================
