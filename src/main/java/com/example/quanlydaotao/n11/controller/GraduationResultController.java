@@ -2,6 +2,7 @@ package com.example.quanlydaotao.n11.controller;
 
 import com.example.quanlydaotao.n11.dto.EvaluateGraduationRequest;
 import com.example.quanlydaotao.n11.entity.GraduationResult;
+import com.example.quanlydaotao.n11.exception.NotFoundException;
 import com.example.quanlydaotao.n11.service.GraduationResultService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -9,11 +10,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
 import com.example.quanlydaotao.n11.entity.GraduationCondition;
@@ -41,6 +44,11 @@ public class GraduationResultController {
         this.conditionService = conditionService;
     }
 
+    // Whitelist các field hợp lệ để sort, tránh 500 khi truyền field sai
+    private static final Set<String> VALID_SORT_FIELDS = Set.of(
+            "createdAt", "updatedAt", "result", "classification", "gpa",
+            "totalCredits", "failedCredits", "decisionDate");
+
     // 1. Lấy danh sách có phân trang và lọc theo trạng thái (result: 1=Đạt, 0=Chưa đạt)
     // Ví dụ gọi: GET /api/graduation-results?result=1&page=0&size=10
     @GetMapping
@@ -52,7 +60,11 @@ public class GraduationResultController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String direction) {
 
-        Sort sort = direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        // LỖI 1 FIX: Validate sortBy field, fallback về createdAt nếu không hợp lệ
+        String safeSortBy = VALID_SORT_FIELDS.contains(sortBy) ? sortBy : "createdAt";
+        Sort sort = direction.equalsIgnoreCase("asc")
+                ? Sort.by(safeSortBy).ascending()
+                : Sort.by(safeSortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseEntity.ok(service.findAll(result, conditionId, pageable));
@@ -68,7 +80,13 @@ public class GraduationResultController {
 
             GraduationCondition condition = null;
             if (conditionId != null) {
-                condition = conditionService.one(conditionId);
+                // LỖI 2 FIX: NotFoundException được bắt → trả 404 thay vì 500
+                try {
+                    condition = conditionService.one(conditionId);
+                } catch (NotFoundException e) {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Không tìm thấy bộ điều kiện ID=" + conditionId);
+                }
             }
 
             List<GraduationResultExportDTO> passed = data.getOrDefault("passed", List.of());

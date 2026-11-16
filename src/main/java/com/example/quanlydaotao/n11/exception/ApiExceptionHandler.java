@@ -2,6 +2,7 @@ package com.example.quanlydaotao.n11.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -32,6 +33,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, Object>> invalidId(MethodArgumentTypeMismatchException ex) {
         return ResponseEntity.badRequest().body(Map.of("error", "Định dạng tham số không hợp lệ: " + ex.getName()));
+    }
+
+    // LỖI 3 FIX: Body JSON null hoặc không parse được → 400 với message rõ ràng
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> unreadableBody(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Request body không hợp lệ hoặc bị thiếu"));
     }
 
     @ExceptionHandler(ResponseStatusException.class)
