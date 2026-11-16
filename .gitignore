@@ -1,3 +1,38 @@
 .aider*
 .agent/
+
+
+# Local student class update scripts
+update_student_classes.ps1
+update_student_classes.py
+database/update_student_classes.sql
+
+# Documentation & Database
+docs/
+database/
+
+# ====================================
+# Agent / AI tool directories
+# ====================================
+.agents/
+.gemini/
+.idea/
+
+# Antigravity / AI agent cache & logs
+.antigravity/
+.cursor/
+.copilot/
+.continue/
+
+# Build output
 target/
+
+# OS generated files
+Thumbs.db
+.DS_Store
+
+# IDE specific
+*.iml
+*.ipr
+*.iws
+>>>>>>> 161cba2bc9bd8047edcee82fd6cba23ff7852a7a

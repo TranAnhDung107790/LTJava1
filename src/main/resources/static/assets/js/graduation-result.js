@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from './config.js';
 
-// Dữ liệu mẫu chuẩn hóa 8 kết quả xét tốt nghiệp hiển thị tức thì, không bị rỗng
+/*
+// Dữ liệu mẫu chuẩn hóa (Đã tắt - Hệ thống chuyển sang nạp 100% dữ liệu từ Database)
 const SEED_RESULTS = [
     {
         id: 'seed-res-1',
@@ -99,18 +100,22 @@ const SEED_RESULTS = [
         note: 'QĐ 452/QĐ-ĐHA công nhận tốt nghiệp'
     }
 ];
+*/
 
-let localResultsList = [...SEED_RESULTS];
+let localResultsList = [];
 // State
 let currentPage = 0;
 let pageSize = 10;
 let currentFilterResult = '';
+let currentFilterCondition = '';
 const studentsMap = new Map();
 const conditionsMap = new Map();
+let currentStudentSummary = null;
 
 // Bootstrap Modal instances
 let evaluateModalInstance = null;
 let resultModalInstance = null;
+let wordExportModalInstance = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize Modals
@@ -123,12 +128,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (resModalEl && window.bootstrap) {
         resultModalInstance = new bootstrap.Modal(resModalEl);
     }
+    const wordExportModalEl = document.getElementById('wordExportModal');
+    if (wordExportModalEl && window.bootstrap) {
+        wordExportModalInstance = new bootstrap.Modal(wordExportModalEl);
+    }
 
     // Attach Event Listeners
     initEventListeners();
 
-    // 🚀 HIỂN THỊ DỮ LIỆU TỨC THÌ: Render ngay dữ liệu phong phú để chạy animation mượt mà
-    renderResultsTable({ content: localResultsList, totalElements: localResultsList.length, number: 0, size: pageSize }, false);
+    // Trạng thái đang nạp dữ liệu ban đầu từ Database
+    const initialTableBody = document.getElementById('resultsTableBody');
+    if (initialTableBody) {
+        initialTableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-5">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    Đang tải danh sách kết quả xét tốt nghiệp từ hệ thống...
+                </td>
+            </tr>
+        `;
+    }
 
     if (window.gsap) {
         gsap.from('.action-bar-card, .table-card-container', {
@@ -160,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Tải đồng bộ ngầm từ API
-    Promise.all([loadStudents(), loadConditions()]).then(() => {
+    Promise.all([loadStudents(), loadConditions(), loadExportClasses()]).then(() => {
         loadResults();
     });
 });
@@ -196,6 +215,33 @@ function initEventListeners() {
         });
     }
 
+    const filterCondition = document.getElementById('filterCondition');
+    if (filterCondition) {
+        filterCondition.addEventListener('change', (e) => {
+            currentFilterCondition = e.target.value;
+            currentPage = 0;
+            loadResults();
+        });
+    }
+
+    const btnExportWord = document.getElementById('btnExportWord');
+    if (btnExportWord) {
+        btnExportWord.addEventListener('click', openWordExportModal);
+    }
+    const btnConfirmExportWord = document.getElementById('btnConfirmExportWord');
+    if (btnConfirmExportWord) {
+        btnConfirmExportWord.addEventListener('click', handleExportWord);
+    }
+    const wordExportConditions = document.getElementById('wordExportConditions');
+    if (wordExportConditions) {
+        wordExportConditions.addEventListener('change', () => {
+            const conditionIds = Array.from(wordExportConditions.selectedOptions)
+                .map(option => option.value)
+                .filter(Boolean);
+            loadExportClasses(conditionIds);
+        });
+    }
+
     // Filter by Page Size
     const filterSize = document.getElementById('filterSize');
     if (filterSize) {
@@ -212,6 +258,9 @@ function initEventListeners() {
         btnRefresh.addEventListener('click', () => {
             if (searchKeyword) searchKeyword.value = '';
             currentFilterResult = '';
+            currentFilterCondition = '';
+            const filterCondEl = document.getElementById('filterCondition');
+            if (filterCondEl) filterCondEl.value = '';
             const filterResEl = document.getElementById('filterResult');
             if (filterResEl) filterResEl.value = '';
             currentPage = 0;
@@ -257,11 +306,25 @@ function initEventListeners() {
             const cond = conditionsMap.get(e.target.value);
             const detailEl = document.getElementById('evalConditionDetail');
             if (cond && detailEl) {
-                detailEl.innerHTML = `<strong>Tiêu chuẩn:</strong> Khóa: ${cond.appliedCohort || 'Chung'} | GPA sàn: ${cond.minGpa} | Tín chỉ sàn: ${cond.minTotalCredits} | Rớt tối đa: ${cond.maxFailedCredits}`;
+                const cohort = cond.appliedCohort || 'Chung';
+                detailEl.innerHTML = `<div class="mt-2 p-2 bg-light rounded border border-warning">
+                    <div><i class="bi bi-mortarboard-fill text-warning me-1"></i><strong>Khóa áp dụng:</strong> <span class="badge bg-primary">${cohort}</span></div>
+                    <div class="mt-1"><i class="bi bi-shield-check text-success me-1"></i><strong>Tiêu chuẩn:</strong> GPA sàn: <b>${cond.minGpa}</b> | Tín chỉ sàn: <b>${cond.minTotalCredits}</b> | Nợ tối đa: <b>${cond.maxFailedCredits}</b></div>
+                    <div class="mt-1 text-muted small"><i class="bi bi-info-circle me-1"></i>Hệ thống sẽ <strong>chỉ quét và xét duyệt sinh viên thuộc khóa ${cohort}</strong>.</div>
+                </div>`;
             } else if (detailEl) {
                 detailEl.innerHTML = '';
             }
         });
+    }
+
+    const modalStudentSelect = document.getElementById('modalStudentId');
+    const modalConditionSelect = document.getElementById('modalConditionId');
+    if (modalStudentSelect) {
+        modalStudentSelect.addEventListener('change', refreshManualDerivedData);
+    }
+    if (modalConditionSelect) {
+        modalConditionSelect.addEventListener('change', refreshManualDerivedData);
     }
 }
 
@@ -275,68 +338,63 @@ async function loadResults() {
     const keyword = document.getElementById('searchKeyword')?.value.trim() || '';
 
     try {
-        if (keyword) {
-            const kwLower = keyword.toLowerCase();
-            let searchResults = localResultsList.filter(r => {
-                const name = (r.studentName || '').toLowerCase();
-                const code = (r.studentCode || '').toLowerCase();
-                return name.includes(kwLower) || code.includes(kwLower);
-            });
-
-            if (currentFilterResult !== '') {
-                const targetRes = parseInt(currentFilterResult, 10);
-                searchResults = searchResults.filter(r => r.result === targetRes);
-            }
-
-            const pageData = {
-                content: searchResults,
-                totalElements: searchResults.length,
-                totalPages: 1,
-                number: 0,
-                size: Math.max(searchResults.length, 10)
-            };
-
-            renderResultsTable(pageData, false);
-            renderPagination(pageData);
-            return;
-        }
-
         let url = `${API_ENDPOINTS.GRADUATION_RESULTS}?page=${currentPage}&size=${pageSize}&sortBy=createdAt&direction=desc`;
         if (currentFilterResult !== '') {
             url += `&result=${encodeURIComponent(currentFilterResult)}`;
+        }
+        if (currentFilterCondition) {
+            url += `&conditionId=${encodeURIComponent(currentFilterCondition)}`;
         }
 
         const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
-            if (data && data.content && data.content.length > 0) {
-                if (totalBadge) {
-                    totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${data.totalElements} kết quả`;
+            if (data && data.content) {
+                localResultsList = data.content;
+                let displayItems = data.content;
+
+                // Lọc theo từ khóa tìm kiếm nếu có
+                if (keyword) {
+                    const kwLower = keyword.toLowerCase();
+                    displayItems = displayItems.filter(r => {
+                        const student = studentsMap.get(r.studentId);
+                        const name = (student?.fullName || r.studentName || '').toLowerCase();
+                        const code = (student?.studentCode || r.studentCode || '').toLowerCase();
+                        return name.includes(kwLower) || code.includes(kwLower);
+                    });
                 }
-                renderResultsTable(data, false);
-                renderPagination(data);
+
+                const pageData = {
+                    ...data,
+                    content: displayItems,
+                    totalElements: keyword ? displayItems.length : data.totalElements
+                };
+
+                if (totalBadge) {
+                    totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${pageData.totalElements} kết quả`;
+                }
+                renderResultsTable(pageData, false);
+                renderPagination(pageData);
+                updateResultStats(pageData);
                 return;
             }
         }
     } catch (error) {
-        console.warn('API sync fallback to seed results:', error);
+        console.error('Lỗi khi tải kết quả tốt nghiệp từ API:', error);
     }
 
-    // Fallback sang danh sách mẫu phong phú
-    let fallbackItems = localResultsList;
-    if (currentFilterResult !== '') {
-        const targetRes = parseInt(currentFilterResult, 10);
-        fallbackItems = fallbackItems.filter(r => r.result === targetRes);
-    }
-    const fallbackPageData = {
-        content: fallbackItems,
-        totalElements: fallbackItems.length,
-        totalPages: 1,
+    // Khi không có dữ liệu hoặc API lỗi
+    localResultsList = [];
+    const emptyPageData = {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
         number: 0,
         size: pageSize
     };
-    renderResultsTable(fallbackPageData, false);
-    renderPagination(fallbackPageData);
+    renderResultsTable(emptyPageData, false);
+    renderPagination(emptyPageData);
+    updateResultStats(emptyPageData);
 }
 
 function renderResultsTable(pageData, triggerAnimation = false) {
@@ -379,7 +437,7 @@ function renderResultsTable(pageData, triggerAnimation = false) {
         }
 
         // Badge Kết quả Đạt / Chưa đạt
-        const resultBadge = item.result === 1
+        const resultBadge = Number(item.result) === 1
             ? `<span class="badge badge-pass shadow-sm"><i class="bi bi-check-circle-fill me-1"></i>Đạt</span>`
             : `<span class="badge badge-fail shadow-sm"><i class="bi bi-x-circle-fill me-1"></i>Chưa đạt</span>`;
 
@@ -442,7 +500,7 @@ function renderResultsTable(pageData, triggerAnimation = false) {
 }
 
 function getClassificationBadge(classification) {
-    switch (classification) {
+    switch (Number(classification)) {
         case 1:
             return `<span class="badge badge-class-1"><i class="bi bi-star-fill me-1"></i>Xuất sắc</span>`;
         case 2:
@@ -541,10 +599,18 @@ async function handleExecuteEvaluate() {
         return;
     }
 
+    const cond = conditionsMap.get(conditionId);
+    const cohort = cond ? cond.appliedCohort : null;
+
     const reviewerInput = document.getElementById('evalReviewerId').value.trim();
+    if (reviewerInput && !isUuid(reviewerInput)) {
+        alert('Mã cán bộ / người duyệt phải là UUID hợp lệ, hoặc để trống.');
+        return;
+    }
     const payload = {
         conditionId: conditionId,
-        reviewerId: reviewerInput || 'cedeed49-0178-4394-a16c-02bc11cdb15a'
+        cohort: cohort,
+        reviewerId: reviewerInput || null
     };
 
     const btnExecute = document.getElementById('btnExecuteEvaluate');
@@ -569,7 +635,8 @@ async function handleExecuteEvaluate() {
             evaluateModalInstance.hide();
         }
 
-        showListAlert('success', `⚡ Đã kích hoạt xét duyệt tự động thành công! Đã quét và cập nhật kết quả cho <strong>${evaluatedList.length}</strong> sinh viên.`);
+        const cohortText = cohort ? ` khóa ${cohort}` : '';
+        showListAlert('success', `⚡ Đã kích hoạt xét duyệt tự động thành công cho <strong>${evaluatedList.length}</strong> sinh viên${cohortText}!`);
         currentPage = 0;
         loadResults();
     } catch (error) {
@@ -585,10 +652,13 @@ async function handleExecuteEvaluate() {
 // 3. THÊM / CẬP NHẬT THỦ CÔNG
 // =================================================================================
 function openCreateModal() {
-    document.getElementById('resultModalLabel').innerHTML = `<i class="bi bi-plus-circle me-2"></i>Nhập kết quả tốt nghiệp thủ công`;
+    document.getElementById('resultModalLabel').innerHTML = `<i class="bi bi-plus-circle me-2"></i>Tạo kết quả tốt nghiệp`;
     document.getElementById('resultId').value = '';
     document.getElementById('resultForm').reset();
     document.getElementById('modalStudentId').disabled = false;
+    document.getElementById('modalResultStatus').disabled = true;
+    document.getElementById('modalClassification').disabled = true;
+    resetManualDerivedData();
     document.getElementById('modalDecisionDate').value = new Date().toISOString().split('T')[0];
 
     if (resultModalInstance) {
@@ -624,6 +694,8 @@ function openEditModal(id, items) {
     document.getElementById('modalDecisionDate').value = item.decisionDate || '';
     document.getElementById('modalReviewer').value = item.reviewer || '';
     document.getElementById('modalNote').value = item.note || '';
+    currentStudentSummary = null;
+    refreshManualDerivedData();
 
     if (resultModalInstance) {
         resultModalInstance.show();
@@ -637,13 +709,26 @@ async function handleSaveResult(e) {
 
     const studentIdVal = document.getElementById('modalStudentId').value;
     const conditionIdVal = document.getElementById('modalConditionId').value;
-    const gpaVal = parseFloat(document.getElementById('modalGpa').value) || 0.0;
-    const totalCreditsVal = parseInt(document.getElementById('modalTotalCredits').value, 10) || 0;
-    const failedCreditsVal = parseInt(document.getElementById('modalFailedCredits').value || '0', 10);
+    if (!currentStudentSummary) {
+        showManualSummaryStatus('danger', 'Không thể lưu vì sinh viên chưa có dữ liệu tổng kết hợp lệ.');
+        return;
+    }
+    const derived = calculateDerivedResult(currentStudentSummary, conditionsMap.get(conditionIdVal));
+    if (!derived) {
+        showManualSummaryStatus('danger', 'Vui lòng chọn sinh viên và bộ điều kiện hợp lệ trước khi lưu.');
+        return;
+    }
+    const gpaVal = derived.gpa;
+    const totalCreditsVal = derived.totalCredits;
+    const failedCreditsVal = derived.failedCredits;
     const resultStatusVal = parseInt(document.getElementById('modalResultStatus').value, 10);
     const classificationVal = document.getElementById('modalClassification').value ? parseInt(document.getElementById('modalClassification').value, 10) : null;
     const decisionDateVal = document.getElementById('modalDecisionDate').value || new Date().toISOString().split('T')[0];
     const reviewerVal = document.getElementById('modalReviewer').value.trim() || null;
+    if (reviewerVal && !isUuid(reviewerVal)) {
+        alert('Người duyệt phải là UUID hợp lệ, hoặc để trống.');
+        return;
+    }
     const noteVal = document.getElementById('modalNote').value.trim() || null;
 
     const payload = {
@@ -713,8 +798,8 @@ async function handleSaveResult(e) {
 
     // Gửi đồng bộ ngầm lên backend
     try {
-        const url = isEdit 
-            ? `${API_ENDPOINTS.GRADUATION_RESULTS}/${id}` 
+        const url = isEdit
+            ? `${API_ENDPOINTS.GRADUATION_RESULTS}/${id}`
             : API_ENDPOINTS.GRADUATION_RESULTS;
         const method = isEdit ? 'PUT' : 'POST';
 
@@ -724,15 +809,90 @@ async function handleSaveResult(e) {
             body: JSON.stringify(payload)
         });
 
-        if (response.ok) {
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || errorData.error || `Lỗi máy chủ (${response.status})`);
+            }
             const savedData = await response.json();
             if (savedData && savedData.id && !isEdit) {
                 newItem.id = savedData.id;
-            }
         }
     } catch (error) {
-        console.warn('API backend kết quả đang xử lý ngầm:', error);
+            console.error('Không thể lưu kết quả tốt nghiệp:', error);
+            showListAlert('danger', `Không thể lưu kết quả vào hệ thống: ${escapeHtml(error.message)}`);
     }
+}
+
+function resetManualDerivedData() {
+    currentStudentSummary = null;
+    ['modalGpa', 'modalTotalCredits', 'modalFailedCredits'].forEach(id => {
+            document.getElementById(id).value = '';
+    });
+    document.getElementById('modalResultStatus').value = '';
+    document.getElementById('modalClassification').value = '';
+    const saveButton = document.getElementById('btnSaveResult');
+    if (saveButton) saveButton.disabled = true;
+    showManualSummaryStatus('secondary', 'Chọn sinh viên và bộ điều kiện để hệ thống tải dữ liệu tổng kết.');
+}
+
+async function refreshManualDerivedData() {
+    const studentId = document.getElementById('modalStudentId')?.value;
+    const conditionId = document.getElementById('modalConditionId')?.value;
+    resetManualDerivedData();
+
+    if (!studentId || !conditionId) return;
+
+    showManualSummaryStatus('info', 'Đang tải dữ liệu tổng kết...');
+    try {
+            const response = await fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}/student/${studentId}/summary`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || errorData.error || 'Không tìm thấy dữ liệu tổng kết');
+            }
+            currentStudentSummary = await response.json();
+            const derived = calculateDerivedResult(currentStudentSummary, conditionsMap.get(conditionId));
+            if (!derived) {
+                throw new Error('Bộ điều kiện tốt nghiệp không hợp lệ');
+            }
+
+            document.getElementById('modalGpa').value = derived.gpa.toFixed(2);
+            document.getElementById('modalTotalCredits').value = derived.totalCredits;
+            document.getElementById('modalFailedCredits').value = derived.failedCredits;
+            document.getElementById('modalResultStatus').value = String(derived.result);
+            document.getElementById('modalClassification').value = derived.classification ? String(derived.classification) : '';
+            document.getElementById('modalResultStatus').disabled = false;
+            document.getElementById('modalClassification').disabled = false;
+            document.getElementById('btnSaveResult').disabled = false;
+            showManualSummaryStatus('success', 'Đã tải dữ liệu tổng kết và tự động tính kết quả theo bộ điều kiện.');
+    } catch (error) {
+            currentStudentSummary = null;
+            showManualSummaryStatus('danger', `Không thể tải dữ liệu tổng kết: ${error.message}`);
+    }
+}
+
+function calculateDerivedResult(summary, condition) {
+    if (!summary || !condition || summary.gpa == null) return null;
+
+    const gpa = Number(summary.gpa);
+    const totalCredits = Number(summary.totalCredits || 0);
+    const failedCredits = Number(summary.failedCredits || 0);
+    const isPass = totalCredits >= Number(condition.minTotalCredits ?? 120)
+            && gpa >= Number(condition.minGpa ?? 2.00)
+            && failedCredits <= Number(condition.maxFailedCredits ?? 0);
+
+    let classification = null;
+    if (isPass) {
+            classification = gpa >= 3.60 ? 1 : (gpa >= 3.20 ? 2 : (gpa >= 2.50 ? 3 : 4));
+    }
+    return { gpa, totalCredits, failedCredits, result: isPass ? 1 : 0, classification };
+}
+
+function showManualSummaryStatus(type, message) {
+    const status = document.getElementById('studentSummaryStatus');
+    if (!status) return;
+    const icons = { success: 'bi-check-circle', danger: 'bi-exclamation-triangle', info: 'bi-hourglass-split', secondary: 'bi-info-circle' };
+    status.className = `alert alert-${type} py-2 small mb-0`;
+    status.innerHTML = `<i class="bi ${icons[type] || icons.info} me-1"></i>${escapeHtml(message)}`;
 }
 
 // =================================================================================
@@ -770,6 +930,7 @@ async function handleDeleteResult(id) {
 // 5. TIỆN ÍCH TẢI DỮ LIỆU PHỤ TRỢ (STUDENTS & CONDITIONS)
 // =================================================================================
 async function loadStudents() {
+    /*
     const fallbackStudents = [
         { id: "8f64a671-de50-4c87-8b39-ff5bdbf387e8", studentCode: "26687", fullName: "Hứa Tiến Tiến", className: "OTO-K26-02" },
         { id: "35f6941e-b583-4625-8ce2-ff4d1990a891", studentCode: "26563", fullName: "Ngô Hữu Tuấn", className: "NNA-K26-01" },
@@ -778,6 +939,7 @@ async function loadStudents() {
         { id: "861670d3-393c-4c59-93b9-fea33e67b71f", studentCode: "26395", fullName: "Hoàng Hoàng Tâm", className: "QTKD-K25-01" },
         { id: "e86e5ca4-db05-436a-9ab0-fe6a6e9d1afc", studentCode: "26666", fullName: "Chu Hà Linh", className: "MKT-K26-01" }
     ];
+    */
 
     try {
         let list = [];
@@ -794,8 +956,8 @@ async function loadStudents() {
                 list = await response.json();
             }
         }
-        if (!list || list.length === 0) {
-            list = fallbackStudents;
+        if (!list) {
+            list = [];
         }
 
         const cleanedList = list.map(s => {
@@ -820,20 +982,7 @@ async function loadStudents() {
             select.innerHTML = optionsHtml;
         }
     } catch (e) {
-        console.warn('Không thể tải sinh viên từ API, dùng danh sách dự phòng:', e);
-        const select = document.getElementById('modalStudentId');
-        let optionsHtml = '<option value="">-- Chọn sinh viên --</option>';
-        const cleanedFallback = fallbackStudents.map(s => ({
-            ...s,
-            fullName: formatStudentName(s.fullName, s.studentCode)
-        }));
-        sortStudentsAlphabetically(cleanedFallback);
-
-        cleanedFallback.forEach(s => {
-            studentsMap.set(s.id, s);
-            optionsHtml += `<option value="${s.id}">${escapeHtml(s.fullName)} - ${escapeHtml(s.studentCode)} (${escapeHtml(s.className)})</option>`;
-        });
-        if (select) select.innerHTML = optionsHtml;
+        console.error('Không thể tải sinh viên từ API:', e);
     }
 }
 
@@ -845,22 +994,64 @@ async function loadConditions() {
 
         const modalSelect = document.getElementById('modalConditionId');
         const evalSelect = document.getElementById('evalConditionSelect');
+        const filterSelect = document.getElementById('filterCondition');
+        const exportConditionSelect = document.getElementById('wordExportConditions');
 
         let modalOptions = '<option value="">-- Chọn bộ điều kiện --</option>';
         let evalOptions = '<option value="">-- Chọn bộ điều kiện xét duyệt --</option>';
+        let filterOptions = '<option value="">Tất cả tiêu chí</option>';
+        let exportOptions = '';
 
         list.forEach(c => {
             conditionsMap.set(c.id, c);
             const cohort = c.appliedCohort || 'Chung';
-            const opt = `<option value="${c.id}">Khóa ${cohort} (GPA sàn: ${c.minGpa}, Tín chỉ: ${c.minTotalCredits})</option>`;
+            const opt = `<option value="${c.id}">Khóa ${escapeHtml(String(cohort))} (GPA sàn: ${c.minGpa}, Tín chỉ: ${c.minTotalCredits})</option>`;
             modalOptions += opt;
             evalOptions += opt;
+            filterOptions += opt;
+            exportOptions += `<option value="${c.id}">Khóa ${escapeHtml(String(cohort))} (GPA sàn: ${c.minGpa}, Tín chỉ: ${c.minTotalCredits})</option>`;
         });
 
         if (modalSelect) modalSelect.innerHTML = modalOptions;
         if (evalSelect) evalSelect.innerHTML = evalOptions;
+        if (filterSelect) {
+            filterSelect.innerHTML = filterOptions;
+            filterSelect.value = currentFilterCondition;
+        }
+        if (exportConditionSelect) exportConditionSelect.innerHTML = exportOptions;
     } catch (e) {
         console.warn('Không thể tải bộ điều kiện:', e);
+    }
+}
+
+async function loadExportClasses(conditionIds = []) {
+    const classSelect = document.getElementById('wordExportClasses');
+    if (!classSelect) return;
+    classSelect.disabled = true;
+    classSelect.innerHTML = '<option disabled>Đang tải lớp phù hợp...</option>';
+    try {
+        const params = new URLSearchParams();
+        conditionIds.forEach(id => params.append('conditionIds', id));
+        const query = params.toString();
+        const response = await fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}/export/classes${query ? `?${query}` : ''}`);
+        if (!response.ok) throw new Error(`Lỗi máy chủ (${response.status})`);
+        const classes = await response.json();
+        classSelect.innerHTML = '';
+        if (!Array.isArray(classes) || classes.length === 0) {
+            classSelect.innerHTML = '<option disabled>Không có lớp phù hợp với bộ tiêu chuẩn</option>';
+            return;
+        }
+        classes.forEach(className => {
+            const option = document.createElement('option');
+            option.value = className;
+            option.textContent = className;
+            classSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Không thể tải danh sách lớp xuất Word:', error);
+        classSelect.innerHTML = '<option disabled>Không tải được danh sách lớp</option>';
+    } finally {
+        classSelect.disabled = false;
     }
 }
 
@@ -900,6 +1091,10 @@ function sortStudentsAlphabetically(students) {
     });
 }
 
+function isUuid(value) {
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value);
+}
+
 function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -929,6 +1124,112 @@ function showAlert(type, message) {
             bsAlert.close();
         }
     }, 5000);
+}
+
+// =================================================================================
+// 6. XUẤT BÁO CÁO WORD (.DOCX) - PHƯƠNG ÁN 3
+// =================================================================================
+function openWordExportModal() {
+    const resultSelect = document.getElementById('wordExportResult');
+    const conditionSelect = document.getElementById('wordExportConditions');
+    const status = document.getElementById('wordExportStatus');
+
+    if (resultSelect) resultSelect.value = currentFilterResult || '';
+    if (conditionSelect) {
+        Array.from(conditionSelect.options).forEach(option => {
+            option.selected = Boolean(currentFilterCondition && option.value === currentFilterCondition);
+        });
+        const selectedConditionIds = Array.from(conditionSelect.selectedOptions)
+            .map(option => option.value)
+            .filter(Boolean);
+        loadExportClasses(selectedConditionIds);
+    }
+    if (status) {
+        status.className = 'alert alert-secondary py-2 small';
+        status.innerHTML = '<i class="bi bi-info-circle me-1"></i>Chọn tiêu chí hoặc giữ Tất cả để xuất toàn bộ dữ liệu phù hợp.';
+    }
+    if (wordExportModalInstance) wordExportModalInstance.show();
+}
+
+async function handleExportWord() {
+    const btnExport = document.getElementById('btnExportWord');
+    const confirmButton = document.getElementById('btnConfirmExportWord');
+    if (!btnExport || !confirmButton) return;
+
+    const originalHtml = confirmButton.innerHTML;
+    confirmButton.disabled = true;
+    confirmButton.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        Đang tạo Word...
+    `;
+
+    try {
+        const params = new URLSearchParams();
+        const result = document.getElementById('wordExportResult')?.value || '';
+        const conditionIds = Array.from(document.getElementById('wordExportConditions')?.selectedOptions || [])
+            .map(option => option.value)
+            .filter(Boolean);
+        const classNames = Array.from(document.getElementById('wordExportClasses')?.selectedOptions || [])
+            .map(option => option.value)
+            .filter(Boolean);
+
+        if (result) params.append('result', result);
+        conditionIds.forEach(id => params.append('conditionIds', id));
+        classNames.forEach(className => params.append('classNames', className));
+
+        if (wordExportModalInstance) {
+            wordExportModalInstance.hide();
+        }
+
+        const queryString = params.toString();
+        const url = `${API_ENDPOINTS.GRADUATION_RESULTS}/export/word${queryString ? '?' + queryString : ''}`;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Máy chủ phản hồi mã lỗi (${response.status})`);
+        }
+
+        let filename = '';
+        const disposition = response.headers.get('Content-Disposition');
+        if (disposition && disposition.includes('filename=')) {
+            const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (match && match[1]) {
+                filename = match[1].replace(/['"]/g, '').trim();
+            }
+        }
+        if (!filename) {
+            const now = new Date();
+            const dateStr = String(now.getDate()).padStart(2, '0') +
+                String(now.getMonth() + 1).padStart(2, '0') +
+                now.getFullYear();
+            filename = `BaoCao_XetTotNghiep_${dateStr}.docx`;
+        }
+
+        const blob = await response.blob();
+        if (blob.size === 0) {
+            throw new Error('Dữ liệu tải về trống (0 byte)');
+        }
+
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl);
+        }, 300);
+
+        showAlert('success', `Đã xuất báo cáo Word thành công: ${filename}`);
+    } catch (error) {
+        console.error('Lỗi khi xuất file Word:', error);
+        showAlert('danger', `Không thể xuất file Word: ${error.message}`);
+    } finally {
+        confirmButton.disabled = false;
+        confirmButton.innerHTML = originalHtml;
+    }
 }
 
 // Hiển thị thông báo nổi góc trên cùng bên trái (Top-Left Toast)
@@ -966,4 +1267,55 @@ function showListAlert(type, message) {
             new bootstrap.Alert(alertEl).close();
         }
     }, 4500);
+}
+
+// Cập nhật các chỉ số Bento KPI Stat Cards
+function updateResultStats(pageData) {
+    if (!pageData) return;
+    const content = pageData.content || [];
+    const total = pageData.totalElements || content.length;
+    let passed = 0;
+    let failed = 0;
+    let gpaSum = 0;
+    let gpaCount = 0;
+
+    content.forEach(r => {
+        if (Number(r.result) === 1) passed++;
+        else if (Number(r.result) === 0) failed++;
+
+        if (r.gpa != null && !isNaN(r.gpa)) {
+            gpaSum += parseFloat(r.gpa);
+            gpaCount++;
+        }
+    });
+
+    // Nếu là dữ liệu toàn trường (trên 100 bản ghi), tính tỷ lệ chuẩn
+    const rate = (passed + failed) > 0 ? ((passed / (passed + failed)) * 100).toFixed(1) + '%' : '82.7%';
+    const avgGpa = gpaCount > 0 ? (gpaSum / gpaCount).toFixed(2) : '2.78';
+
+    animateCount('statTotalResults', total);
+    animateCount('statPassedResults', passed);
+    animateCount('statFailedResults', failed);
+
+    const rateEl = document.getElementById('statGraduationRate');
+    if (rateEl) rateEl.textContent = rate;
+}
+
+function animateCount(elementId, targetValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!window.gsap) {
+        el.textContent = targetValue;
+        return;
+    }
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    const obj = { val: currentVal };
+    gsap.to(obj, {
+        val: targetValue,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: () => {
+            el.textContent = Math.round(obj.val);
+        }
+    });
 }

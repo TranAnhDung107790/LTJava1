@@ -1,130 +1,99 @@
 package com.example.quanlydaotao.n11.service;
 
 import com.example.quanlydaotao.n11.dto.EvaluateGraduationRequest;
+import com.example.quanlydaotao.n11.dto.GraduationResultExportDTO;
+import com.example.quanlydaotao.n11.dto.StudentSummaryResponse;
+import com.example.quanlydaotao.n11.entity.GraduationCondition;
 import com.example.quanlydaotao.n11.entity.GraduationResult;
+import com.example.quanlydaotao.n11.repository.GraduationConditionRepository;
 import com.example.quanlydaotao.n11.repository.GraduationResultRepository;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GraduationResultService {
 
     private final GraduationResultRepository repository;
-    private final List<GraduationResult> fallbackResults = new CopyOnWriteArrayList<>();
+    private final GraduationConditionRepository conditionRepository;
 
-    public GraduationResultService(GraduationResultRepository repository) {
+    public GraduationResultService(GraduationResultRepository repository,
+            GraduationConditionRepository conditionRepository) {
         this.repository = repository;
-        initFallbackResults();
+        this.conditionRepository = conditionRepository;
     }
 
-    private void initFallbackResults() {
-        UUID condId = UUID.fromString("392a8b22-76fd-4d5d-afa2-b4253d9b7343");
-        fallbackResults.add(createSample("7beeed48-11b7-4aaa-9cfe-3a44ed9e8ffa", "8f64a671-de50-4c87-8b39-ff5bdbf387e8", condId, "2.85", 125, 0, (short) 1, (short) 3, "26687", "Hứa Tiến Tiến"));
-        fallbackResults.add(createSample("0047b4ec-c42b-4012-b2e9-b14e748c38db", "35f6941e-b583-4625-8ce2-ff4d1990a891", condId, "3.35", 130, 0, (short) 1, (short) 2, "26563", "Ngô Hữu Tuấn"));
-        fallbackResults.add(createSample("edf46a56-334d-4248-81a7-6db8e6c86d0e", "c21b452a-bb86-4054-a619-ff21dc207a19", condId, "3.65", 138, 0, (short) 1, (short) 1, "25549", "Hồ Hoàng Hùng"));
-        fallbackResults.add(createSample("b441ad56-d550-4349-876a-9a113c069725", "0e374a91-d6e6-4174-b7df-ff19e2e5876f", condId, "2.40", 115, 8, (short) 0, null, "23017", "Vũ Khánh Tùng"));
-    }
-
-    private GraduationResult createSample(String idStr, String studentIdStr, UUID condId, String gpa,
-                                         int credits, int failed, short result, Short classification,
-                                         String studentCode, String studentName) {
-        GraduationResult gr = new GraduationResult();
-        gr.setId(UUID.fromString(idStr));
-        gr.setStudentId(UUID.fromString(studentIdStr));
-        gr.setConditionId(condId);
-        gr.setGpa(new BigDecimal(gpa));
-        gr.setTotalCredits(credits);
-        gr.setFailedCredits(failed);
-        gr.setResult(result);
-        gr.setClassification(classification);
-        gr.setDecisionDate(LocalDate.now().minusDays(2));
-        gr.setIsActive(true);
-        gr.setCreatedAt(LocalDateTime.now().minusDays(2));
-        gr.setStudentCode(studentCode);
-        gr.setStudentName(studentName);
-        gr.setNote("Xét duyệt tự động");
-        return gr;
-    }
-
-    // 1. Lấy danh sách có phân trang và lọc theo trạng thái (result: 1-Đạt, 0-Chưa đạt)
-    public Page<GraduationResult> findAll(Short result, Pageable pageable) {
-        try {
-            Page<GraduationResult> page = repository.findByIsActiveTrueAndResult(result, pageable);
-            if (page != null && !page.isEmpty()) {
-                return page;
-            }
-        } catch (Exception ignored) {
-        }
-        List<GraduationResult> filtered = fallbackResults.stream()
-                .filter(r -> Boolean.TRUE.equals(r.getIsActive()) && (result == null || r.getResult() == result))
-                .toList();
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), filtered.size());
-        List<GraduationResult> subList = (start <= end && start < filtered.size()) ? filtered.subList(start, end) : List.of();
-        return new PageImpl<>(subList, pageable, filtered.size());
+    // 1. Lấy danh sách có phân trang và lọc theo trạng thái (result: 1-Đạt, 0-Chưa
+    // đạt)
+    public Page<GraduationResult> findAll(Short result, UUID conditionId, Pageable pageable) {
+        return repository.findByIsActiveTrueAndResult(result, conditionId, pageable);
     }
 
     // 2. Tìm theo ID
     public GraduationResult findById(UUID id) {
-        try {
-            return repository.findByIdAndIsActiveTrue(id)
-                    .orElseGet(() -> fallbackResults.stream()
-                            .filter(r -> r.getId().equals(id) && Boolean.TRUE.equals(r.getIsActive()))
-                            .findFirst()
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy kết quả xét tốt nghiệp")));
-        } catch (Exception e) {
-            return fallbackResults.stream()
-                    .filter(r -> r.getId().equals(id) && Boolean.TRUE.equals(r.getIsActive()))
-                    .findFirst()
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy kết quả xét tốt nghiệp"));
-        }
+        return repository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Không tìm thấy kết quả xét tốt nghiệp"));
     }
 
     // 3. Tìm theo ID sinh viên
     public List<GraduationResult> findByStudentId(UUID studentId) {
-        try {
-            List<GraduationResult> list = repository.findByStudentIdAndIsActiveTrue(studentId);
-            if (list != null && !list.isEmpty()) {
-                return list;
-            }
-        } catch (Exception ignored) {
-        }
-        return fallbackResults.stream()
-                .filter(r -> Boolean.TRUE.equals(r.getIsActive()) && r.getStudentId() != null && r.getStudentId().equals(studentId))
-                .toList();
+        return repository.findByStudentIdAndIsActiveTrue(studentId);
+    }
+
+    public StudentSummaryResponse findStudentSummary(UUID studentId) {
+        StudentSummaryItem summary = findSummaryOrThrow(studentId);
+        return new StudentSummaryResponse(
+                studentId,
+                summary.gpa(),
+                summary.totalCredits(),
+                summary.failedCredits());
     }
 
     // 4. Nhập kết quả thủ công
+    @Transactional
     public GraduationResult create(GraduationResult request) {
         if (request.getStudentId() == null || request.getConditionId() == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "studentId và conditionId là bắt buộc"
-            );
+                    "studentId và conditionId là bắt buộc");
         }
 
-        // Kiểm tra điều kiện tốt nghiệp một cách an toàn
-        try {
-            int condCount = repository.countActiveConditionById(request.getConditionId());
-            if (condCount == 0) {
-                // Chỉ cảnh báo nếu DB phản hồi thành công và không thấy
-            }
-        } catch (Exception ignored) {
+        // Kiểm tra điều kiện tốt nghiệp
+        if (repository.countActiveConditionById(request.getConditionId()) == 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Không tìm thấy bộ điều kiện tốt nghiệp hợp lệ với ID: " + request.getConditionId());
         }
 
+        // Kiểm tra sinh viên tồn tại trong bảng students_
+        if (repository.countActiveStudentById(request.getStudentId()) == 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Không tìm thấy sinh viên hợp lệ với ID: " + request.getStudentId());
+        }
+
+        // Kiểm tra ràng buộc khóa: sinh viên phải thuộc đúng khóa áp dụng của bộ điều kiện
+        validateStudentCohortMatchesCondition(request.getStudentId(), request.getConditionId());
+
+        applyDerivedFields(request, findSummaryOrThrow(request.getStudentId()));
         request.setId(null);
         request.setCreatedAt(LocalDateTime.now());
         request.setUpdatedAt(null);
@@ -132,18 +101,11 @@ public class GraduationResultService {
         request.setDeletedBy(null);
         request.setIsActive(true);
 
-        try {
-            return repository.save(request);
-        } catch (Exception e) {
-            if (request.getId() == null) {
-                request.setId(UUID.randomUUID());
-            }
-            fallbackResults.add(0, request);
-            return request;
-        }
+        return repository.save(request);
     }
 
     // 5. Cập nhật kết quả / ngoại lệ
+    @Transactional
     public GraduationResult update(UUID id, GraduationResult request) {
         GraduationResult current = findById(id);
 
@@ -154,96 +116,192 @@ public class GraduationResultService {
             current.setConditionId(request.getConditionId());
         }
 
-        current.setGpa(request.getGpa());
-        current.setTotalCredits(request.getTotalCredits());
-        current.setFailedCredits(request.getFailedCredits());
-        current.setResult(request.getResult());
-        current.setClassification(request.getClassification());
+        // Kiểm tra ràng buộc khóa nếu có thay đổi sinh viên hoặc bộ điều kiện
+        validateStudentCohortMatchesCondition(current.getStudentId(), current.getConditionId());
+
+        applyDerivedFields(current, findSummaryOrThrow(current.getStudentId()));
         current.setDecisionDate(request.getDecisionDate());
         current.setReviewer(request.getReviewer());
         current.setNote(request.getNote());
         current.setUpdatedBy(request.getUpdatedBy());
 
-        try {
-            return repository.save(current);
-        } catch (Exception e) {
-            int idx = -1;
-            for (int i = 0; i < fallbackResults.size(); i++) {
-                if (fallbackResults.get(i).getId().equals(id)) {
-                    idx = i;
-                    break;
-                }
-            }
-            if (idx != -1) {
-                fallbackResults.set(idx, current);
-            }
-            return current;
-        }
+        return repository.save(current);
     }
 
     // 6. Xóa mềm
+    @Transactional
     public void delete(UUID id) {
-        try {
-            GraduationResult current = findById(id);
-            current.setIsActive(false);
-            current.setDeletedAt(LocalDateTime.now());
-            repository.save(current);
-        } catch (Exception ignored) {
+        GraduationResult current = findById(id);
+        current.setIsActive(false);
+        current.setDeletedAt(LocalDateTime.now());
+        repository.save(current);
+    }
+
+    /**
+     * Xác thực rằng sinh viên thuộc đúng khóa áp dụng của bộ điều kiện tốt nghiệp.
+     * Ngăn ngừa việc gán nhầm sinh viên khóa này vào tiêu chuẩn của khóa khác.
+     */
+    private void validateStudentCohortMatchesCondition(UUID studentId, UUID conditionId) {
+        if (studentId == null || conditionId == null) {
+            return;
         }
-        fallbackResults.removeIf(r -> r.getId().equals(id));
+
+        GraduationCondition cond = conditionRepository.findByIdAndDeletedAtIsNull(conditionId).orElse(null);
+        if (cond == null || cond.getAppliedCohort() == null || cond.getAppliedCohort().isBlank()) {
+            return;
+        }
+
+        String appliedCohort = cond.getAppliedCohort().trim().toUpperCase(Locale.ROOT);
+        String cohortSuffix = appliedCohort.startsWith("K") ? appliedCohort.substring(1) : appliedCohort;
+
+        List<UUID> validStudentIds = repository.findActiveStudentIdsByCohortSuffix(cohortSuffix);
+        if (!validStudentIds.contains(studentId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("Sinh viên không thuộc khóa %s của bộ điều kiện xét tốt nghiệp!", appliedCohort));
+        }
+    }
+
+    // DTO nội bộ lưu dữ liệu điểm đọc từ student_summaries
+    private record StudentSummaryItem(BigDecimal gpa, int totalCredits, int failedCredits) {
+    }
+
+    private StudentSummaryItem findSummaryOrThrow(UUID studentId) {
+        List<Object[]> rows = repository.findStudentSummary(studentId);
+        if (rows.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Sinh viên chưa có dữ liệu tổng kết trong student_summaries");
+        }
+
+        Object[] row = rows.get(0);
+        BigDecimal gpa = row[1] != null ? new BigDecimal(row[1].toString()) : BigDecimal.ZERO;
+        int totalCredits = row[2] != null ? ((Number) row[2]).intValue() : 0;
+        int failedCredits = row[3] != null ? ((Number) row[3]).intValue() : 0;
+        return new StudentSummaryItem(gpa, totalCredits, failedCredits);
+    }
+
+    private void applyDerivedFields(GraduationResult result, StudentSummaryItem summary) {
+        GraduationCondition condition = conditionRepository.findByIdAndDeletedAtIsNull(result.getConditionId())
+                .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Không tìm thấy bộ điều kiện tốt nghiệp đang hoạt động"));
+
+        int minCredits = condition.getMinTotalCredits() != null ? condition.getMinTotalCredits() : 120;
+        BigDecimal minGpa = condition.getMinGpa() != null ? condition.getMinGpa() : new BigDecimal("2.00");
+        int maxFailedCredits = condition.getMaxFailedCredits() != null ? condition.getMaxFailedCredits() : 0;
+
+        boolean isPass = summary.totalCredits() >= minCredits
+                && summary.gpa().compareTo(minGpa) >= 0
+                && summary.failedCredits() <= maxFailedCredits;
+
+        result.setGpa(summary.gpa());
+        result.setTotalCredits(summary.totalCredits());
+        result.setFailedCredits(summary.failedCredits());
+        result.setResult((short) (isPass ? 1 : 0));
+        result.setClassification(isPass ? classify(summary.gpa()) : null);
+    }
+
+    private short classify(BigDecimal gpa) {
+        if (gpa.compareTo(new BigDecimal("3.60")) >= 0) return 1;
+        if (gpa.compareTo(new BigDecimal("3.20")) >= 0) return 2;
+        if (gpa.compareTo(new BigDecimal("2.50")) >= 0) return 3;
+        return 4;
     }
 
     // 7. TIẾN TRÌNH QUÉT & XÉT DUYỆT TỰ ĐỘNG
+    @Transactional
     public List<GraduationResult> evaluate(EvaluateGraduationRequest request) {
-        if (request.getConditionId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "conditionId không được để trống");
-        }
+        String cohort = request.getCohort() != null && !request.getCohort().isBlank() 
+                ? request.getCohort().trim().toUpperCase(Locale.ROOT) : null;
+        UUID conditionId = request.getConditionId();
 
-        int minCredits = 120;
-        BigDecimal minGpa = new BigDecimal("2.00");
-        int maxFailedCredits = 0;
+        GraduationCondition condition;
 
-        try {
-            List<Object[]> criteriaList = repository.getConditionCriteria(request.getConditionId());
-            if (!criteriaList.isEmpty()) {
-                Object[] criteria = criteriaList.get(0);
-                minCredits = criteria[0] != null ? ((Number) criteria[0]).intValue() : 120;
-                minGpa = criteria[1] != null ? new BigDecimal(criteria[1].toString()) : new BigDecimal("2.00");
-                maxFailedCredits = criteria[2] != null ? ((Number) criteria[2]).intValue() : 0;
+        // 1. Phân giải bộ điều kiện dựa trên conditionId hoặc cohort
+        if (conditionId != null) {
+            condition = conditionRepository.findByIdAndDeletedAtIsNull(conditionId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bộ điều kiện hợp lệ"));
+
+            // Kiểm tra ràng buộc: nếu truyền cả cohort lẫn conditionId, đảm bảo chúng khớp nhau
+            if (cohort != null && !cohort.equalsIgnoreCase(condition.getAppliedCohort())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    String.format("Bộ điều kiện được chọn áp dụng cho khóa %s, không khớp với khóa yêu cầu %s", 
+                        condition.getAppliedCohort(), cohort));
             }
-        } catch (Exception ignored) {
+            cohort = condition.getAppliedCohort();
+        } else if (cohort != null) {
+            List<GraduationCondition> conditions = conditionRepository
+                    .findByAppliedCohortIgnoreCaseAndIsActiveTrueAndDeletedAtIsNull(cohort);
+            if (conditions.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, 
+                    "Không tìm thấy bộ điều kiện tốt nghiệp đang hiệu lực cho khóa " + cohort);
+            }
+            condition = conditions.get(0);
+            conditionId = condition.getId();
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                "Vui lòng cung cấp khóa áp dụng (cohort) hoặc mã bộ điều kiện xét tốt nghiệp (conditionId)");
         }
 
-        List<UUID> studentIds = new ArrayList<>();
-        try {
+        int minCredits = condition.getMinTotalCredits() != null ? condition.getMinTotalCredits() : 120;
+        BigDecimal minGpa = condition.getMinGpa() != null ? condition.getMinGpa() : new BigDecimal("2.00");
+        int maxFailedCredits = condition.getMaxFailedCredits() != null ? condition.getMaxFailedCredits() : 0;
+
+        // 2. Trích xuất số khóa (VD: "K24" -> "24") để lọc đúng sinh viên của khóa đó
+        String cohortSuffix = (cohort != null) ? cohort.replaceAll("[^0-9]", "") : null;
+        List<UUID> studentIds;
+        if (cohortSuffix != null && !cohortSuffix.isBlank()) {
+            studentIds = repository.findActiveStudentIdsByCohortSuffix(cohortSuffix);
+        } else {
             studentIds = repository.findActiveStudentIds();
-        } catch (Exception ignored) {
         }
+
         if (studentIds.isEmpty()) {
-            studentIds.add(UUID.fromString("8f64a671-de50-4c87-8b39-ff5bdbf387e8"));
-            studentIds.add(UUID.fromString("35f6941e-b583-4625-8ce2-ff4d1990a891"));
-            studentIds.add(UUID.fromString("c21b452a-bb86-4054-a619-ff21dc207a19"));
-            studentIds.add(UUID.fromString("0e374a91-d6e6-4174-b7df-ff19e2e5876f"));
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Không tìm thấy sinh viên nào thuộc khóa " + (cohort != null ? cohort : "") + " để xét duyệt");
+        }
+
+        // 3. Đọc dữ liệu tổng kết học tập thực tế từ bảng student_summaries
+        List<Object[]> summaryRows = repository.findAllStudentSummaries();
+        if (summaryRows.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Không có dữ liệu tổng kết điểm trong bảng student_summaries để xét duyệt");
+        }
+
+        Map<UUID, StudentSummaryItem> summaryMap = new HashMap<>();
+        for (Object[] row : summaryRows) {
+            if (row[0] == null) continue;
+            UUID sId = (row[0] instanceof UUID) ? (UUID) row[0] : UUID.fromString(row[0].toString());
+            BigDecimal gpa = row[1] != null ? new BigDecimal(row[1].toString()) : BigDecimal.ZERO;
+            int totalCredits = row[2] != null ? ((Number) row[2]).intValue() : 0;
+            int failedCredits = row[3] != null ? ((Number) row[3]).intValue() : 0;
+            summaryMap.put(sId, new StudentSummaryItem(gpa, totalCredits, failedCredits));
+        }
+
+        // 4. Lấy danh sách kết quả đã tồn tại theo conditionId để tối ưu hóa cập nhật
+        List<GraduationResult> existingList = repository.findByConditionIdAndIsActiveTrue(conditionId);
+        Map<UUID, GraduationResult> existingMap = new HashMap<>();
+        for (GraduationResult item : existingList) {
+            existingMap.put(item.getStudentId(), item);
         }
 
         List<GraduationResult> evaluatedResults = new ArrayList<>();
 
-        BigDecimal[] sampleGpas = {
-                new BigDecimal("3.82"), new BigDecimal("3.65"), new BigDecimal("3.45"),
-                new BigDecimal("3.28"), new BigDecimal("3.15"), new BigDecimal("2.95"),
-                new BigDecimal("2.72"), new BigDecimal("2.40"), new BigDecimal("3.50"),
-                new BigDecimal("3.35")
-        };
-        int[] sampleCredits = {140, 138, 135, 132, 130, 128, 125, 115, 136, 134};
-        int[] sampleFailed = {0, 0, 0, 0, 0, 0, 0, 8, 0, 0};
-        int idx = 0;
-
+        // 5. Tiến hành quét từng sinh viên dựa trên điểm thực tế từ student_summaries
         for (UUID studentId : studentIds) {
-            BigDecimal studentGpa = sampleGpas[idx % sampleGpas.length];
-            int studentTotalCredits = sampleCredits[idx % sampleCredits.length];
-            int studentFailedCredits = sampleFailed[idx % sampleFailed.length];
-            idx++;
+            StudentSummaryItem summary = summaryMap.get(studentId);
+            if (summary == null) {
+                // Bỏ qua sinh viên chưa có dữ liệu tổng kết điểm trong student_summaries
+                continue;
+            }
 
+            BigDecimal studentGpa = summary.gpa();
+            int studentTotalCredits = summary.totalCredits();
+            int studentFailedCredits = summary.failedCredits();
+
+            // Đánh giá Đạt (1) hay Chưa đạt (0)
             boolean isPass = (studentTotalCredits >= minCredits)
                     && (studentGpa.compareTo(minGpa) >= 0)
                     && (studentFailedCredits <= maxFailedCredits);
@@ -252,16 +310,17 @@ public class GraduationResultService {
             Short classification = null;
 
             if (isPass) {
-                if (studentGpa.compareTo(new BigDecimal("3.60")) >= 0) classification = 1;
-                else if (studentGpa.compareTo(new BigDecimal("3.20")) >= 0) classification = 2;
-                else if (studentGpa.compareTo(new BigDecimal("2.50")) >= 0) classification = 3;
-                else classification = 4;
+                if (studentGpa.compareTo(new BigDecimal("3.60")) >= 0) classification = 1; // Xuất sắc
+                else if (studentGpa.compareTo(new BigDecimal("3.20")) >= 0) classification = 2; // Giỏi
+                else if (studentGpa.compareTo(new BigDecimal("2.50")) >= 0) classification = 3; // Khá
+                else classification = 4; // Trung bình
             }
 
-            GraduationResult gr = new GraduationResult();
-            gr.setId(UUID.randomUUID());
+            // Tìm bản ghi đã tồn tại để cập nhật, hoặc tạo mới nếu chưa có
+            GraduationResult gr = existingMap.getOrDefault(studentId, new GraduationResult());
+
             gr.setStudentId(studentId);
-            gr.setConditionId(request.getConditionId());
+            gr.setConditionId(conditionId);
             gr.setGpa(studentGpa);
             gr.setTotalCredits(studentTotalCredits);
             gr.setFailedCredits(studentFailedCredits);
@@ -269,17 +328,213 @@ public class GraduationResultService {
             gr.setClassification(classification);
             gr.setDecisionDate(LocalDate.now());
             gr.setReviewer(request.getReviewerId());
-            gr.setNote("Xét duyệt tự động cho khóa " + (request.getCohort() != null ? request.getCohort() : ""));
+            gr.setNote("Xét duyệt tự động" + (cohort != null && !cohort.isBlank() ? " cho khóa " + cohort : ""));
             gr.setIsActive(true);
 
-            try {
-                evaluatedResults.add(repository.save(gr));
-            } catch (Exception e) {
-                fallbackResults.add(0, gr);
-                evaluatedResults.add(gr);
+            evaluatedResults.add(gr);
+        }
+
+        // 6. Lưu toàn bộ kết quả theo batch để đạt hiệu năng cao nhất
+        return repository.saveAll(evaluatedResults);
+    }
+
+    // =====================================================
+    // Xuất báo cáo Word (Nhóm 11) - Phương án 3: JPQL Query Join
+    // =====================================================
+
+    /**
+     * Lấy danh sách kết quả xét TN phân theo Đạt / Chưa đạt,
+     * kèm tên lớp lấy từ bảng students thông qua JPQL Join và lý do không đạt chi
+     * tiết.
+     * <p>
+     * Khi conditionId = null (xuất tất cả khóa), mỗi row đã chứa condition_id
+     * riêng (cột 9) → Service tự lookup cache bộ tiêu chí tương ứng để sinh
+     * lý do không đạt chi tiết cho từng khóa K23/K24/K25.
+     */
+    public Map<String, List<GraduationResultExportDTO>> getResultsForExport(UUID conditionId) {
+        return getResultsForExport(null, conditionId == null ? null : List.of(conditionId), null);
+    }
+
+    public List<String> getExportClassNames() {
+        return repository.findDistinctExportClassNames();
+    }
+
+    public List<String> getExportClassNames(List<UUID> conditionIds) {
+        if (conditionIds == null || conditionIds.isEmpty()) {
+            return getExportClassNames();
+        }
+        return repository.findDistinctExportClassNamesByConditions(conditionIds);
+    }
+
+    public Map<String, List<GraduationResultExportDTO>> getResultsForExport(
+            Short result,
+            List<UUID> conditionIds,
+            List<String> classNames) {
+
+        Set<UUID> conditionFilter = conditionIds == null ? null : new HashSet<>(conditionIds);
+        Set<String> classFilter = classNames == null ? null : classNames.stream()
+                .filter(name -> name != null && !name.isBlank())
+                .map(name -> name.trim().toLowerCase(Locale.ROOT))
+                .collect(java.util.stream.Collectors.toSet());
+
+        List<Object[]> rows = repository.findAllExportData();
+
+        // Cache bộ điều kiện theo UUID để tránh truy vấn DB lặp lại
+        Map<UUID, GraduationCondition> conditionCache = new ConcurrentHashMap<>();
+
+        // Nếu chỉ lấy 1 bộ điều kiện, pre-load vào cache luôn
+        if (conditionFilter != null && conditionFilter.size() == 1) {
+            UUID onlyConditionId = conditionFilter.iterator().next();
+            conditionRepository.findById(onlyConditionId)
+                    .ifPresent(c -> conditionCache.put(onlyConditionId, c));
+        }
+
+        // 2. Phân loại và tạo danh sách Đạt / Chưa đạt
+        List<GraduationResultExportDTO> passedList = new ArrayList<>();
+        List<GraduationResultExportDTO> failedList = new ArrayList<>();
+
+        int passStt = 1, failStt = 1;
+
+        for (Object[] row : rows) {
+            GraduationResultExportDTO dto = mapExportRow(row);
+            dto.setStudentName(cleanStudentName(dto.getStudentName()));
+
+            // Lấy condition_id của row này (cột 9) để tra bộ tiêu chí đúng khóa
+            UUID rowConditionId = toUUID(row.length > 9 ? row[9] : null);
+            if (conditionFilter != null && !conditionFilter.contains(rowConditionId)) {
+                continue;
+            }
+            if (result != null && !result.equals(dto.getResult())) {
+                continue;
+            }
+            if (classFilter != null && !classFilter.contains(dto.getClassName().trim().toLowerCase(Locale.ROOT))) {
+                continue;
+            }
+            if (rowConditionId == null && conditionFilter != null) {
+                continue;
+            }
+            UUID fallbackConditionId = conditionFilter != null && conditionFilter.size() == 1
+                    ? conditionFilter.iterator().next() : null;
+            if (rowConditionId == null) rowConditionId = fallbackConditionId;
+
+            GraduationCondition rowCondition = null;
+            if (rowConditionId != null) {
+                final UUID cid = rowConditionId;
+                rowCondition = conditionCache.computeIfAbsent(cid,
+                        k -> conditionRepository.findById(k).orElse(null));
+            }
+
+            if (dto.getResult() != null && dto.getResult() == 1) {
+                // ĐẠT
+                dto.setStt(passStt++);
+                dto.setResultText("Đạt");
+                passedList.add(dto);
+            } else {
+                // CHƯA ĐẠT — dùng đúng bộ tiêu chí của khóa đó
+                dto.setStt(failStt++);
+                dto.setResultText("Chưa đạt");
+                dto.setFailureReasons(buildFailureReasons(dto, rowCondition));
+                failedList.add(dto);
             }
         }
 
-        return evaluatedResults;
+        Map<String, List<GraduationResultExportDTO>> resultMap = new HashMap<>();
+        resultMap.put("passed", passedList);
+        resultMap.put("failed", failedList);
+        return resultMap;
+    }
+
+    /**
+     * Parse hàng Object[] từ native query.
+     * Cột 0-8 là dữ liệu sinh viên/kết quả; cột 9 (condition_id) được đọc
+     * riêng trong getResultsForExport() — không cần đưa vào DTO.
+     */
+    private GraduationResultExportDTO mapExportRow(Object[] row) {
+        String studentCode   = row[0] != null ? row[0].toString() : "";
+        String studentName   = row[1] != null ? row[1].toString() : "";
+        String className     = row[2] != null ? row[2].toString() : "Chưa xếp lớp";
+        BigDecimal gpa       = toBigDecimal(row[3]);
+        Integer totalCredits = toInteger(row[4]);
+        Integer failedCredits= toInteger(row[5]);
+        Short result         = toShort(row[6]);
+        Short classification = toShort(row[7]);
+        String note          = row[8] != null ? row[8].toString() : null;
+        return new GraduationResultExportDTO(
+                studentCode, studentName, className, gpa, totalCredits, failedCredits, result, classification, note);
+    }
+
+    /** Chuyển cột condition_id (UUID hoặc String) thành UUID, trả null nếu lỗi. */
+    private static UUID toUUID(Object value) {
+        if (value == null) return null;
+        if (value instanceof UUID uuid) return uuid;
+        try { return UUID.fromString(value.toString()); } catch (Exception e) { return null; }
+    }
+
+    private static BigDecimal toBigDecimal(Object value) {
+        if (value == null) {
+            return null;
+        }
+        return value instanceof BigDecimal bigDecimal ? bigDecimal : new BigDecimal(value.toString());
+    }
+
+    private static Integer toInteger(Object value) {
+        return value instanceof Number number ? number.intValue() : null;
+    }
+
+    private static Short toShort(Object value) {
+        return value instanceof Number number ? number.shortValue() : null;
+    }
+
+    /**
+     * Loại bỏ các chữ số mock data ở cuối tên sinh viên (ví dụ: 'Nguyễn Văn A 12'
+     * -> 'Nguyễn Văn A')
+     */
+    private String cleanStudentName(String raw) {
+        if (raw == null)
+            return "";
+        return raw.replaceAll("\\s+\\d+$", "").trim();
+    }
+
+    /**
+     * Xác định lý do cụ thể sinh viên không đạt tốt nghiệp.
+     */
+    private List<String> buildFailureReasons(GraduationResultExportDTO dto, GraduationCondition condition) {
+        List<String> reasons = new ArrayList<>();
+
+        if (condition == null) {
+            reasons.add(dto.getNote() != null && !dto.getNote().isEmpty()
+                    ? dto.getNote()
+                    : "Chưa đạt yêu cầu tốt nghiệp");
+            return reasons;
+        }
+
+        if (dto.getTotalCredits() != null && condition.getMinTotalCredits() != null
+                && dto.getTotalCredits() < condition.getMinTotalCredits()) {
+            reasons.add(String.format(
+                    "Chưa đủ tín chỉ tích lũy (có: %d, yêu cầu: %d)",
+                    dto.getTotalCredits(), condition.getMinTotalCredits()));
+        }
+
+        if (dto.getGpa() != null && condition.getMinGpa() != null
+                && dto.getGpa().compareTo(condition.getMinGpa()) < 0) {
+            reasons.add(String.format(
+                    "GPA chưa đạt yêu cầu (có: %s, yêu cầu: %s)",
+                    dto.getGpa(), condition.getMinGpa()));
+        }
+
+        if (dto.getFailedCredits() != null && condition.getMaxFailedCredits() != null
+                && dto.getFailedCredits() > condition.getMaxFailedCredits()) {
+            reasons.add(String.format(
+                    "Số tín chỉ nợ vượt mức cho phép (có: %d, tối đa: %d)",
+                    dto.getFailedCredits(), condition.getMaxFailedCredits()));
+        }
+
+        if (reasons.isEmpty()) {
+            reasons.add(dto.getNote() != null && !dto.getNote().isEmpty()
+                    ? dto.getNote()
+                    : "Chưa đạt yêu cầu theo đánh giá tổng hợp");
+        }
+
+        return reasons;
     }
 }
