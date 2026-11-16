@@ -3,14 +3,19 @@ package com.example.quanlydaotao.n11.service;
 import com.example.quanlydaotao.n11.entity.GraduationProfile;
 import com.example.quanlydaotao.n11.entity.Student;
 import com.example.quanlydaotao.n11.repository.GraduationProfileRepository;
+import com.example.quanlydaotao.n11.repository.GraduationResultRepository;
 import com.example.quanlydaotao.n11.repository.StudentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class GraduationProfileService {
@@ -18,14 +23,17 @@ public class GraduationProfileService {
     private final GraduationProfileRepository graduationProfileRepository;
     private final StudentRepository studentRepository;
     private final StudentService studentService;
+    private final GraduationResultRepository graduationResultRepository;
     private final List<GraduationProfile> fallbackProfiles = new CopyOnWriteArrayList<>();
 
     public GraduationProfileService(GraduationProfileRepository graduationProfileRepository,
                                     StudentRepository studentRepository,
-                                    StudentService studentService) {
+                                    StudentService studentService,
+                                    @Autowired(required = false) GraduationResultRepository graduationResultRepository) {
         this.graduationProfileRepository = graduationProfileRepository;
         this.studentRepository = studentRepository;
         this.studentService = studentService;
+        this.graduationResultRepository = graduationResultRepository;
         initFallbackProfiles();
     }
 
@@ -145,12 +153,73 @@ public class GraduationProfileService {
                 .toList();
     }
 
-    public GraduationProfile save(GraduationProfile graduationProfile) {
-        if (graduationProfile.getProfileCode() == null || graduationProfile.getProfileCode().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã hồ sơ không được để trống");
+    public String getNextProfileCode() {
+        int currentYear = LocalDate.now().getYear();
+        int maxSeq = 0;
+
+        List<GraduationProfile> all = findAll();
+        // Khớp các định dạng như HS_2026_001, HS-2026-001, HS2026_001...
+        Pattern p = Pattern.compile("^HS[_-]?" + currentYear + "[_-]?(\\d+)$", Pattern.CASE_INSENSITIVE);
+        for (GraduationProfile prof : all) {
+            if (prof.getProfileCode() != null) {
+                Matcher m = p.matcher(prof.getProfileCode().trim());
+                if (m.matches()) {
+                    try {
+                        int seq = Integer.parseInt(m.group(1));
+                        if (seq > maxSeq) {
+                            maxSeq = seq;
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
         }
+        int nextSeq = maxSeq + 1;
+        return String.format("HS_%d_%03d", currentYear, nextSeq);
+    }
+
+    public GraduationProfile save(GraduationProfile graduationProfile) {
         if (graduationProfile.getStudent() == null || graduationProfile.getStudent().getId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cần cung cấp ID sinh viên");
+        }
+
+        UUID studentId = graduationProfile.getStudent().getId();
+
+        // 1. Kiểm tra nếu sinh viên đã được duyệt tốt nghiệp (Approved hoặc Kết quả = 1) -> Không được nộp lại
+        boolean alreadyApprovedProfile = findAll().stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
+                .anyMatch(p -> p.getStudent() != null && Objects.equals(p.getStudent().getId(), studentId)
+                        && "Approved".equalsIgnoreCase(p.getStatus()));
+
+        boolean alreadyGraduatedResult = false;
+        if (graduationResultRepository != null) {
+            try {
+                alreadyGraduatedResult = graduationResultRepository.findByStudentIdAndIsActiveTrue(studentId).stream()
+                        .anyMatch(r -> r.getResult() != null && r.getResult() == 1);
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (alreadyApprovedProfile || alreadyGraduatedResult) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Sinh viên này đã được duyệt tốt nghiệp, không thể nộp thêm hồ sơ mới!");
+        }
+
+        // 2. Kiểm tra nếu sinh viên đã nộp hồ sơ ở đợt này rồi -> Không được thêm lại ở đợt này
+        if (graduationProfile.getSessionId() != null) {
+            boolean alreadyInSession = findAll().stream()
+                    .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
+                    .anyMatch(p -> p.getStudent() != null && Objects.equals(p.getStudent().getId(), studentId)
+                            && Objects.equals(p.getSessionId(), graduationProfile.getSessionId()));
+            if (alreadyInSession) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Sinh viên này đã nộp hồ sơ trong đợt xét tốt nghiệp này rồi!");
+            }
+        }
+
+        // 3. Tự động sinh mã hồ sơ theo thứ tự HS_YYYY_XXX nếu chưa cung cấp
+        if (graduationProfile.getProfileCode() == null || graduationProfile.getProfileCode().isBlank()) {
+            graduationProfile.setProfileCode(getNextProfileCode());
+        } else {
+            graduationProfile.setProfileCode(graduationProfile.getProfileCode().trim());
         }
 
         graduationProfile.setId(null);
@@ -164,24 +233,23 @@ public class GraduationProfileService {
         if (graduationProfile.getSubmittedDate() == null) {
             graduationProfile.setSubmittedDate(LocalDateTime.now());
         }
-        graduationProfile.setProfileCode(graduationProfile.getProfileCode().trim());
 
         // Resolve student
         Student student = null;
         try {
-            student = studentRepository.findById(graduationProfile.getStudent().getId()).orElse(null);
+            student = studentRepository.findById(studentId).orElse(null);
         } catch (Exception ignored) {
         }
         if (student == null) {
             try {
-                student = studentService.getById(graduationProfile.getStudent().getId());
+                student = studentService.getById(studentId);
             } catch (Exception ignored) {
             }
         }
         if (student == null) {
             // Assign dummy student if none found
             student = new Student("SV", "Sinh viên", "sv@donga.edu.vn", "0900000000", "IT24AB");
-            student.setId(graduationProfile.getStudent().getId());
+            student.setId(studentId);
         }
         graduationProfile.setStudent(student);
 
@@ -207,22 +275,8 @@ public class GraduationProfileService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã hồ sơ không được để trống");
         }
 
-        Student student = null;
-        if (input.getStudent() != null && input.getStudent().getId() != null) {
-            try {
-                student = studentRepository.findById(input.getStudent().getId()).orElse(null);
-            } catch (Exception ignored) {
-            }
-            if (student == null) {
-                try {
-                    student = studentService.getById(input.getStudent().getId());
-                } catch (Exception ignored) {
-                }
-            }
-        }
-        if (student != null) {
-            profile.setStudent(student);
-        }
+        // Không cho phép chỉnh sửa đổi sinh viên của hồ sơ đã tạo (giữ nguyên sinh viên gốc)
+        // profile.getStudent() được giữ nguyên, không thay đổi
 
         profile.setProfileCode(input.getProfileCode().trim());
         profile.setSessionId(input.getSessionId());

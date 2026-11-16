@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -22,6 +23,11 @@ public class GraduationProfileController {
     @GetMapping
     public ResponseEntity<List<GraduationProfile>> getAll() {
         return ResponseEntity.ok(graduationProfileService.findAll());
+    }
+
+    @GetMapping("/next-code")
+    public ResponseEntity<Map<String, String>> getNextCode() {
+        return ResponseEntity.ok(Map.of("nextCode", graduationProfileService.getNextProfileCode()));
     }
 
     @GetMapping("/{id}")

@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from './config.js';
 const SEED_PROFILES = [
     {
         id: 'seed-prof-1',
-        profileCode: 'HS-2026-001',
+        profileCode: 'HS_2026_001',
         student: { id: 's1', fullName: 'Nguyễn Văn An', studentCode: 'SV001', className: 'C2024A' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
@@ -15,7 +15,7 @@ const SEED_PROFILES = [
     },
     {
         id: 'seed-prof-2',
-        profileCode: 'HS-2026-002',
+        profileCode: 'HS_2026_002',
         student: { id: 's2', fullName: 'Trần Thị B', studentCode: 'SV002', className: 'C2024B' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
@@ -26,7 +26,7 @@ const SEED_PROFILES = [
     },
     {
         id: 'seed-prof-3',
-        profileCode: 'HS-2026-003',
+        profileCode: 'HS_2026_003',
         student: { id: 's3', fullName: 'Lê Hoàng C', studentCode: 'SV003', className: 'C2024C' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
@@ -37,7 +37,7 @@ const SEED_PROFILES = [
     },
     {
         id: 'seed-prof-4',
-        profileCode: 'HS-2026-004',
+        profileCode: 'HS_2026_004',
         student: { id: 's4', fullName: 'Phạm Minh D', studentCode: 'SV004', className: 'C2024A' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
@@ -48,7 +48,7 @@ const SEED_PROFILES = [
     },
     {
         id: 'seed-prof-5',
-        profileCode: 'HS-2026-005',
+        profileCode: 'HS_2026_005',
         student: { id: 's5', fullName: 'Hoàng Thị E', studentCode: 'SV005', className: 'C2024B' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
@@ -59,7 +59,7 @@ const SEED_PROFILES = [
     },
     {
         id: 'seed-prof-6',
-        profileCode: 'HS-2026-006',
+        profileCode: 'HS_2026_006',
         student: { id: 's6', fullName: 'Vũ Đức F', studentCode: 'SV006', className: 'C2024C' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
@@ -70,7 +70,7 @@ const SEED_PROFILES = [
     },
     {
         id: 'seed-prof-7',
-        profileCode: 'HS-2026-007',
+        profileCode: 'HS_2026_007',
         student: { id: 's7', fullName: 'Đặng Nhật G', studentCode: 'SV007', className: 'C2024A' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
@@ -81,7 +81,7 @@ const SEED_PROFILES = [
     },
     {
         id: 'seed-prof-8',
-        profileCode: 'HS-2026-008',
+        profileCode: 'HS_2026_008',
         student: { id: 's8', fullName: 'Bùi Thảo H', studentCode: 'SV008', className: 'C2024B' },
         sessionId: 'DX2026_01',
         sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
@@ -95,6 +95,9 @@ const SEED_PROFILES = [
 let profilesList = [...SEED_PROFILES];
 const studentsMap = new Map();
 const sessionsMap = new Map();
+const graduatedStudentIds = new Set();
+let currentSelectedStudent = null;
+let filteredEligibleStudents = [];
 
 let reviewModalInstance = null;
 let profileModalInstance = null;
@@ -145,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Tải đồng bộ ngầm từ API
-    Promise.all([loadStudents(), loadSessions()]).then(() => {
+    Promise.all([loadStudents(), loadSessions(), loadGraduationResults()]).then(() => {
         loadProfiles();
     });
 });
@@ -239,6 +242,70 @@ function initEventListeners() {
     if (reviewForm) {
         reviewForm.addEventListener('submit', handleSubmitReview);
     }
+
+    // 8. Searchable Student Picker Event Listeners
+    const searchInput = document.getElementById('studentSearchInput');
+    const dropdownList = document.getElementById('studentDropdownList');
+    const btnChangeStudent = document.getElementById('btnChangeStudent');
+    const sessionSelect = document.getElementById('modalProfileSessionId');
+
+    if (searchInput) {
+        searchInput.addEventListener('focus', () => {
+            if (dropdownList) {
+                dropdownList.classList.remove('d-none');
+                renderStudentDropdown(searchInput.value);
+            }
+        });
+
+        searchInput.addEventListener('click', () => {
+            if (dropdownList) {
+                dropdownList.classList.remove('d-none');
+                renderStudentDropdown(searchInput.value);
+            }
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            if (dropdownList) dropdownList.classList.remove('d-none');
+            renderStudentDropdown(e.target.value);
+        });
+    }
+
+    if (btnChangeStudent) {
+        btnChangeStudent.addEventListener('click', () => {
+            clearStudentSelection();
+            if (searchInput) {
+                searchInput.focus();
+            }
+            if (dropdownList) {
+                dropdownList.classList.remove('d-none');
+                renderStudentDropdown();
+            }
+        });
+    }
+
+    // Đóng dropdown khi click bên ngoài container tìm kiếm sinh viên
+    document.addEventListener('click', (e) => {
+        const picker = document.getElementById('studentPickerContainer');
+        if (dropdownList && picker && !picker.contains(e.target)) {
+            dropdownList.classList.add('d-none');
+        }
+    });
+
+    // Khi thay đổi đợt xét tốt nghiệp: cập nhật lại danh sách sinh viên đủ điều kiện
+    if (sessionSelect) {
+        sessionSelect.addEventListener('change', () => {
+            updateEligibleStudents();
+            const helper = document.getElementById('sessionAutoHelper');
+            if (helper) {
+                const bestId = findBestMatchingSessionId();
+                if (sessionSelect.value === bestId && bestId) {
+                    helper.classList.remove('d-none');
+                } else {
+                    helper.classList.add('d-none');
+                }
+            }
+        });
+    }
 }
 
 // Cập nhật số đếm trên các nút lọc trạng thái 1 chạm
@@ -318,6 +385,11 @@ async function loadProfiles() {
                 SEED_PROFILES.forEach(p => map.set(p.profileCode, p));
                 data.forEach(p => map.set(p.profileCode, p));
                 profilesList = Array.from(map.values());
+                profilesList.forEach(p => {
+                    if ((p.status || '').toLowerCase() === 'approved' && p.student?.id) {
+                        graduatedStudentIds.add(String(p.student.id));
+                    }
+                });
                 if (totalBadge) {
                     totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${profilesList.length} hồ sơ`;
                 }
@@ -605,29 +677,323 @@ async function handleSubmitReview(e) {
 }
 
 // =================================================================================
-// 3. THÊM / SỬA HỒ SƠ
+// 3. THÊM / SỬA HỒ SƠ & SEARCHABLE STUDENT PICKER
 // =================================================================================
-function openCreateModal() {
+
+// Lấy chữ cái đầu làm avatar
+function getInitials(name) {
+    if (!name) return 'SV';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+// 1. Tự động lấy hoặc sinh mã hồ sơ theo thứ tự HS_2026_001, 002, 003... nhìn vào database
+async function getNextProfileCode() {
+    try {
+        const response = await fetch(`${API_ENDPOINTS.GRADUATION_PROFILES}/next-code`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data && data.nextCode) {
+                return data.nextCode;
+            }
+        }
+    } catch (e) {
+        console.warn('Không thể lấy mã từ API next-code, fallback sang tính cục bộ:', e);
+    }
+
+    // Fallback: Tính toán cục bộ dựa trên profilesList
+    const currentYear = new Date().getFullYear();
+    let maxSeq = 0;
+    const regex = new RegExp(`^HS[_-]?${currentYear}[_-]?(\\d+)$`, 'i');
+    profilesList.forEach(p => {
+        const code = p.profileCode || '';
+        const m = code.match(regex);
+        if (m && m[1]) {
+            const num = parseInt(m[1], 10);
+            if (num > maxSeq) maxSeq = num;
+        }
+    });
+    const nextSeq = maxSeq + 1;
+    return `HS_${currentYear}_${String(nextSeq).padStart(3, '0')}`;
+}
+
+// 2. Tự động tìm đợt xét tốt nghiệp phù hợp với thời gian hiện tại
+function findBestMatchingSessionId() {
+    const todayStr = new Date().toISOString().substring(0, 10);
+    const sessions = Array.from(sessionsMap.values());
+    if (sessions.length === 0) return '';
+
+    // Ưu tiên 1: Đợt có startDate <= today <= dueDate (đang mở nhận hồ sơ)
+    const active = sessions.find(s => {
+        if (s.startDate && s.dueDate) {
+            return s.startDate <= todayStr && todayStr <= s.dueDate;
+        }
+        return false;
+    });
+    if (active) return active.id;
+
+    // Ưu tiên 2: Đợt sắp diễn ra gần nhất (startDate >= today)
+    const upcoming = sessions
+        .filter(s => s.startDate && s.startDate >= todayStr)
+        .sort((a, b) => a.startDate.localeCompare(b.startDate));
+    if (upcoming.length > 0) return upcoming[0].id;
+
+    // Ưu tiên 3: Lấy đợt đầu tiên
+    return sessions[0].id;
+}
+
+// 3. Tính toán và lọc danh sách sinh viên khả dụng cho đợt xét đang chọn
+function updateEligibleStudents() {
+    const currentSessionId = document.getElementById('modalProfileSessionId')?.value || '';
+
+    // Thu thập các sinh viên đã có hồ sơ trong đợt này
+    const sessionSubmittedStudentIds = new Set();
+    profilesList.forEach(p => {
+        if (p.sessionId && String(p.sessionId) === String(currentSessionId) && p.student?.id) {
+            sessionSubmittedStudentIds.add(String(p.student.id));
+        }
+    });
+
+    // Thu thập các sinh viên đã được duyệt tốt nghiệp (Approved hoặc Kết quả = 1)
+    const allGraduatedIds = new Set(graduatedStudentIds);
+    profilesList.forEach(p => {
+        if ((p.status || '').toLowerCase() === 'approved' && p.student?.id) {
+            allGraduatedIds.add(String(p.student.id));
+        }
+    });
+
+    // Lọc:
+    // - Sinh viên đã được duyệt tốt nghiệp thì KHÔNG hiển thị lại
+    // - Sinh viên đã được thêm ở đợt này rồi thì KHÔNG hiển thị lại ở đợt này nữa
+    const allStudents = Array.from(studentsMap.values());
+    filteredEligibleStudents = allStudents.filter(s => {
+        const sId = String(s.id);
+        if (allGraduatedIds.has(sId)) return false;
+        if (currentSessionId && sessionSubmittedStudentIds.has(sId)) return false;
+        return true;
+    });
+
+    // Nếu sinh viên đang chọn bị trùng ở đợt mới, bỏ chọn để người dùng chọn lại
+    if (currentSelectedStudent) {
+        const stillEligible = filteredEligibleStudents.some(s => String(s.id) === String(currentSelectedStudent.id));
+        if (!stillEligible) {
+            clearStudentSelection();
+            showAlert('warning', 'Sinh viên vừa chọn đã có hồ sơ trong đợt xét này, vui lòng chọn sinh viên khác!');
+        }
+    }
+
+    renderStudentDropdown();
+}
+
+// Render dropdown danh sách sinh viên tìm kiếm
+function renderStudentDropdown(keyword = '') {
+    const dropdownItems = document.getElementById('studentDropdownItems');
+    const dropdownCount = document.getElementById('studentDropdownCount');
+    if (!dropdownItems) return;
+
+    const kw = (keyword || '').toLowerCase().trim();
+    let displayStudents = filteredEligibleStudents;
+    if (kw) {
+        displayStudents = filteredEligibleStudents.filter(s => {
+            const name = (s.fullName || s.name || '').toLowerCase();
+            const code = (s.studentCode || '').toLowerCase();
+            const cls = (s.className || '').toLowerCase();
+            return name.includes(kw) || code.includes(kw) || cls.includes(kw);
+        });
+    }
+
+    if (dropdownCount) {
+        dropdownCount.textContent = `${displayStudents.length} sinh viên khả dụng`;
+    }
+
+    if (displayStudents.length === 0) {
+        dropdownItems.innerHTML = `
+            <div class="p-3 text-center text-muted small">
+                <i class="bi bi-person-x fs-4 d-block mb-1 text-secondary"></i>
+                ${kw ? 'Không tìm thấy sinh viên nào khớp với từ khóa tìm kiếm.' : 'Không có sinh viên nào khả dụng ở đợt này (đã nộp hoặc đã tốt nghiệp).'}
+            </div>
+        `;
+        return;
+    }
+
+    dropdownItems.innerHTML = displayStudents.map(s => {
+        const initials = getInitials(s.fullName || s.name || 'SV');
+        const code = escapeHtml(s.studentCode || 'SV');
+        const name = escapeHtml(s.fullName || s.name || 'Sinh viên');
+        const cls = escapeHtml(s.className || 'Chưa xếp lớp');
+
+        return `
+            <div class="prof-student-item" data-id="${s.id}">
+                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                    <div class="prof-student-avatar">${initials}</div>
+                    <div class="text-truncate">
+                        <div class="fw-bold text-dark small text-truncate">${name}</div>
+                        <div class="text-muted" style="font-size: 0.74rem;">
+                            <span class="badge bg-light text-primary border me-1 font-monospace">${code}</span>
+                            <span>${cls}</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 0.72rem;">
+                    Chọn
+                </button>
+            </div>
+        `;
+    }).join('');
+
+    dropdownItems.querySelectorAll('.prof-student-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const sId = item.getAttribute('data-id');
+            const target = studentsMap.get(sId);
+            if (target) {
+                selectStudent(target);
+            }
+        });
+    });
+}
+
+// Chọn một sinh viên
+function selectStudent(student) {
+    currentSelectedStudent = student;
+    const hiddenInput = document.getElementById('modalProfileStudentId');
+    if (hiddenInput) hiddenInput.value = student.id;
+
+    const selectedCard = document.getElementById('studentSelectedCard');
+    const searchWrap = document.getElementById('studentSearchWrap');
+    const dropdown = document.getElementById('studentDropdownList');
+
+    const name = student.fullName || student.name || 'Sinh viên';
+    document.getElementById('selectedStudentAvatar').textContent = getInitials(name);
+    document.getElementById('selectedStudentName').textContent = name;
+    document.getElementById('selectedStudentCode').textContent = student.studentCode || 'SV';
+    document.getElementById('selectedStudentClass').textContent = student.className || 'Chưa xếp lớp';
+
+    if (selectedCard) selectedCard.classList.remove('d-none');
+    if (searchWrap) searchWrap.classList.add('d-none');
+    if (dropdown) dropdown.classList.add('d-none');
+}
+
+// Bỏ chọn sinh viên để tìm lại
+function clearStudentSelection() {
+    currentSelectedStudent = null;
+    const hiddenInput = document.getElementById('modalProfileStudentId');
+    if (hiddenInput) hiddenInput.value = '';
+
+    const selectedCard = document.getElementById('studentSelectedCard');
+    const searchWrap = document.getElementById('studentSearchWrap');
+    const searchInput = document.getElementById('studentSearchInput');
+
+    if (selectedCard) selectedCard.classList.add('d-none');
+    if (searchWrap) searchWrap.classList.remove('d-none');
+    if (searchInput) searchInput.value = '';
+}
+
+// MỞ MODAL NỘP HỒ SƠ TỐT NGHIỆP
+async function openCreateModal() {
     document.getElementById('profileModalLabel').innerHTML = `<i class="bi bi-folder-plus me-2"></i>Nộp hồ sơ đề nghị xét tốt nghiệp`;
     document.getElementById('profileId').value = '';
     document.getElementById('profileForm').reset();
-    document.getElementById('modalProfileCode').disabled = false;
+
+    // 1. Hiển thị Picker tạo mới, ẩn Thẻ khóa
+    const pickerContainer = document.getElementById('studentPickerContainer');
+    const lockedCard = document.getElementById('studentLockedCard');
+    if (pickerContainer) pickerContainer.classList.remove('d-none');
+    if (lockedCard) lockedCard.classList.add('d-none');
+    clearStudentSelection();
+
+    // 2. Tự động sinh mã hồ sơ nhìn vào database dạng HS_2026_001, 002, 003...
+    const codeInput = document.getElementById('modalProfileCode');
+    if (codeInput) {
+        codeInput.value = 'Đang tạo mã...';
+        codeInput.readOnly = true;
+        const nextCode = await getNextProfileCode();
+        codeInput.value = nextCode;
+    }
+
+    // 3. Tự động chọn đợt xét tốt nghiệp phù hợp với thời gian hiện tại
+    const sessionSelect = document.getElementById('modalProfileSessionId');
+    sessionSelect?.querySelectorAll('option[data-profile-session-fallback]').forEach(option => option.remove());
+    const sessionHelper = document.getElementById('sessionAutoHelper');
+    const bestSessionId = findBestMatchingSessionId();
+    if (sessionSelect && bestSessionId) {
+        sessionSelect.value = bestSessionId;
+        if (sessionHelper) sessionHelper.classList.remove('d-none');
+    }
+
+    // 4. Lọc sinh viên khả dụng cho đợt xét đang chọn
+    updateEligibleStudents();
+
+    // 5. Ghi chú sinh viên mặc định hiện: 'Đang chờ hội đồng xét duyệt đợt cuối'
+    const noteEl = document.getElementById('modalProfileNote');
+    if (noteEl) {
+        noteEl.value = 'Đang chờ hội đồng xét duyệt đợt cuối';
+    }
+
+    // 6. Trạng thái mặc định: Pending
+    const statusEl = document.getElementById('modalProfileStatus');
+    if (statusEl) {
+        statusEl.value = 'Pending';
+    }
 
     if (profileModalInstance) {
         profileModalInstance.show();
     }
 }
 
+// MỞ MODAL CHỈNH SỬA HỒ SƠ TỐT NGHIỆP
 function openEditModal(id) {
     const item = profilesList.find(x => String(x.id) === String(id));
     if (!item) return;
 
     document.getElementById('profileModalLabel').innerHTML = `<i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin hồ sơ`;
     document.getElementById('profileId').value = item.id;
-    document.getElementById('modalProfileCode').value = item.profileCode || '';
-    document.getElementById('modalProfileCode').disabled = true;
-    document.getElementById('modalProfileStudentId').value = item.student?.id || '';
-    document.getElementById('modalProfileSessionId').value = item.sessionId || '';
+    
+    // 1. Mã hồ sơ không thể sửa
+    const codeInput = document.getElementById('modalProfileCode');
+    if (codeInput) {
+        codeInput.value = item.profileCode || '';
+        codeInput.readOnly = true;
+    }
+
+    // 2. KHÓA CỐ ĐỊNH SINH VIÊN: Không thể chỉnh sửa thành sinh viên khác, hiện rõ thông tin sinh viên
+    const pickerContainer = document.getElementById('studentPickerContainer');
+    const lockedCard = document.getElementById('studentLockedCard');
+    if (pickerContainer) pickerContainer.classList.add('d-none');
+    if (lockedCard) lockedCard.classList.remove('d-none');
+
+    const student = item.student || studentsMap.get(item.student?.id);
+    const studentName = student?.fullName || student?.name || 'Sinh viên';
+    const studentCode = student?.studentCode || 'SV';
+    const studentClass = student?.className || 'Chưa xếp lớp';
+    const studentId = student?.id || item.student?.id || '';
+
+    document.getElementById('lockedStudentName').textContent = studentName;
+    document.getElementById('lockedStudentCode').textContent = studentCode;
+    document.getElementById('lockedStudentClass').textContent = studentClass;
+    document.getElementById('lockedStudentAvatar').textContent = getInitials(studentName);
+    document.getElementById('modalProfileStudentId').value = studentId;
+
+    // 3. Đợt xét và trạng thái
+    const sessionSelect = document.getElementById('modalProfileSessionId');
+    const sessionId = item.sessionId ? String(item.sessionId) : '';
+    if (sessionSelect && sessionId && !Array.from(sessionSelect.options).some(option => option.value === sessionId)) {
+        const session = sessionsMap.get(sessionId);
+        const sessionLabel = session
+            ? [session.sessionCode, session.sessionName].filter(Boolean).join(' - ')
+            : item.sessionName || `Đợt xét hiện tại (${sessionId})`;
+        const option = document.createElement('option');
+        option.value = sessionId;
+        option.textContent = sessionLabel;
+        option.dataset.profileSessionFallback = 'true';
+        sessionSelect.append(option);
+    }
+    if (sessionSelect) {
+        sessionSelect.value = sessionId;
+    }
+    const sessionHelper = document.getElementById('sessionAutoHelper');
+    if (sessionHelper) sessionHelper.classList.add('d-none');
+
     document.getElementById('modalProfileStatus').value = item.status || 'Pending';
     document.getElementById('modalProfileNote').value = item.note || '';
 
@@ -643,14 +1009,39 @@ async function handleSaveProfile(e) {
 
     const studentId = document.getElementById('modalProfileStudentId').value;
     if (!studentId) {
-        alert('Vui lòng chọn sinh viên!');
+        alert('Vui lòng chọn sinh viên nộp hồ sơ!');
         return;
     }
 
+    const sessionId = document.getElementById('modalProfileSessionId').value || null;
+    const profileCode = document.getElementById('modalProfileCode').value.trim();
+
+    // Frontend validation khi tạo mới
+    if (!isEdit) {
+        // Kiểm tra nếu sinh viên đã được duyệt tốt nghiệp
+        const isGraduated = graduatedStudentIds.has(String(studentId)) ||
+            profilesList.some(p => String(p.student?.id) === String(studentId) && (p.status || '').toLowerCase() === 'approved');
+        if (isGraduated) {
+            alert('Sinh viên này đã được duyệt tốt nghiệp, không thể nộp thêm hồ sơ mới!');
+            return;
+        }
+
+        // Kiểm tra nếu sinh viên đã nộp trong đợt này
+        if (sessionId) {
+            const alreadySubmittedInSession = profilesList.some(p => 
+                String(p.student?.id) === String(studentId) && String(p.sessionId) === String(sessionId)
+            );
+            if (alreadySubmittedInSession) {
+                alert('Sinh viên này đã nộp hồ sơ trong đợt xét tốt nghiệp này rồi!');
+                return;
+            }
+        }
+    }
+
     const payload = {
-        profileCode: document.getElementById('modalProfileCode').value.trim(),
+        profileCode: profileCode,
         student: { id: studentId },
-        sessionId: document.getElementById('modalProfileSessionId').value || null,
+        sessionId: sessionId,
         status: document.getElementById('modalProfileStatus').value,
         note: document.getElementById('modalProfileNote').value.trim() || null
     };
@@ -668,9 +1059,7 @@ async function handleSaveProfile(e) {
                 target.sessionId = payload.sessionId;
                 target.status = payload.status;
                 target.note = payload.note;
-                if (studentsMap.has(studentId)) {
-                    target.student = studentsMap.get(studentId);
-                }
+                // Khi chỉnh sửa: không đổi sinh viên khác
             }
             const sTarget = SEED_PROFILES.find(p => String(p.id) === String(id));
             if (sTarget) {
@@ -678,9 +1067,6 @@ async function handleSaveProfile(e) {
                 sTarget.sessionId = payload.sessionId;
                 sTarget.status = payload.status;
                 sTarget.note = payload.note;
-                if (studentsMap.has(studentId)) {
-                    sTarget.student = studentsMap.get(studentId);
-                }
             }
             if (profileModalInstance) {
                 profileModalInstance.hide();
@@ -705,7 +1091,6 @@ async function handleSaveProfile(e) {
             const err = await response.json().catch(() => ({}));
             throw new Error(err.message || err.error || `Lỗi máy chủ (${response.status})`);
         }
-
         if (profileModalInstance) {
             profileModalInstance.hide();
         }
@@ -759,17 +1144,9 @@ async function loadStudents() {
         if (!response.ok) return;
         const list = await response.json();
 
-        const select = document.getElementById('modalProfileStudentId');
-        let optionsHtml = '<option value="">-- Chọn sinh viên --</option>';
-
         list.forEach(s => {
             studentsMap.set(s.id, s);
-            optionsHtml += `<option value="${s.id}">${escapeHtml(s.studentCode)} - ${escapeHtml(s.fullName)} (${escapeHtml(s.className || 'Chưa xếp lớp')})</option>`;
         });
-
-        if (select) {
-            select.innerHTML = optionsHtml;
-        }
     } catch (e) {
         console.warn('Không thể tải sinh viên:', e);
     }
@@ -794,6 +1171,22 @@ async function loadSessions() {
         }
     } catch (e) {
         console.warn('Không thể tải đợt xét:', e);
+    }
+}
+
+async function loadGraduationResults() {
+    try {
+        const response = await fetch(`${API_ENDPOINTS.GRADUATION_RESULTS}?result=1&size=1000`);
+        if (!response.ok) return;
+        const data = await response.json();
+        const list = Array.isArray(data) ? data : (data.content || []);
+        list.forEach(r => {
+            if (r.studentId && (r.result === 1 || String(r.result) === '1')) {
+                graduatedStudentIds.add(String(r.studentId));
+            }
+        });
+    } catch (e) {
+        console.warn('Không thể tải kết quả tốt nghiệp:', e);
     }
 }
 

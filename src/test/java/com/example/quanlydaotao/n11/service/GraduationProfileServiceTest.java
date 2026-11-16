@@ -90,7 +90,6 @@ class GraduationProfileServiceTest {
         input.setReviewDate(LocalDateTime.now());
 
         when(graduationProfileRepository.findByIdAndIsActiveTrue(id)).thenReturn(Optional.of(current));
-        when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
         when(graduationProfileRepository.save(current)).thenReturn(current);
 
         GraduationProfile updated = service.update(id, input);

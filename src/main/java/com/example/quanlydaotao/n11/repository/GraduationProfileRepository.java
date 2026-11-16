@@ -21,4 +21,5 @@ public interface GraduationProfileRepository extends JpaRepository<GraduationPro
             String profileCode, String studentCode);
 
     boolean existsByProfileCodeIgnoreCase(String profileCode);
+
 }

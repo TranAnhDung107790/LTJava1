@@ -29,4 +29,3 @@ public interface GraduationSessionRepository extends JpaRepository<GraduationSes
            ":currentDate >= s.startDate AND :currentDate <= s.dueDate")
     List<GraduationSession> findActiveSessionsInPeriod(@Param("currentDate") LocalDate currentDate);
 }
-

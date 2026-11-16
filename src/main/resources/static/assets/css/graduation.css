@@ -1810,3 +1810,253 @@ button:active,
 .prof-decision-card.active {
     box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.2);
 }
+
+/* ==========================================================================
+   🎓 MODAL NỘP & SỬA HỒ SƠ TỐT NGHIỆP (PROFILE MODAL & STUDENT PICKER)
+   ========================================================================== */
+.prof-modal {
+    border-radius: 18px !important;
+    overflow: hidden !important;
+    border: none !important;
+    box-shadow: 0 20px 45px -10px rgba(77, 68, 181, 0.25), 0 10px 20px -5px rgba(0, 0, 0, 0.08) !important;
+}
+
+.prof-modal-header {
+    background: linear-gradient(135deg, #4D44B5 0%, #7C5CFC 100%) !important;
+    color: #FFFFFF !important;
+    padding: 1.1rem 1.5rem !important;
+    border-bottom: none !important;
+}
+
+.prof-modal-header .modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* Badge tự động sinh mã từ CSDL */
+.prof-auto-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.18rem 0.55rem;
+    border-radius: 9999px;
+    background: #F3EEFF;
+    color: #6D28D9;
+    border: 1px solid #DDD6FE;
+    letter-spacing: -0.01em;
+}
+
+.prof-auto-badge i {
+    font-size: 0.75rem;
+    color: #7C5CFC;
+}
+
+.prof-code-input {
+    background-color: #F8FAFC !important;
+    font-family: var(--font-mono, 'Fira Code', monospace) !important;
+    font-weight: 700 !important;
+    color: #1E293B !important;
+    letter-spacing: 0.03em;
+    cursor: default;
+}
+
+/* Searchable Student Picker Component */
+.prof-student-picker {
+    position: relative;
+    width: 100%;
+}
+
+.prof-student-search-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.prof-student-search-wrap .prof-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 0.88rem;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.prof-student-search-input {
+    padding-left: 36px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid #CBD5E1 !important;
+    font-size: 0.88rem !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    background: #FFFFFF !important;
+}
+
+.prof-student-search-input:focus {
+    border-color: #7C5CFC !important;
+    box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.2) !important;
+}
+
+/* Dropdown thả xuống danh sách sinh viên */
+.prof-student-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 1065;
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.15), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    animation: profDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes profDropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.prof-student-dropdown-header {
+    background: #F8FAFC;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.prof-student-dropdown-body {
+    max-height: 220px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #CBD5E1 #F1F5F9;
+}
+
+.prof-student-dropdown-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.prof-student-dropdown-body::-webkit-scrollbar-track {
+    background: #F1F5F9;
+}
+
+.prof-student-dropdown-body::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+}
+
+.prof-student-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-bottom: 1px solid #F1F5F9;
+}
+
+.prof-student-item:last-child {
+    border-bottom: none;
+}
+
+.prof-student-item:hover {
+    background-color: #F3EEFF;
+}
+
+.prof-student-avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 50%;
+    background: #EEF2FF;
+    color: #4F46E5;
+    font-weight: 700;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.prof-student-avatar.av-locked {
+    background: #FEF3C7;
+    color: #B45309;
+}
+
+/* Thẻ sinh viên đã được chọn (Selected Card) */
+.prof-student-selected-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #F8F7FF;
+    border: 1.5px solid #D4C4FF;
+    border-radius: 10px;
+    min-height: 48px;
+    transition: all 0.2s ease;
+}
+
+.prof-student-selected-card:hover {
+    border-color: #7C5CFC;
+    box-shadow: 0 2px 8px rgba(124, 92, 252, 0.12);
+}
+
+.prof-student-change-btn {
+    padding: 0.22rem 0.65rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 7px !important;
+    font-weight: 600 !important;
+    color: #4D44B5 !important;
+    border-color: #D4C4FF !important;
+    background: #FFFFFF !important;
+    white-space: nowrap;
+}
+
+.prof-student-change-btn:hover {
+    background: #4D44B5 !important;
+    color: #FFFFFF !important;
+    border-color: #4D44B5 !important;
+}
+
+/* Thẻ sinh viên bị khóa khi chỉnh sửa (Locked Card) */
+.prof-student-locked-card {
+    padding: 10px 14px;
+    background: #F8FAFC;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
+    cursor: not-allowed;
+    user-select: none;
+}
+
+/* Helper chú thích tự động chọn đợt */
+.prof-session-helper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    color: #059669;
+    font-weight: 600;
+    margin-top: 5px;
+    line-height: 1.3;
+}
+
+.prof-session-helper i {
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.prof-session-select {
+    color: #1E293B !important;
+    background-color: #FFFFFF !important;
+}
+
+.prof-session-select option {
+    color: #1E293B;
+}
