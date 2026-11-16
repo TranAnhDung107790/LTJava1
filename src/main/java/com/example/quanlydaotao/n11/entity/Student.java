@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "students")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Student {
 
     @Id
@@ -35,6 +35,9 @@ public class Student {
     @Column(name = "class_name")
     private String className;
 
+    @Column(name = "status")
+    private String status = "Đang học";
+
     public Student() {
     }
 
@@ -44,6 +47,16 @@ public class Student {
         this.email = email;
         this.phone = phone;
         this.className = className;
+        this.status = "Đang học";
+    }
+
+    public Student(String studentCode, String fullName, String email, String phone, String className, String status) {
+        this.studentCode = studentCode;
+        this.fullName = fullName;
+        this.email = email;
+        this.phone = phone;
+        this.className = className;
+        this.status = (status != null && !status.trim().isEmpty()) ? status : "Đang học";
     }
 
     public UUID getId() {
@@ -70,6 +83,7 @@ public class Student {
         this.fullName = fullName;
     }
 
+    @jakarta.persistence.Transient
     public String getName() {
         return fullName;
     }
@@ -100,5 +114,13 @@ public class Student {
 
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    public String getStatus() {
+        return (status != null && !status.trim().isEmpty()) ? status : "Đang học";
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

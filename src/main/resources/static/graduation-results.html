@@ -123,6 +123,62 @@
                 <div class="edu-layout">
                     <!-- ===== MAIN CONTENT ===== -->
                     <div class="edu-main-content">
+
+                        <!-- Bento KPI Stat Cards -->
+                        <div class="bento-grid">
+                            <div class="bento-stat-card bento-card-blue">
+                                <div class="bento-header">
+                                    <span class="bento-title">Tổng số kết quả</span>
+                                    <div class="bento-icon-wrapper bento-icon-blue">
+                                        <i class="bi bi-award-fill"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value" id="statTotalResults">480</div>
+                                <div class="bento-subtitle">
+                                    <i class="bi bi-layers text-primary"></i>Khóa K23, K24, K25
+                                </div>
+                            </div>
+
+                            <div class="bento-stat-card bento-card-emerald">
+                                <div class="bento-header">
+                                    <span class="bento-title">Đạt tốt nghiệp</span>
+                                    <div class="bento-icon-wrapper bento-icon-emerald">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value text-success" id="statPassedResults">397</div>
+                                <div class="bento-subtitle text-success">
+                                    <span class="status-pulse-dot"></span>Đủ điều kiện cấp bằng
+                                </div>
+                            </div>
+
+                            <div class="bento-stat-card bento-card-amber">
+                                <div class="bento-header">
+                                    <span class="bento-title">Chưa đạt</span>
+                                    <div class="bento-icon-wrapper bento-icon-amber">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value text-warning" id="statFailedResults">83</div>
+                                <div class="bento-subtitle">
+                                    <i class="bi bi-exclamation-triangle text-warning"></i>Nợ tín chỉ / GPA dưới sàn
+                                </div>
+                            </div>
+
+                            <div class="bento-stat-card bento-card-purple">
+                                <div class="bento-header">
+                                    <span class="bento-title">Tỷ lệ tốt nghiệp</span>
+                                    <div class="bento-icon-wrapper bento-icon-purple">
+                                        <i class="bi bi-pie-chart-fill"></i>
+                                    </div>
+                                </div>
+                                <div class="bento-value text-purple" id="statGraduationRate" style="font-size: 1.45rem;">82.7%</div>
+                                <div class="bento-subtitle">
+                                    <i class="bi bi-star-fill text-purple"></i>GPA trung bình: 2.78
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Action & Filter Bar -->
                         <div class="action-bar-card mb-4 p-3">
                             <div class="row g-2 align-items-center justify-content-between">
@@ -144,6 +200,14 @@
                                         </select>
                                     </div>
 
+                                    <!-- Filter Condition -->
+                                    <div class="d-flex align-items-center gap-1">
+                                        <label class="small text-muted fw-semibold text-nowrap">Tiêu chuẩn:</label>
+                                        <select id="filterCondition" class="form-select form-select-sm" style="width: 160px;">
+                                            <option value="">Tất cả tiêu chuẩn</option>
+                                        </select>
+                                    </div>
+
                                     <!-- Filter Page Size -->
                                     <div class="d-flex align-items-center gap-1">
                                         <label class="small text-muted fw-semibold text-nowrap">Số lượng:</label>
@@ -162,6 +226,11 @@
                                 </div>
 
                                 <div class="col-12 col-md-auto d-flex flex-wrap gap-2">
+                                    <!-- Export Word Button -->
+                                    <button id="btnExportWord" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm px-3" title="Xuất báo cáo kết quả tốt nghiệp ra Word (.docx)">
+                                        <i class="bi bi-file-earmark-word me-1"></i>Xuất Word
+                                    </button>
+
                                     <!-- Evaluate Trigger Button -->
                                     <button id="btnOpenEvaluateModal" class="btn btn-warning btn-sm text-dark fw-semibold shadow-sm px-3">
                                         <i class="bi bi-lightning-charge-fill me-1"></i>Xét duyệt tự động
@@ -448,7 +517,7 @@
 
                     <div class="alert alert-info py-2 small mb-0">
                         <i class="bi bi-info-circle me-1"></i>
-                        Tiến trình này sẽ quét toàn bộ sinh viên đang hoạt động trong hệ thống.
+                        Hệ thống sẽ đối chiếu và chỉ quét các sinh viên thuộc đúng khóa áp dụng của bộ tiêu chuẩn đã chọn (ví dụ: K24 chỉ xét sinh viên khóa K24).
                     </div>
                 </form>
             </div>

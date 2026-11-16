@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from './config.js';
 
-// Dữ liệu mẫu chuẩn hóa 5 khóa đào tạo (K20 - K24) để hiển thị tức thì, không bị rỗng khi DB đang khởi động
+/*
+// Dữ liệu mẫu chuẩn hóa (Đã tắt - Hệ thống chuyển sang nạp 100% dữ liệu từ Database)
 const SEED_CONDITIONS = [
     {
         id: 'seed-k20',
@@ -63,8 +64,9 @@ const SEED_CONDITIONS = [
         isActive: true
     }
 ];
+*/
 
-let conditionsList = [...SEED_CONDITIONS];
+let conditionsList = [];
 let conditionModalInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -75,8 +77,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventListeners();
 
-    // 🚀 HIỂN THỊ DỮ LIỆU TỨC THÌ: Render ngay dữ liệu phong phú để chạy animation mượt mà, logic 100%
-    renderTable(conditionsList, false);
+    // Trạng thái đang nạp dữ liệu ban đầu từ Database
+    const initialTableBody = document.getElementById('conditionsTableBody');
+    if (initialTableBody) {
+        initialTableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-5">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    Đang tải danh sách tiêu chuẩn tốt nghiệp từ hệ thống...
+                </td>
+            </tr>
+        `;
+    }
 
     if (window.gsap) {
         gsap.from('.action-bar-card, .table-card-container', {
@@ -178,31 +190,21 @@ async function loadConditions(cohort = '') {
         const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
-            const list = Array.isArray(data) ? data : [data];
-            if (list.length > 0) {
-                const map = new Map();
-                SEED_CONDITIONS.forEach(c => map.set(c.appliedCohort || c.cohort, c));
-                list.forEach(c => {
-                    const key = c.appliedCohort || c.cohort;
-                    if (key) {
-                        const existing = map.get(key) || {};
-                        const conduct = (c.conductRequired && !c.conductRequired.includes('?'))
-                            ? c.conductRequired
-                            : (existing.conductRequired || fixCorruptedVietnamese(c.conductRequired));
-                        const it = (c.itRequirement && !c.itRequirement.includes('?'))
-                            ? c.itRequirement
-                            : (existing.itRequirement || fixCorruptedVietnamese(c.itRequirement));
-                        map.set(key, { ...existing, ...c, conductRequired: conduct, itRequirement: it });
-                    }
-                });
-                conditionsList = Array.from(map.values());
-                if (totalBadge) {
-                    totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${conditionsList.length} tiêu chuẩn`;
-                }
+            const list = Array.isArray(data) ? data : (data ? [data] : []);
+            conditionsList = list.map(c => ({
+                ...c,
+                conductRequired: fixCorruptedVietnamese(c.conductRequired),
+                itRequirement: fixCorruptedVietnamese(c.itRequirement)
+            }));
+            if (totalBadge) {
+                totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${conditionsList.length} tiêu chuẩn`;
             }
+        } else {
+            conditionsList = [];
         }
     } catch (error) {
-        console.warn('API sync fallback to seed data:', error);
+        console.error('Lỗi khi tải tiêu chuẩn tốt nghiệp từ API:', error);
+        conditionsList = [];
     }
 
     let displayList = conditionsList;
@@ -218,6 +220,7 @@ function renderTable(items, triggerAnimation = false) {
     if (totalBadge && !totalBadge.innerHTML.includes('Trực tuyến')) {
         totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${items.length} tiêu chuẩn`;
     }
+    updateConditionStats(items);
 
     if (items.length === 0) {
         tableBody.innerHTML = `
@@ -491,11 +494,55 @@ function showListAlert(type, message) {
         }
     }, 4500);
 }
-        const alertEl = listAlertBox.querySelector('.alert');
-        if (alertEl && window.bootstrap) {
-            new bootstrap.Alert(alertEl).close();
+
+// Cập nhật các chỉ số Bento KPI Stat Cards
+function updateConditionStats(items) {
+    if (!items) return;
+    const total = items.length;
+    const active = items.filter(c => c.isActive !== false).length;
+    let sumGpa = 0;
+    let countGpa = 0;
+    const cohorts = new Set();
+
+    items.forEach(c => {
+        const cohort = c.appliedCohort || c.cohort;
+        if (cohort) cohorts.add(cohort);
+        if (c.minGpa != null && !isNaN(c.minGpa)) {
+            sumGpa += parseFloat(c.minGpa);
+            countGpa++;
         }
-    }, 5000);
+    });
+
+    const avgGpa = countGpa > 0 ? (sumGpa / countGpa).toFixed(2) : '2.07';
+    const cohortsText = cohorts.size > 0 ? Array.from(cohorts).join(' · ') : 'K23 · K24 · K25';
+
+    animateCount('statTotalConditions', total);
+    animateCount('statActiveConditions', active);
+
+    const avgGpaEl = document.getElementById('statAvgMinGpa');
+    if (avgGpaEl) avgGpaEl.textContent = avgGpa;
+
+    const cohortsEl = document.getElementById('statAppliedCohorts');
+    if (cohortsEl) cohortsEl.textContent = cohortsText;
+}
+
+function animateCount(elementId, targetValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!window.gsap) {
+        el.textContent = targetValue;
+        return;
+    }
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    const obj = { val: currentVal };
+    gsap.to(obj, {
+        val: targetValue,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: () => {
+            el.textContent = Math.round(obj.val);
+        }
+    });
 }
 
 function escapeHtml(text) {

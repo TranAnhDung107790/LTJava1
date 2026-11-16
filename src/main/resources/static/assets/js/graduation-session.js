@@ -1,7 +1,8 @@
 import { API_ENDPOINTS } from './config.js';
 import { renderMiniCalendar } from './calendar-widget.js';
 
-// Dữ liệu mẫu chuẩn hóa 4 đợt xét tốt nghiệp hiển thị tức thì, không bị rỗng
+/*
+// Dữ liệu mẫu chuẩn hóa (Đã tắt - Hệ thống chuyển sang nạp 100% dữ liệu từ Database)
 const SEED_SESSIONS = [
     {
         id: 'seed-sess-1',
@@ -44,8 +45,9 @@ const SEED_SESSIONS = [
         note: 'Đã hoàn thành công tác trao bằng'
     }
 ];
+*/
 
-let sessionsList = [...SEED_SESSIONS];
+let sessionsList = [];
 let sessionModalInstance = null;
 let autoModalInstance = null;
 let activeOnlyFilter = false;
@@ -64,10 +66,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventListeners();
 
-    // 🚀 HIỂN THỊ DỮ LIỆU TỨC THÌ: Render ngay để chạy animation mượt mà
-    renderCards(sessionsList, false);
-    renderTable(sessionsList, false);
-    updateBentoStats(sessionsList);
+    // Trạng thái đang nạp dữ liệu ban đầu từ Database
+    const cardsContainer = document.getElementById('sessionsCardsContainer');
+    if (cardsContainer) {
+        cardsContainer.innerHTML = `
+            <div class="card shadow-sm border-0 py-5 text-center text-muted">
+                <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                <p class="mb-0">Đang tải danh sách đợt xét tốt nghiệp từ hệ thống...</p>
+            </div>
+        `;
+    }
+    const tableBody = document.getElementById('sessionsTableBody');
+    if (tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-5">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    Đang tải danh sách đợt xét tốt nghiệp từ hệ thống...
+                </td>
+            </tr>
+        `;
+    }
     renderMiniCalendar();
 
     if (window.gsap) {
@@ -257,18 +276,16 @@ async function loadSessions(keyword = '') {
         const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
-                const map = new Map();
-                SEED_SESSIONS.forEach(s => map.set(s.sessionCode, s));
-                data.forEach(s => map.set(s.sessionCode, s));
-                sessionsList = Array.from(map.values());
-                if (totalBadge) {
-                    totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${sessionsList.length} đợt xét`;
-                }
+            sessionsList = Array.isArray(data) ? data : (data ? [data] : []);
+            if (totalBadge) {
+                totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Trực tuyến · ${sessionsList.length} đợt xét`;
             }
+        } else {
+            sessionsList = [];
         }
     } catch (error) {
-        console.warn('API sync fallback to seed data:', error);
+        console.error('Lỗi khi tải đợt xét tốt nghiệp từ API:', error);
+        sessionsList = [];
     }
 
     let displayList = sessionsList;
