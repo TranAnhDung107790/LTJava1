@@ -5,11 +5,9 @@
 # Local student class update scripts
 update_student_classes.ps1
 update_student_classes.py
-database/update_student_classes.sql
 
 # Documentation & Database
 /docs/
-database/
 
 # ====================================
 # Agent / AI tool directories
