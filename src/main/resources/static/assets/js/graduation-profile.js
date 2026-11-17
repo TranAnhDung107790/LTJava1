@@ -1,98 +1,10 @@
 import { API_ENDPOINTS } from './config.js';
 
-// Dữ liệu mẫu chuẩn hóa 8 hồ sơ sinh viên xét tốt nghiệp hiển thị tức thì, không bị rỗng
-const SEED_PROFILES = [
-    {
-        id: 'seed-prof-1',
-        profileCode: 'HS_2026_001',
-        student: { id: 's1', fullName: 'Nguyễn Văn An', studentCode: 'SV001', className: 'C2024A' },
-        sessionId: 'DX2026_01',
-        sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
-        status: 'Approved',
-        submittedDate: '2026-10-05',
-        reviewDate: '2026-10-25',
-        note: 'Hồ sơ đầy đủ, TOEIC 650, đủ 132 tín chỉ'
-    },
-    {
-        id: 'seed-prof-2',
-        profileCode: 'HS_2026_002',
-        student: { id: 's2', fullName: 'Trần Thị B', studentCode: 'SV002', className: 'C2024B' },
-        sessionId: 'DX2026_01',
-        sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
-        status: 'Approved',
-        submittedDate: '2026-10-08',
-        reviewDate: '2026-10-28',
-        note: 'GPA 3.68, IELTS 6.5, xếp loại Xuất sắc'
-    },
-    {
-        id: 'seed-prof-3',
-        profileCode: 'HS_2026_003',
-        student: { id: 's3', fullName: 'Lê Hoàng C', studentCode: 'SV003', className: 'C2024C' },
-        sessionId: 'DX2026_01',
-        sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
-        status: 'Pending',
-        submittedDate: '2026-10-12',
-        reviewDate: null,
-        note: 'Chờ bổ sung bản sao chứng chỉ B1 trước 15/11'
-    },
-    {
-        id: 'seed-prof-4',
-        profileCode: 'HS_2026_004',
-        student: { id: 's4', fullName: 'Phạm Minh D', studentCode: 'SV004', className: 'C2024A' },
-        sessionId: 'DX2026_01',
-        sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
-        status: 'Approved',
-        submittedDate: '2026-10-15',
-        reviewDate: '2026-11-02',
-        note: 'Chuẩn VSTEP B1 hợp lệ, 135 tín chỉ'
-    },
-    {
-        id: 'seed-prof-5',
-        profileCode: 'HS_2026_005',
-        student: { id: 's5', fullName: 'Hoàng Thị E', studentCode: 'SV005', className: 'C2024B' },
-        sessionId: 'DX2026_01',
-        sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
-        status: 'Approved',
-        submittedDate: '2026-10-16',
-        reviewDate: '2026-11-02',
-        note: 'GPA 3.82, TOEIC 780, đề xuất Thủ khoa'
-    },
-    {
-        id: 'seed-prof-6',
-        profileCode: 'HS_2026_006',
-        student: { id: 's6', fullName: 'Vũ Đức F', studentCode: 'SV006', className: 'C2024C' },
-        sessionId: 'DX2026_01',
-        sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
-        status: 'Rejected',
-        submittedDate: '2026-10-18',
-        reviewDate: '2026-11-03',
-        note: 'Thiếu 6 tín chỉ tích lũy bắt buộc (124/130)'
-    },
-    {
-        id: 'seed-prof-7',
-        profileCode: 'HS_2026_007',
-        student: { id: 's7', fullName: 'Đặng Nhật G', studentCode: 'SV007', className: 'C2024A' },
-        sessionId: 'DX2026_01',
-        sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
-        status: 'Pending',
-        submittedDate: '2026-10-20',
-        reviewDate: null,
-        note: 'Đang chờ hội đồng xét duyệt đợt cuối'
-    },
-    {
-        id: 'seed-prof-8',
-        profileCode: 'HS_2026_008',
-        student: { id: 's8', fullName: 'Bùi Thảo H', studentCode: 'SV008', className: 'C2024B' },
-        sessionId: 'DX2026_01',
-        sessionName: 'Đợt 1 - Xét tốt nghiệp HK1 2026-2027',
-        status: 'Approved',
-        submittedDate: '2026-10-22',
-        reviewDate: '2026-11-04',
-        note: 'Hồ sơ đầy đủ, IELTS 6.0, MOS Đạt'
-    }
-];
-
-let profilesList = [...SEED_PROFILES];
+// Dữ liệu mẫu đã bỏ để dùng 100% dữ liệu từ Database (giống các module khác)
+/*
+const SEED_PROFILES = [];
+*/
+let profilesList = [];
 const studentsMap = new Map();
 const sessionsMap = new Map();
 const graduatedStudentIds = new Set();
@@ -361,6 +273,54 @@ function setReviewDecision(status, autoFillTemplate = false) {
     }
 }
 
+// Làm sạch tên sinh viên (loại bỏ mã SV/thừa) giống module kết quả tốt nghiệp
+function formatStudentName(rawName, code) {
+    if (!rawName) return '';
+    let cleaned = String(rawName).trim();
+    if (code) {
+        const escapedCode = String(code).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        cleaned = cleaned.replace(new RegExp(`(\\s*[-–/"|,]?\\s*\\(?\\[?${escapedCode}\\)?\\]?\\s*)$`, 'i'), '');
+    }
+    cleaned = cleaned.replace(/\s*\([A-Za-z0-9_.-]+\)\s*$/, '');
+    cleaned = cleaned.replace(/\s*\[[A-Za-z0-9_.-]+\]\s*$/, '');
+    cleaned = cleaned.replace(/\s*[-–"]\s*[A-Za-z0-9_.-]+\s*$/, '');
+    // Giữ nguyên phần số đuôi là một phần của tên sinh viên
+    return cleaned.trim();
+}
+
+// Cập nhật các thẻ KPI bento cho hồ sơ
+function updateProfileStats(list) {
+    if (!Array.isArray(list)) return;
+    const total = list.length;
+    const approved = list.filter(p => (p.status || '').toLowerCase() === 'approved').length;
+    const pending = list.filter(p => (p.status || '').toLowerCase() === 'pending').length;
+    const rejected = list.filter(p => (p.status || '').toLowerCase() === 'rejected').length;
+
+    animateCount('statTotalProfiles', total);
+    animateCount('statApprovedProfiles', approved);
+    animateCount('statPendingProfiles', pending);
+    animateCount('statRejectedProfiles', rejected);
+}
+
+function animateCount(elementId, targetValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (!window.gsap) {
+        el.textContent = targetValue;
+        return;
+    }
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    const obj = { val: currentVal };
+    gsap.to(obj, {
+        val: targetValue,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: () => {
+            el.textContent = Math.round(obj.val);
+        }
+    });
+}
+
 async function loadProfiles() {
     const tableBody = document.getElementById('profilesTableBody');
     const totalBadge = document.getElementById('totalBadge');
@@ -380,11 +340,8 @@ async function loadProfiles() {
         const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
-                const map = new Map();
-                SEED_PROFILES.forEach(p => map.set(p.profileCode, p));
-                data.forEach(p => map.set(p.profileCode, p));
-                profilesList = Array.from(map.values());
+            if (Array.isArray(data)) {
+                profilesList = data;
                 profilesList.forEach(p => {
                     if ((p.status || '').toLowerCase() === 'approved' && p.student?.id) {
                         graduatedStudentIds.add(String(p.student.id));
@@ -423,8 +380,9 @@ function renderTable(items, triggerAnimation = false) {
         totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${items.length} hồ sơ`;
     }
 
-    // Luôn cập nhật số lượng trên các nút lọc trạng thái
+    // Luôn cập nhật số lượng trên các nút lọc trạng thái và KPI bento
     updateFilterCounts(profilesList);
+    updateProfileStats(profilesList);
 
     if (items.length === 0) {
         tableBody.innerHTML = `
@@ -439,10 +397,14 @@ function renderTable(items, triggerAnimation = false) {
     }
 
     tableBody.innerHTML = items.map((item, index) => {
-        // Sinh viên
+        // Sinh viên (làm sạch tên sinh viên giống module kết quả)
         const student = item.student || studentsMap.get(item.student?.id);
-        const studentDisplay = student 
-            ? `<strong>${escapeHtml(student.fullName)}</strong><br/><small class="text-muted"><i class="bi bi-person-vcard me-1"></i>${escapeHtml(student.studentCode)} - ${escapeHtml(student.className || '')}</small>`
+        const rawName = student?.fullName || student?.name || item.studentName || item.studentFullName;
+        const fullName = formatStudentName(rawName, student?.studentCode || item.studentCode);
+        const studentCode = student?.studentCode || item.studentCode || '';
+        const className = student?.className || item.className || '';
+        const studentDisplay = fullName
+            ? `<strong>${escapeHtml(fullName)}</strong><br/><small class="text-muted"><i class="bi bi-person-vcard me-1"></i>${escapeHtml(studentCode)} - ${escapeHtml(className)}</small>`
             : '<span class="text-muted">-</span>';
 
         // Đợt xét
@@ -571,7 +533,8 @@ function openReviewModal(id) {
     document.getElementById('reviewNote').value = item.note || '';
 
     const student = item.student || studentsMap.get(item.student?.id);
-    const studentText = student ? `${student.fullName} (${student.studentCode})` : 'Mã: ' + item.profileCode;
+    const cleanedName = formatStudentName(student?.fullName || student?.name, student?.studentCode);
+    const studentText = cleanedName ? `${cleanedName} (${student.studentCode})` : 'Mã: ' + item.profileCode;
     document.getElementById('reviewProfileInfo').textContent = `Mã hồ sơ: ${item.profileCode} | Sinh viên: ${studentText}`;
 
     // Đồng bộ trạng thái quyết định phê duyệt và nhãn nút bấm (Mặc định Approved, hoặc Rejected nếu trạng thái hiện tại là Rejected)
@@ -620,7 +583,7 @@ async function handleSubmitReview(e) {
                 targetProfile.note = payload.note;
             }
 
-            const targetSeed = SEED_PROFILES.find(p => String(p.id) === String(id));
+            const targetSeed = (typeof SEED_PROFILES !== 'undefined' ? SEED_PROFILES : []).find(p => String(p.id) === String(id));
             if (targetSeed) {
                 targetSeed.status = payload.status;
                 targetSeed.reviewDate = nowStr;
@@ -963,7 +926,7 @@ function openEditModal(id) {
     if (lockedCard) lockedCard.classList.remove('d-none');
 
     const student = item.student || studentsMap.get(item.student?.id);
-    const studentName = student?.fullName || student?.name || 'Sinh viên';
+    const studentName = formatStudentName(student?.fullName || student?.name, student?.studentCode) || 'Sinh viên';
     const studentCode = student?.studentCode || 'SV';
     const studentClass = student?.className || 'Chưa xếp lớp';
     const studentId = student?.id || item.student?.id || '';
@@ -1061,7 +1024,7 @@ async function handleSaveProfile(e) {
                 target.note = payload.note;
                 // Khi chỉnh sửa: không đổi sinh viên khác
             }
-            const sTarget = SEED_PROFILES.find(p => String(p.id) === String(id));
+            const sTarget = (typeof SEED_PROFILES !== 'undefined' ? SEED_PROFILES : []).find(p => String(p.id) === String(id));
             if (sTarget) {
                 sTarget.profileCode = payload.profileCode;
                 sTarget.sessionId = payload.sessionId;
@@ -1112,8 +1075,8 @@ async function handleDeleteProfile(id) {
     const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     if (!UUID_REGEX.test(id)) {
         profilesList = profilesList.filter(p => String(p.id) !== String(id));
-        const sIdx = SEED_PROFILES.findIndex(p => String(p.id) === String(id));
-        if (sIdx !== -1) SEED_PROFILES.splice(sIdx, 1);
+        const sIdx = (typeof SEED_PROFILES !== 'undefined' ? SEED_PROFILES : []).findIndex(p => String(p.id) === String(id));
+        if (sIdx !== -1 && typeof SEED_PROFILES !== 'undefined') SEED_PROFILES.splice(sIdx, 1);
         showAlert('success', 'Đã xóa hồ sơ thành công!');
         renderTable(profilesList, true);
         return;
@@ -1145,6 +1108,9 @@ async function loadStudents() {
         const list = await response.json();
 
         list.forEach(s => {
+            if (s && s.fullName) {
+                s.fullName = formatStudentName(s.fullName, s.studentCode);
+            }
             studentsMap.set(s.id, s);
         });
     } catch (e) {

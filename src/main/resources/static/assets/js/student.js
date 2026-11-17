@@ -155,12 +155,10 @@ function cleanStudentName(name, code) {
         const escapedCode = String(code).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         cleaned = cleaned.replace(new RegExp(`(\\s*[-–/|,]?\\s*\\(?\\[?${escapedCode}\\)?\\]?\\s*)$`, 'i'), '');
     }
-    // Xóa các dạng đuôi mã sinh viên phổ biến
+    // Xóa các dạng đuôi mã sinh viên phổ biến, nhưng giữ phần số đuôi là một phần của tên (vd. "Bùi Gia Huy 311")
     cleaned = cleaned.replace(/\s*\([A-Za-z0-9_.-]+\)\s*$/, '');
     cleaned = cleaned.replace(/\s*\[[A-Za-z0-9_.-]+\]\s*$/, '');
     cleaned = cleaned.replace(/\s*[-–]\s*[A-Za-z0-9_.-]+\s*$/, '');
-    cleaned = cleaned.replace(/\s+(?:SV|sv|it|IT)?[0-9]{3,8}\s*$/i, '');
-    cleaned = cleaned.replace(/\s+\d+\s*$/, '');
     return cleaned.trim();
 }
 

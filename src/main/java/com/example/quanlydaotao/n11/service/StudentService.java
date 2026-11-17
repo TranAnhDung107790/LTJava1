@@ -71,8 +71,8 @@ public class StudentService {
         cleaned = cleaned.replaceAll("\\s*\\([A-Za-z0-9_.-]+\\)\\s*$", "");
         cleaned = cleaned.replaceAll("\\s*\\[[A-Za-z0-9_.-]+\\]\\s*$", "");
         cleaned = cleaned.replaceAll("\\s*[-–]\\s*[A-Za-z0-9_.-]+\\s*$", "");
-        cleaned = cleaned.replaceAll("(?i)\\s+(?:SV|sv|it|IT)?[0-9]{3,8}\\s*$", "");
-        cleaned = cleaned.replaceAll("\\s+\\d+\\s*$", "");
+        // Giữ nguyên phần số đuôi là một phần của tên sinh viên (vd. "Bùi Gia Huy 311"),
+        // chỉ xóa mã SV khi trùng với code đã xử lý ở trên.
         return cleaned.trim();
     }
 
