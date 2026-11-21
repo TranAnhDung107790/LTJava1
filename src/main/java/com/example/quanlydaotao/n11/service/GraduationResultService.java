@@ -162,7 +162,7 @@ public class GraduationResultService {
         }
     }
 
-    // DTO nội bộ lưu dữ liệu điểm đọc từ student_summaries
+    // DTO nội bộ lưu dữ liệu điểm đọc từ graduation_results
     private record StudentSummaryItem(BigDecimal gpa, int totalCredits, int failedCredits) {
     }
 
@@ -171,7 +171,7 @@ public class GraduationResultService {
         if (rows.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Sinh viên chưa có dữ liệu tổng kết trong student_summaries");
+                    "Sinh viên chưa có dữ liệu tổng kết trong graduation_results");
         }
 
         Object[] row = rows.get(0);
@@ -263,11 +263,11 @@ public class GraduationResultService {
                     "Không tìm thấy sinh viên nào thuộc khóa " + (cohort != null ? cohort : "") + " để xét duyệt");
         }
 
-        // 3. Đọc dữ liệu tổng kết học tập thực tế từ bảng student_summaries
+        // 3. Đọc dữ liệu tổng kết học tập thực tế từ graduation_results
         List<Object[]> summaryRows = repository.findAllStudentSummaries();
         if (summaryRows.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Không có dữ liệu tổng kết điểm trong bảng student_summaries để xét duyệt");
+                    "Không có dữ liệu tổng kết điểm trong bảng graduation_results để xét duyệt");
         }
 
         Map<UUID, StudentSummaryItem> summaryMap = new HashMap<>();
@@ -289,7 +289,7 @@ public class GraduationResultService {
 
         List<GraduationResult> evaluatedResults = new ArrayList<>();
 
-        // 5. Tiến hành quét từng sinh viên dựa trên điểm thực tế từ student_summaries
+        // 5. Tiến hành quét từng sinh viên dựa trên điểm thực tế từ graduation_results
         for (UUID studentId : studentIds) {
             StudentSummaryItem summary = summaryMap.get(studentId);
             if (summary == null) {

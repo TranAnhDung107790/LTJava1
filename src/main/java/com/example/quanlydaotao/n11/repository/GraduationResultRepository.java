@@ -56,15 +56,22 @@ public interface GraduationResultRepository extends JpaRepository<GraduationResu
             ") t", nativeQuery = true)
     List<UUID> findActiveStudentIds();
 
-    // Lấy thông tin tổng kết học tập thực tế từ student_summaries (student_id, gpa_value, total_credits, failed_credits)
-    @Query(value = "SELECT student_id, gpa_value, total_credits, failed_credits " +
-            "FROM dbo.student_summaries " +
-            "WHERE is_active = 1 AND student_id IS NOT NULL", nativeQuery = true)
+    // Fallback không phụ thuộc migration student_summaries: đọc dữ liệu tổng kết mới nhất
+    // trực tiếp từ graduation_results.
+    @Query(value = "WITH ranked AS (" +
+            "SELECT student_id, gpa, total_credits, failed_credits, " +
+            "ROW_NUMBER() OVER (PARTITION BY student_id ORDER BY updated_at DESC, created_at DESC) AS rn " +
+            "FROM dbo.graduation_results " +
+            "WHERE is_active = 1 AND student_id IS NOT NULL" +
+            ") " +
+            "SELECT student_id, gpa, total_credits, failed_credits " +
+            "FROM ranked WHERE rn = 1", nativeQuery = true)
     List<Object[]> findAllStudentSummaries();
 
-    @Query(value = "SELECT student_id, gpa_value, total_credits, failed_credits " +
-            "FROM dbo.student_summaries " +
-            "WHERE is_active = 1 AND student_id = :studentId", nativeQuery = true)
+    @Query(value = "SELECT TOP (1) student_id, gpa, total_credits, failed_credits " +
+            "FROM dbo.graduation_results " +
+            "WHERE is_active = 1 AND student_id = :studentId " +
+            "ORDER BY updated_at DESC, created_at DESC", nativeQuery = true)
     List<Object[]> findStudentSummary(@Param("studentId") UUID studentId);
 
     // Lấy danh sách ID sinh viên thuộc riêng một khóa cụ thể (VD: '24' cho K24, '25' cho K25, '23' cho K23)
