@@ -38,7 +38,12 @@ public class GraduationProfileService {
     }
 
     private void initFallbackProfiles() {
-        List<Student> students = studentService.getFallbackStudents();
+        // The service may be constructed by Mockito before optional
+        // dependencies are injected. Keep fallback initialization safe in
+        // unit tests as well as in the Spring application context.
+        List<Student> students = studentService != null
+                ? studentService.getFallbackStudents()
+                : Collections.emptyList();
         Student s1 = students.size() > 0 ? students.get(0) : new Student("26687", "Hứa Tiến Tiến", "tien.hua@donga.edu.vn", "0901234561", "IT24AB");
         Student s2 = students.size() > 1 ? students.get(1) : new Student("26563", "Ngô Hữu Tuấn", "tuan.ngo@donga.edu.vn", "0901234562", "IT24AB");
         Student s3 = students.size() > 2 ? students.get(2) : new Student("25549", "Hồ Hoàng Hùng", "hung.ho@donga.edu.vn", "0901234563", "IT24AB");
@@ -225,11 +230,11 @@ public class GraduationProfileService {
         graduationProfile.setId(null);
         graduationProfile.setIsActive(true);
         graduationProfile.setDeletedAt(null);
-        if (graduationProfile.getStatus() == null || graduationProfile.getStatus().isBlank()) {
-            graduationProfile.setStatus("Pending");
-        } else {
-            graduationProfile.setStatus(graduationProfile.getStatus().trim());
-        }
+        // A newly submitted profile always starts a new review workflow.
+        // Review state can only be changed through review(...).
+        graduationProfile.setStatus("Pending");
+        graduationProfile.setReviewerId(null);
+        graduationProfile.setReviewDate(null);
         if (graduationProfile.getSubmittedDate() == null) {
             graduationProfile.setSubmittedDate(LocalDateTime.now());
         }
@@ -284,9 +289,8 @@ public class GraduationProfileService {
             profile.setSubmittedDate(input.getSubmittedDate());
         }
         profile.setNote(input.getNote());
-        if (input.getStatus() != null && !input.getStatus().isBlank()) {
-            profile.setStatus(input.getStatus().trim());
-        }
+        // Keep status and review metadata unchanged here. They are controlled
+        // exclusively by the dedicated review endpoint.
 
         try {
             return graduationProfileRepository.save(profile);
