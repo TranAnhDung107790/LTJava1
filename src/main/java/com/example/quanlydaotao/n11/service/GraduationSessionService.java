@@ -63,12 +63,11 @@ public class GraduationSessionService {
 
     public List<GraduationSession> findAll() {
         try {
+            // DB trả về rỗng là kết quả thật, không phải lỗi -> trả về rỗng
             List<GraduationSession> list = repository.findByIsActiveTrue();
-            if (list != null && !list.isEmpty()) {
-                return list;
-            }
-            return new ArrayList<>(fallbackSessions);
+            return list != null ? list : List.of();
         } catch (Exception e) {
+            // Chỉ dùng dữ liệu dự phòng khi DB thực sự lỗi
             return new ArrayList<>(fallbackSessions);
         }
     }
@@ -76,10 +75,9 @@ public class GraduationSessionService {
     public GraduationSession findById(UUID id) {
         try {
             return repository.findByIdAndIsActiveTrue(id)
-                    .orElseGet(() -> fallbackSessions.stream()
-                            .filter(s -> s.getId().equals(id) && Boolean.TRUE.equals(s.getIsActive()))
-                            .findFirst()
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đợt xét tốt nghiệp")));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đợt xét tốt nghiệp"));
+        } catch (ResponseStatusException rse) {
+            throw rse;
         } catch (Exception e) {
             return fallbackSessions.stream()
                     .filter(s -> s.getId().equals(id) && Boolean.TRUE.equals(s.getIsActive()))
@@ -94,9 +92,7 @@ public class GraduationSessionService {
         }
         try {
             List<GraduationSession> list = repository.searchByKeyword(keyword.trim());
-            if (list != null && !list.isEmpty()) {
-                return list;
-            }
+            return list != null ? list : List.of();
         } catch (Exception ignored) {
         }
         String kw = keyword.trim().toLowerCase();
@@ -110,9 +106,7 @@ public class GraduationSessionService {
     public List<GraduationSession> getActiveSessions() {
         try {
             List<GraduationSession> list = repository.findActiveSessionsInPeriod(LocalDate.now());
-            if (list != null && !list.isEmpty()) {
-                return list;
-            }
+            return list != null ? list : List.of();
         } catch (Exception ignored) {
         }
         LocalDate today = LocalDate.now();
@@ -135,7 +129,7 @@ public class GraduationSessionService {
         session.setDeletedAt(null);
 
         try {
-            if (repository.existsBySessionCodeIgnoreCase(code)) {
+            if (repository.existsBySessionCodeIgnoreCaseAndIsActiveTrue(code)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Mã đợt xét đã tồn tại");
             }
             session.setId(null);
@@ -158,7 +152,18 @@ public class GraduationSessionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã đợt xét không được để trống");
         }
 
-        session.setSessionCode(input.getSessionCode().trim());
+        String newCode = input.getSessionCode().trim();
+        try {
+            if (repository.existsBySessionCodeIgnoreCaseAndIsActiveTrueAndIdNot(newCode, id)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Mã đợt xét đã tồn tại");
+            }
+        } catch (ResponseStatusException rse) {
+            throw rse;
+        } catch (Exception ignored) {
+            // DB không khả dụng -> bỏ qua kiểm tra trùng (chế độ dự phòng)
+        }
+
+        session.setSessionCode(newCode);
         session.setSessionName(input.getSessionName());
         session.setAcademicYear(input.getAcademicYear());
         session.setSemester(input.getSemester());
@@ -187,13 +192,22 @@ public class GraduationSessionService {
     }
 
     public void deleteSoft(UUID id, UUID deletedBy) {
+        GraduationSession session = findById(id);
+        boolean fromFallback = fallbackSessions.stream().anyMatch(s -> s.getId().equals(id));
+        if (fromFallback) {
+            // Dữ liệu dự phòng (DB không khả dụng): chỉ xóa trong bộ nhớ
+            fallbackSessions.removeIf(s -> s.getId().equals(id));
+            return;
+        }
         try {
-            GraduationSession session = findById(id);
             session.setIsActive(false);
             session.setDeletedAt(LocalDateTime.now());
             session.setDeletedBy(deletedBy);
             repository.save(session);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            // Không nuốt lỗi: API phải báo lỗi thay vì báo xóa thành công
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Không thể xóa đợt xét tốt nghiệp: " + e.getMessage(), e);
         }
         fallbackSessions.removeIf(s -> s.getId().equals(id));
     }
@@ -251,20 +265,23 @@ public class GraduationSessionService {
                                    String academicYear, int semester, LocalDate startDate,
                                    LocalDate dueDate, String note) {
         try {
-            if (!repository.existsBySessionCodeIgnoreCase(code)) {
-                GraduationSession s = new GraduationSession();
-                s.setSessionCode(code);
-                s.setSessionName(name);
-                s.setAcademicYear(academicYear);
-                s.setSemester(semester);
-                s.setStartDate(startDate);
-                s.setDueDate(dueDate);
-                s.setNote(note);
-                s.setIsActive(true);
-                list.add(repository.save(s));
+            if (repository.existsBySessionCodeIgnoreCaseAndIsActiveTrue(code)) {
+                // Mã đã tồn tại trong DB -> bỏ qua ngay, không rơi xuống tạo bản dự phòng
                 return;
             }
+            GraduationSession s = new GraduationSession();
+            s.setSessionCode(code);
+            s.setSessionName(name);
+            s.setAcademicYear(academicYear);
+            s.setSemester(semester);
+            s.setStartDate(startDate);
+            s.setDueDate(dueDate);
+            s.setNote(note);
+            s.setIsActive(true);
+            list.add(repository.save(s));
+            return;
         } catch (Exception ignored) {
+            // DB không khả dụng -> mới dùng danh sách dự phòng bên dưới
         }
         // Fallback create
         boolean exists = fallbackSessions.stream().anyMatch(s -> s.getSessionCode().equalsIgnoreCase(code));

@@ -1,6 +1,9 @@
 package com.example.quanlydaotao.n11.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -14,12 +17,14 @@ public class GraduationSession extends BaseEntity {
     private UUID id;
 
     @Column(name = "session_code", nullable = false, unique = true, length = 50)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     private String sessionCode;
 
     @Column(name = "session_name", nullable = false, length = 255, columnDefinition = "nvarchar(255)")
     private String sessionName;
 
     @Column(name = "academic_year", length = 20)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     private String academicYear;
 
     @Column(name = "semester")

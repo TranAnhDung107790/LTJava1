@@ -20,6 +20,12 @@ public interface GraduationSessionRepository extends JpaRepository<GraduationSes
 
     boolean existsBySessionCodeIgnoreCase(String sessionCode);
 
+    // Chỉ xét các đợt còn hiệu lực: mã đã xóa mềm được phép dùng lại
+    boolean existsBySessionCodeIgnoreCaseAndIsActiveTrue(String sessionCode);
+
+    // Kiểm tra trùng khi cập nhật, bỏ qua chính bản ghi đang sửa
+    boolean existsBySessionCodeIgnoreCaseAndIsActiveTrueAndIdNot(String sessionCode, UUID id);
+
     @Query("SELECT s FROM GraduationSession s WHERE s.isActive = true AND " +
            "(LOWER(s.sessionCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(s.sessionName) LIKE LOWER(CONCAT('%', :keyword, '%')))")

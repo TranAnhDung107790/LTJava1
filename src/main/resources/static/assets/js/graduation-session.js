@@ -53,6 +53,13 @@ let autoModalInstance = null;
 let activeOnlyFilter = false;
 let currentViewMode = 'cards'; // 'cards' | 'table'
 
+// Lấy ngày theo giờ địa phương. toISOString() dùng UTC nên bị lệch 1 ngày vào buổi tối ở Việt Nam.
+function todayLocal() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const modalEl = document.getElementById('sessionModal');
     if (modalEl && window.bootstrap) {
@@ -288,11 +295,8 @@ async function loadSessions(keyword = '') {
         sessionsList = [];
     }
 
+    // /active và /search đã lọc ở server; chỉ lọc thêm từ khóa cho trường hợp server trả rỗng
     let displayList = sessionsList;
-    if (activeOnlyFilter) {
-        const today = new Date().toISOString().split('T')[0];
-        displayList = displayList.filter(s => s.startDate && s.dueDate && today >= s.startDate && today <= s.dueDate);
-    }
     if (keyword) {
         const kw = keyword.toLowerCase();
         displayList = displayList.filter(s => (s.sessionCode || '').toLowerCase().includes(kw) || (s.sessionName || '').toLowerCase().includes(kw));
@@ -300,29 +304,17 @@ async function loadSessions(keyword = '') {
 
     renderCards(displayList, false);
     renderTable(displayList, false);
-    updateBentoStats(sessionsList.length > 0 ? sessionsList : displayList);
 }
 
 // ==========================================================================
 // 🎴 RENDER CARDS (Pastel EdTech Cards — Bản B theo Wireframe Prompt 7)
 // ==========================================================================
-function fixCorruptedVietnamese(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/Xét\s+t\?t\s+nghi\?p/gi, 'Xét tốt nghiệp')
-        .replace(/Ð\?t/gi, 'Đợt')
-        .replace(/nam\s+h\?c/gi, 'năm học')
-        .replace(/K\?s*hè/gi, 'Kỳ hè')
-        .replace(/Kh\?i\s+t\?o/gi, 'Khởi tạo')
-        .replace(/t\?t\s+nghi\?p/gi, 'tốt nghiệp');
-}
-
 function renderCards(items, triggerAnimation = false) {
     const cardsContainer = document.getElementById('sessionsCardsContainer');
     if (!cardsContainer) return;
 
-    // Cập nhật các chỉ số Bento Stat Cards
-    updateBentoStats(sessionsList.length > 0 ? sessionsList : items);
+    // Cập nhật các chỉ số Bento Stat Cards theo đúng dữ liệu đang hiển thị
+    updateBentoStats(items);
 
     if (items.length === 0) {
         cardsContainer.innerHTML = `
@@ -334,7 +326,7 @@ function renderCards(items, triggerAnimation = false) {
         return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayLocal();
     const pastelThemes = [
         { theme: 'card-pastel-blue', icon: 'bi-mortarboard-fill' },
         { theme: 'card-pastel-lavender', icon: 'bi-calendar2-check-fill' },
@@ -374,10 +366,10 @@ function renderCards(items, triggerAnimation = false) {
                         ${periodStatus}
                         <span class="badge bg-white text-secondary border fw-semibold px-2 py-1">HK${item.semester || 1} · ${escapeHtml(item.academicYear || '2026-2027')}</span>
                     </div>
-                    <h5 class="card-session-title mb-2">${escapeHtml(fixCorruptedVietnamese(item.sessionName))}</h5>
+                    <h5 class="card-session-title mb-2">${escapeHtml(item.sessionName)}</h5>
                     <div class="card-session-meta">
                         <span><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Thời gian:</strong> ${dateRangeText}</span>
-                        ${item.note ? `<span><i class="bi bi-info-circle me-1 text-secondary"></i>${escapeHtml(fixCorruptedVietnamese(item.note))}</span>` : ''}
+                        ${item.note ? `<span><i class="bi bi-info-circle me-1 text-secondary"></i>${escapeHtml(item.note)}</span>` : ''}
                     </div>
                 </div>
                 <div class="card-session-actions">
@@ -423,8 +415,8 @@ function renderTable(items) {
         totalBadge.innerHTML = `<span class="status-pulse-dot"></span>Tổng số: ${items.length} đợt xét`;
     }
 
-    // Cập nhật các chỉ số Bento Stat Cards
-    updateBentoStats(sessionsList.length > 0 ? sessionsList : items);
+    // Cập nhật các chỉ số Bento Stat Cards theo đúng dữ liệu đang hiển thị
+    updateBentoStats(items);
 
     if (!tableBody) return;
 
@@ -440,7 +432,7 @@ function renderTable(items) {
         return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayLocal();
 
     tableBody.innerHTML = items.map((item, index) => {
         const sessionCodeBadge = `<span class="session-code-pill">${escapeHtml(item.sessionCode)}</span>`;
@@ -453,7 +445,7 @@ function renderTable(items) {
         let periodStatus = '<span class="badge-status badge-status-expired"><i class="bi bi-dash-circle me-1"></i>Chưa mở</span>';
         if (sDate && dDate) {
             if (today >= sDate && today <= dDate) {
-                periodStatus = '<span class="badge-status badge-status-active"><span class="status-pulse-dot"></span>Đang mở nộp</span>';
+                periodStatus = '<span class="badge-status badge-status-active"><span class="status-pulse-dot"></span>Đang mở nhận hồ sơ</span>';
             } else if (today < sDate) {
                 periodStatus = '<span class="badge-status badge-status-upcoming"><i class="bi bi-clock-history me-1"></i>Sắp diễn ra</span>';
             } else if (today > dDate) {
@@ -506,7 +498,7 @@ function renderTable(items) {
 }
 
 function updateBentoStats(allSessions) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayLocal();
     let activeCount = 0;
     let upcomingCount = 0;
     let latestYear = '2026 - 2027';
@@ -556,7 +548,7 @@ function openCreateModal() {
     document.getElementById('sessionId').value = '';
     document.getElementById('sessionForm').reset();
     document.getElementById('modalSessionCode').disabled = false;
-    document.getElementById('modalStartDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('modalStartDate').value = todayLocal();
 
     if (sessionModalInstance) {
         sessionModalInstance.show();
@@ -571,12 +563,12 @@ function openEditModal(id) {
     document.getElementById('sessionId').value = item.id;
     document.getElementById('modalSessionCode').value = item.sessionCode || '';
     document.getElementById('modalSessionCode').disabled = true;
-    document.getElementById('modalSessionName').value = fixCorruptedVietnamese(item.sessionName) || '';
+    document.getElementById('modalSessionName').value = item.sessionName || '';
     document.getElementById('modalAcademicYear').value = item.academicYear || '';
     document.getElementById('modalSemester').value = item.semester || 1;
     document.getElementById('modalStartDate').value = item.startDate ? String(item.startDate).substring(0, 10) : '';
     document.getElementById('modalDueDate').value = item.dueDate ? String(item.dueDate).substring(0, 10) : '';
-    document.getElementById('modalNote').value = fixCorruptedVietnamese(item.note) || '';
+    document.getElementById('modalNote').value = item.note || '';
 
     if (sessionModalInstance) {
         sessionModalInstance.show();
@@ -599,34 +591,7 @@ async function handleSaveSession(e) {
         note: document.getElementById('modalNote').value.trim() || null
     };
 
-    // Đóng modal ngay tức thì
-    if (sessionModalInstance) {
-        sessionModalInstance.hide();
-    }
-
-    // 🚀 TỐI ƯU TỨC THÌ: Cập nhật giao diện trong 50ms
-    const tempItem = {
-        id: isEdit ? id : ('sess-' + Date.now()),
-        ...payload
-    };
-
-    if (isEdit) {
-        const idx = sessionsList.findIndex(x => String(x.id) === String(id));
-        if (idx !== -1) sessionsList[idx] = { ...sessionsList[idx], ...tempItem };
-    } else {
-        sessionsList.unshift(tempItem);
-    }
-
-    renderCards(sessionsList, true);
-    renderTable(sessionsList, false);
-    updateBentoStats(sessionsList);
-
-    const successMsg = isEdit
-        ? `✅ Đã cập nhật đợt xét: <strong>${payload.sessionCode}</strong> - ${payload.sessionName} thành công!`
-        : `✅ Đã thêm mới đợt xét tốt nghiệp: <strong>${payload.sessionCode}</strong> - ${payload.sessionName} (HK${payload.semester} · ${payload.academicYear || ''}) thành công!`;
-    showListAlert('success', successMsg);
-
-    // Gửi đồng bộ ngầm lên server
+    // Chỉ cập nhật giao diện và báo thành công SAU KHI server xác nhận
     try {
         let response;
         if (isEdit && !isSeed) {
@@ -643,14 +608,35 @@ async function handleSaveSession(e) {
             });
         }
 
-        if (response && response.ok) {
-            const savedData = await response.json();
-            if (savedData && savedData.id && !isEdit) {
-                tempItem.id = savedData.id;
-            }
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || `Lỗi máy chủ (${response.status})`);
         }
+
+        const savedData = await response.json().catch(() => null);
+        const savedItem = (savedData && savedData.id)
+            ? savedData
+            : { id: isEdit ? id : ('sess-' + Date.now()), ...payload };
+
+        if (isEdit) {
+            const idx = sessionsList.findIndex(x => String(x.id) === String(id));
+            if (idx !== -1) sessionsList[idx] = savedItem;
+        } else {
+            sessionsList.unshift(savedItem);
+        }
+
+        if (sessionModalInstance) {
+            sessionModalInstance.hide();
+        }
+        renderCards(sessionsList, true);
+        renderTable(sessionsList, false);
+
+        const successMsg = isEdit
+            ? `✅ Đã cập nhật đợt xét: <strong>${payload.sessionCode}</strong> - ${payload.sessionName} thành công!`
+            : `✅ Đã thêm mới đợt xét tốt nghiệp: <strong>${payload.sessionCode}</strong> - ${payload.sessionName} (HK${payload.semester} · ${payload.academicYear || ''}) thành công!`;
+        showListAlert('success', successMsg);
     } catch (error) {
-        console.warn('API backend đợt xét đang xử lý ngầm:', error);
+        showListAlert('danger', `❌ Không lưu được đợt xét: ${error.message}. Vui lòng thử lại.`);
     }
 }
 
@@ -680,12 +666,8 @@ async function handleDeleteSession(id) {
         showListAlert('success', '🗑️ Đã xóa đợt xét thành công!');
         loadSessions();
     } catch (error) {
-        // Fallback xóa bộ nhớ tạm
-        sessionsList = sessionsList.filter(x => String(x.id) !== String(id));
-        renderCards(sessionsList, false);
-        renderTable(sessionsList, false);
-        updateBentoStats(sessionsList);
-        showListAlert('success', '🗑️ Đã xóa đợt xét thành công!');
+        // Không xóa khỏi giao diện và không báo thành công khi API lỗi
+        showListAlert('danger', `❌ Không xóa được đợt xét: ${error.message}. Vui lòng thử lại.`);
     }
 }
 
