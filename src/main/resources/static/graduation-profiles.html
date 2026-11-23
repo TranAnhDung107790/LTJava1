@@ -1,6 +1,20 @@
 <!doctype html>
 <html lang="vi">
 <head>
+    <!-- Cổng phân quyền demo: chỉ admin được vào toàn bộ dự án (Nhóm 11) -->
+    <script>
+    (function () {
+        try {
+            var auth = JSON.parse(localStorage.getItem('n11_demo_auth') || 'null');
+            if (auth && auth.username === 'admin' && auth.role === 'ADMIN') return;
+        } catch (e) { /* rơi xuống dưới */ }
+        location.replace('/graduation-login.html?redirect=' + encodeURIComponent(location.pathname + location.search));
+    })();
+    </script>
+    <script type="module">
+        import { mountUserBadge } from '/assets/js/graduation-auth.js?v=20261123_auth1';
+        mountUserBadge();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hồ sơ tốt nghiệp | Quản lý tốt nghiệp</title>
@@ -9,7 +23,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" crossorigin="anonymous" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" crossorigin="anonymous" />
     <link rel="stylesheet" href="/adminlte/css/adminlte.css" />
-    <link rel="stylesheet" href="/assets/css/graduation.css?v=20261116_v1" />
+    <link rel="stylesheet" href="/assets/css/graduation.css?v=20261123_auth1" />
 </head>
 
 <body class="layout-fixed sidebar-expand-lg sidebar-open">
@@ -680,7 +694,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="/adminlte/js/adminlte.js"></script>
-<script type="module" src="/assets/js/calendar-widget.js?v=20261106_v3"></script>
-<script type="module" src="/assets/js/graduation-profile.js?v=20261117_v4"></script>
+<script type="module" src="/assets/js/calendar-widget.js?v=20261123_auth1"></script>
+<script type="module" src="/assets/js/graduation-profile.js?v=20261123_auth1"></script>
 </body>
 </html>
